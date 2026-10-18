@@ -23,6 +23,13 @@
 - **Et** je vois le résultat de la vérification Recherche d'entreprises
 - **Et** je vois la position du salon sur une carte
 
+### 2 bis. Dossier avec un SIRET introuvable ou inactif (E14)
+- **Étant donné** qu'un gérant a envoyé son dossier alors que la vérification de son SIRET a donné `not_found` (introuvable) ou `inactive` (inactif)
+- **Quand** j'ouvre `/admin/salons` avec le filtre « à traiter »
+- **Alors** ce dossier figure dans la liste, « à vérifier »
+- **Et** son détail affiche le résultat de la vérification
+- **Et** je peux le valider ou le refuser comme tout autre dossier
+
 ### 3. Valider un dossier
 - **Étant donné** que le détail d'un dossier en attente est affiché
 - **Quand** je clique sur « Valider »
@@ -84,7 +91,8 @@
 | `notifications.salon_decision.rejected.email` | _À rédiger (absent des docs)_ | E-mail ; contient le motif |
 
 ## Questions ouvertes
-- **APP_FLOW F-A1 / BACKEND_SCHEMA §3** : comment les cinq valeurs de `siret_check_result` (`valid`, `naf_mismatch`, `inactive`, `not_found`, `error`) se répartissent-elles entre ✓, ⚠ et ✗ ? F-M1 n'utilise que ✓ et ⚠.
+- **Résolu le 18/10** (E14) — SIRET introuvable ou inactif : le dossier est envoyé « à vérifier », l'admin décide ; voir scénario 2 bis.
+- **APP_FLOW F-A1 / F-M1 / BACKEND_SCHEMA §3** : E14 ne règle pas l'affichage. F-M1 n'utilise que ✓ (actif et NAF 96.02A/B) et ⚠ (« à vérifier » sinon) ; F-A1 ajoute ✗. Quelles valeurs de `siret_check_result` (`valid`, `naf_mismatch`, `inactive`, `not_found`, `error`) s'affichent ✗, puisque `not_found` et `inactive` sont « à vérifier » ?
 - **APP_FLOW §2.3 / F-A1** : après un refus, que voit le gérant (aucune garde pour le statut `rejected`) ? Peut-il corriger et renvoyer son dossier ?
 - **APP_FLOW F-A1 / TRD §6.1** : `verify-siret` peut être appelée par l'admin, mais aucun bouton ne relance la vérification dans F-A1. Faut-il un bouton (par exemple après un résultat `error`) ? Un admin peut-il revenir sur une décision ?
 - **BACKEND_SCHEMA §3** : le statut `suspended` (abus) existe, mais aucun parcours ni commande ne permet de suspendre un salon.

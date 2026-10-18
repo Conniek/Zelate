@@ -2,10 +2,10 @@
 
 **En tant qu'**équipe plateforme, **je veux** limiter les abus (un ticket actif par numéro, plafonds de codes SMS par numéro et par IP, avertissement après 5 absences en 30 jours), **afin de** protéger les files des salons et maîtriser le coût des SMS.
 
-- Priorité : S (PRD §5.3)
-- Règles appliquées : un seul ticket actif à la fois, tous salons confondus ; absences répétées : avertissement seul après 5 absences en 30 jours ; chaque salon ne voit que ses propres données (PRD §5.1 « Autres règles ») ; H4 (absence après 10 min) et H6 (numéro jamais affiché) (PRD §5.1) ; décision n° 17 (PRD §11) ; risque « Fraude au trafic SMS » : plafonds par numéro, par IP et par pays, +33 uniquement (PRD §9)
+- Priorité : I (PRD §5.3, v1.1)
+- Règles appliquées : un seul ticket actif à la fois, tous salons confondus ; absences répétées : avertissement seul, par notification, à la 5e absence en 30 jours, tous salons confondus (E10) ; annuler, même une fois appelé, n'est pas une absence (E3) ; chaque salon ne voit que ses propres données (PRD §5.1 « Autres règles ») ; plafonds de codes SMS : 5 par heure et par numéro, 20 par heure et par IP (PRD §5.3 P-03, TRD §7) ; absences enregistrées dans `private.no_show_records` par empreinte du numéro, 30 jours glissants, walk-ins compris (K8, TRD §8) ; notification « Avertissement d'absences » : push, SMS si pas de push (PRD §5.4) ; H4 (absence après 10 min) et H6 (numéro jamais affiché) (PRD §5.1) ; décision n° 17 (PRD §11) ; risque « Fraude au trafic SMS » : plafonds par numéro, par IP et par pays, +33 uniquement (PRD §9)
 - Parcours : F-C3 (étapes 4 et 5), F-M7 (inscription à l'accueil, message `already_has_active_ticket`), F-C7 (libération à 10 min) (APP_FLOW) ; événement « Libération » : compteur d'absences (APP_FLOW §7)
-- Commandes et données : `join_queue`, `register_walk_in` (erreur `queue.already_has_active_ticket`, `queue.rate_limited`) · Edge Function `auth-send-sms` (plafonds de codes) · `queue-tick` (`called → no_show`) · tables `tickets` (index unique partiel « un ticket actif par client », `no_show_at`, `is_test`), `private.ticket_contacts` (`phone_hash`, `is_active`), `private.rate_limits`
+- Commandes et données : `join_queue`, `register_walk_in` (erreurs `queue.already_has_active_ticket`, `queue.rate_limited`) · `cancel_ticket` · Edge Function `auth-send-sms` (plafonds de codes, erreur `auth.otp_rate_limited`, TRD §6.2) · `queue-tick` (`called → no_show`) · tables `tickets` (index unique partiel « un ticket actif par client », `no_show_at`, `is_test`), `private.ticket_contacts` (`phone_hash`, `is_active`), `private.no_show_records` (`phone_hash`, `ticket_id`, `occurred_at`), `private.rate_limits`, `notifications` (`no_show_warning`) · tâche `daily-maintenance` (purge des `no_show_records` de plus de 30 jours)
 
 ## Scénarios
 
@@ -32,17 +32,17 @@
 - **Quand** un client réel rejoint une file
 - **Alors** le ticket de test n'empêche la création d'aucun ticket
 
-### 5. Plafond de codes SMS par numéro
-- **Étant donné** que le plafond de codes de connexion pour un numéro est atteint
-- **Quand** un nouveau code est demandé pour ce numéro, depuis n'importe quel appareil
+### 5. Plafond de 5 codes SMS par heure et par numéro
+- **Étant donné** que 5 codes de connexion ont été envoyés à un numéro dans l'heure
+- **Quand** un 6e code est demandé pour ce numéro, depuis n'importe quel appareil
 - **Alors** aucun SMS n'est envoyé
-- **Et** un message indique de réessayer plus tard
+- **Et** l'erreur `auth.otp_rate_limited` est renvoyée, avec un message qui indique de réessayer plus tard
 
-### 6. Plafond de codes SMS par IP
-- **Étant donné** que le plafond de codes de connexion pour une adresse IP est atteint
-- **Quand** un code est demandé depuis cette adresse IP pour un autre numéro
+### 6. Plafond de 20 codes SMS par heure et par IP
+- **Étant donné** que 20 codes de connexion ont été demandés depuis une adresse IP dans l'heure
+- **Quand** un 21e code est demandé depuis cette adresse IP pour un autre numéro
 - **Alors** aucun SMS n'est envoyé
-- **Et** un message indique de réessayer plus tard
+- **Et** l'erreur `auth.otp_rate_limited` est renvoyée
 
 ### 7. Numéros hors +33 refusés
 - **Étant donné** un numéro qui n'est pas un numéro +33
