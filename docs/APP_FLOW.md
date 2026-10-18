@@ -71,7 +71,8 @@ Les chemins d'URL sont en anglais (ce sont des noms de code) ; les titres de pag
 | Gérant dont le salon attend la validation | `/signup/pending` (le wizard reste accessible) |
 | Gérant dont le salon est validé mais non publié | `/dashboard/setup` |
 | Coiffeur non connecté sur `/stylist` | `/signin?next=/stylist/queue` |
-| Coiffeur désactivé ou sessions coupées par le gérant | `/signin` avec le message « Votre accès a été retiré » |
+| Coiffeur désactivé | `/signin` avec le message « Votre accès a été retiré, contactez votre gérant » |
+| Sessions coupées par le gérant (téléphone perdu ou changé) | `/signin` avec le message « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » |
 | Utilisateur sans droit admin sur `/admin` | `/signin` |
 
 ---
@@ -255,7 +256,8 @@ stateDiagram-v2
 | --- | --- | --- |
 | Champ e-mail + « Recevoir mon lien » | Envoie le lien magique | — |
 | Lien ouvert | Session de 30 jours | F-S4 |
-| Compte désactivé ou sessions coupées par le gérant | « Votre accès a été retiré, contactez votre gérant » | — |
+| Compte désactivé | « Votre accès a été retiré, contactez votre gérant » | — |
+| Sessions coupées par le gérant | « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » | F-S2 |
 | « Se déconnecter » (menu) | Fin de session | F-S2 |
 
 ### F-S3 · Mon statut — C-02
@@ -273,7 +275,7 @@ Barre de statut toujours visible en haut de `/stylist/queue`.
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| Carte « Prochain client » (en haut) | Premier ticket éligible pour moi (il me demande, ou il est sans préférence et je maîtrise la prestation) : prénom, prestation, durée, statut d'approche (pas parti, en route, arrivé, en retard de X min), réponse T-30, mention « vous a demandé » | — |
+| Carte « Prochain client » (en haut) | Premier ticket éligible pour moi (il me demande, ou il est sans préférence et je maîtrise la prestation) : prénom, prestation, durée, statut d'approche (confirmé à T-30, en retard de X min, sans réponse, arrivé), réponse T-30, mention « vous a demandé » | — |
 | « Appeler » (barre du bas, actif si je suis disponible et qu'un ticket est éligible) | `call_ticket` : le serveur appelle le premier ticket éligible ; refuse un second appel en cours | F-S5 |
 | Liste « Ensuite » | Mes prochains clients estimés, lecture seule (pas de glisser-déposer) | — |
 | Bandeau rouge « Connexion perdue » | Toutes les actions désactivées, reconnexion automatique | — |
@@ -406,7 +408,7 @@ Jamais de numéro de téléphone affiché.
 | --- | --- | --- |
 | Menu du coiffeur : « Absent », « En retard », « Part plus tôt », « Pause » | Formulaire (heure prévue, heure de fin, motif) | — |
 | Aperçu de l'impact | Liste des tickets touchés : réassignés automatiquement (sans préférence) ou à confirmer par le client (avec préférence) | — |
-| « Confirmer » | `set_presence` | Clients notifiés ; ceux avec préférence choisissent « attendre » ou « changer » |
+| « Confirmer » | `set_presence` | Clients notifiés ; ceux avec préférence choisissent « attendre » ou « premier disponible » |
 
 ### F-M9 · Retirer un ticket — S-12
 

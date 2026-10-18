@@ -115,19 +115,19 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.endOfDay.banner.title` | « Fin de journée » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.endOfDay.response.stay` | « reste » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.endOfDay.response.cancel` | « annule » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.endOfDay.response.none` | « sans réponse » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.endOfDay.closeNow` | « Fermer la file maintenant » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.endOfDay.closing.title` | « {count} clients attendent encore » | APP_FLOW F-M12 ; pluriel ICU |
-| `pro-manager.endOfDay.closing.serve` | « Servir » | PRD §5.2 |
-| `pro-manager.endOfDay.closing.cancel` | « Annuler avec excuses » | PRD §5.2 |
-| `pro-manager.endOfDay.closing.all` | « Tous » | Libellé indicatif (APP_FLOW F-M12) |
+| `pro-manager.end_of_day.banner.title` | « Fin de journée » | Libellé indicatif (APP_FLOW F-M12) |
+| `pro-manager.end_of_day.response.stay` | « reste » | Libellé indicatif (APP_FLOW F-M12) |
+| `pro-manager.end_of_day.response.cancel` | « annule » | Libellé indicatif (APP_FLOW F-M12) |
+| `pro-manager.end_of_day.response.none` | « sans réponse » | Libellé indicatif (APP_FLOW F-M12) |
+| `pro-manager.end_of_day.close_now` | « Fermer la file maintenant » | Libellé indicatif (APP_FLOW F-M12) |
+| `pro-manager.end_of_day.closing.title` | « {count} clients attendent encore » | APP_FLOW F-M12 ; pluriel ICU |
+| `pro-manager.end_of_day.closing.serve` | « Servir » | PRD §5.2 |
+| `pro-manager.end_of_day.closing.cancel` | « Annuler avec excuses » | PRD §5.2 |
+| `pro-manager.end_of_day.closing.all` | « Tous » | Libellé indicatif (APP_FLOW F-M12) |
 | `notifications.end_of_day_risk.push` | « Vous risquez de ne pas être pris avant la fermeture » | PRD §5.2 ; boutons « Je reste » et « J'annule » |
 | `notifications.end_of_day_risk.sms` | — (à rédiger, à partir de « Vous risquez de ne pas être pris avant la fermeture ») | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; lien de suivi pour répondre |
-| `notifications.cancelled_by_salon.endOfDay.push` | — (à rédiger) | Excuses et salons proches |
-| `notifications.cancelled_by_salon.endOfDay.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; excuses et salons proches ; hors plafond |
+| `notifications.cancelled_by_salon.end_of_day.push` | — (à rédiger) | Excuses et salons proches |
+| `notifications.cancelled_by_salon.end_of_day.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; excuses et salons proches ; hors plafond |
 | `errors.queue.invalid_transition` | — (à rédiger) | Partagée avec S-02, S-12, S-13 |
 
 ## Questions ouvertes

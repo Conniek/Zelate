@@ -119,11 +119,9 @@
 | `common.approach_status.late` | « en retard de {minutes} min » | Valeurs à arbitrer |
 | `common.approach_status.confirmed` | « confirmé » | BACKEND_SCHEMA §4.13 seulement |
 | `common.approach_status.no_response` | « sans réponse » | BACKEND_SCHEMA §4.13 seulement |
-| `common.approach_status.not_left` | « pas parti » | APP_FLOW F-S4 seulement |
-| `common.approach_status.on_the_way` | « en route » | APP_FLOW F-S4 seulement |
 
 ## Questions ouvertes
-- [APP_FLOW / BACKEND_SCHEMA] Les valeurs du statut d'approche diffèrent : APP_FLOW F-S4 « pas parti, en route, arrivé, en retard de X min » ; BACKEND_SCHEMA §4.13 « arrivé, en retard de X min, confirmé, sans réponse », calculées depuis `arrived_at`, `eta_response`, `declared_delay_minutes`. « Pas parti » et « en route » ne se calculent pas sans GPS (H7). Quelle liste retenir ?
+- **Résolu le 18/10** : APP_FLOW F-S4 reprend la liste de BACKEND_SCHEMA (confirmé à T-30, en retard de X min, sans réponse, arrivé). Question d'origine : les valeurs du statut d'approche différaient : APP_FLOW F-S4 « pas parti, en route, arrivé, en retard de X min » ; BACKEND_SCHEMA §4.13 « arrivé, en retard de X min, confirmé, sans réponse », calculées depuis `arrived_at`, `eta_response`, `declared_delay_minutes`. « Pas parti » et « en route » ne se calculent pas sans GPS (H7). Quelle liste retenir ?
 - [APP_FLOW / PRD / TRD] Contenu de la liste « Ensuite » : APP_FLOW §7 dit qu'un nouveau ticket apparaît chez le coiffeur « demandé ou pressenti » (`estimated_member_id`) ; PRD C-03 et ADR-015 parlent de tous les tickets « sans préférence » éligibles (un même ticket apparaîtrait chez plusieurs coiffeurs). Laquelle ?
 - [APP_FLOW] Nombre de clients affichés dans « Ensuite », et affiche-t-on l'heure estimée de chacun ?
 - [PRD] H8 : le client « reprend la tête de file dès son arrivée ». L'arrivée est-elle l'heure déclarée atteinte, ou l'arrivée validée par le code du ticket (C-05) ?

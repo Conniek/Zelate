@@ -87,9 +87,9 @@
 | --- | --- | --- |
 | `pro-manager.signup.hairdressing.label` | « Je coiffe aussi » | Partagée avec S-01 ; libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.board.hairdressing.label` | « Je coiffe » | Libellé indicatif (APP_FLOW F-M6) |
-| `pro-manager.board.takeNext` | « Je prends le prochain » | Libellé indicatif (APP_FLOW F-M6) |
+| `pro-manager.board.take_next` | « Je prends le prochain » | Libellé indicatif (APP_FLOW F-M6) |
 | `notifications.estimate_changed.push` | — (à rédiger) | Push seulement ; nouvelle heure et raison (APP_FLOW §7) |
-| `notifications.estimate_changed.reason.hairdressingToggled` | — (à rédiger) | Raison montrée au client, sans détail sur le gérant |
+| `notifications.estimate_changed.reason.hairdressing_toggled` | — (à rédiger) | Raison montrée au client, sans détail sur le gérant |
 | `errors.queue.no_eligible_ticket` | — (à rédiger) | — |
 | `errors.queue.invalid_transition` | — (à rédiger) | — |
 

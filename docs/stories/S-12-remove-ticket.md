@@ -80,7 +80,7 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.ticketPanel.remove` | « Retirer de la file » | Libellé indicatif (APP_FLOW F-M9) |
+| `pro-manager.ticket_panel.remove` | « Retirer de la file » | Libellé indicatif (APP_FLOW F-M9) |
 | `pro-manager.remove.reason.emergency` | — (à rédiger) | Valeur `emergency` |
 | `pro-manager.remove.reason.client_request` | — (à rédiger) | Valeur `client_request` |
 | `pro-manager.remove.reason.duplicate` | — (à rédiger) | Valeur `duplicate` |
@@ -92,7 +92,7 @@
 | `notifications.cancelled_by_salon.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; motif, excuses, salons proches ; hors plafond |
 | `notifications.cancelled_by_salon.reason.<removal_reason>` | — (à rédiger) | Motif tel que le client le lit, un par valeur |
 | `errors.queue.invalid_transition` | — (à rédiger) | Partagée avec S-02 |
-| `errors.validation.removalNoteLength` | — (à rédiger) | 200 caractères maximum |
+| `errors.validation.removal_note_length` | — (à rédiger) | 200 caractères maximum |
 
 ## Questions ouvertes
 - **PRD** : comment chaque motif est-il formulé pour le client ? Par exemple, le motif « comportement inapproprié » lui est-il envoyé tel quel ?

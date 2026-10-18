@@ -72,14 +72,14 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.team.menu.revokeSessions` | « Déconnecter ses appareils » | Libellé indicatif (APP_FLOW F-M4) |
+| `pro-manager.team.menu.revoke_sessions` | « Déconnecter ses appareils » | Libellé indicatif (APP_FLOW F-M4) |
 | `pro-manager.team.menu.deactivate` | « Désactiver » | Libellé indicatif (APP_FLOW F-M4) |
-| `pro-manager.team.revokeSessions.confirm` | — (à rédiger) | Rappelle que le coiffeur pourra se reconnecter par lien magique |
+| `pro-manager.team.revoke_sessions.confirm` | — (à rédiger) | Rappelle que le coiffeur pourra se reconnecter par lien magique |
 | `pro-manager.team.deactivate.confirm` | — (à rédiger) | Rappelle que l'accès est retiré et que les clients qui le demandaient devront choisir |
 | `pro-manager.team.status.deactivated` | — (à rédiger) | Valeur `deactivated` |
-| `pro-stylist.signin.accessRevoked` | « Votre accès a été retiré » / « Votre accès a été retiré, contactez votre gérant » | APP_FLOW §2.3 et F-S2 ; texte unique à choisir ; espace `pro-stylist` (story C-01 / F-S2) |
+| `pro-stylist.signin.access_revoked` | « Votre accès a été retiré » / « Votre accès a été retiré, contactez votre gérant » | APP_FLOW §2.3 et F-S2 ; texte unique à choisir ; espace `pro-stylist` (story C-01 / F-S2) |
 | `notifications.stylist_change_required.push` | — (à rédiger) | Partagée avec S-11 |
-| `errors.team.lastManager` | — (à rédiger) | Au moins un gérant par salon |
+| `errors.team.last_manager` | — (à rédiger) | Au moins un gérant par salon |
 
 ## Questions ouvertes
 - **APP_FLOW (contradiction)** : le message du coiffeur coupé n'est pas le même partout. APP_FLOW §2.3 dit « Votre accès a été retiré », F-S2 dit « Votre accès a été retiré, contactez votre gérant ». Après une simple déconnexion (téléphone perdu), le coiffeur reste actif et peut se reconnecter : « contactez votre gérant » l'induit en erreur. Faut-il deux messages, un pour la déconnexion et un pour la désactivation ?

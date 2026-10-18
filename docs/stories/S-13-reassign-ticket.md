@@ -73,9 +73,9 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.ticketPanel.reassign` | « Changer de coiffeur » | Libellé indicatif (APP_FLOW F-M10) |
-| `pro-manager.reassign.delayWarning` | « L'heure du client reculerait de {minutes} min : demandez-lui son accord » | APP_FLOW F-M10 ; variable en minutes |
-| `pro-manager.reassign.clientAgreed` | « Le client est d'accord » | Libellé indicatif (APP_FLOW F-M10) |
+| `pro-manager.ticket_panel.reassign` | « Changer de coiffeur » | Libellé indicatif (APP_FLOW F-M10) |
+| `pro-manager.reassign.delay_warning` | « L'heure du client reculerait de {minutes} min : demandez-lui son accord » | APP_FLOW F-M10 ; variable en minutes |
+| `pro-manager.reassign.client_agreed` | « Le client est d'accord » | Libellé indicatif (APP_FLOW F-M10) |
 | `notifications.estimate_changed.reason.reassigned` | — (à rédiger) | Raison montrée au client (push seulement) |
 | `errors.queue.would_delay_client` | — (à rédiger) | — |
 | `errors.queue.invalid_transition` | — (à rédiger) | Partagée avec S-02 et S-12 |

@@ -105,21 +105,21 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.walkIn.open` | « + Client à l'accueil » | Libellé indicatif (APP_FLOW F-M6) ; raccourci `N` indiqué |
-| `pro-manager.walkIn.title` | « Client à l'accueil » | Libellé indicatif (APP_FLOW F-M7) |
-| `pro-manager.walkIn.firstName` | « Prénom » | 30 caractères maximum |
-| `pro-manager.walkIn.phone` | « Téléphone » | +33 |
-| `pro-manager.walkIn.service` | « Prestation » | — |
-| `pro-manager.walkIn.stylist` | « Coiffeur » | — |
-| `common.firstAvailable` | « Premier disponible » | Partagée avec l'app client (F-C3) |
-| `pro-manager.walkIn.submit` | « Inscrire » | Libellé indicatif (APP_FLOW F-M7) |
+| `pro-manager.walk_in.open` | « + Client à l'accueil » | Libellé indicatif (APP_FLOW F-M6) ; raccourci `N` indiqué |
+| `pro-manager.walk_in.title` | « Client à l'accueil » | Libellé indicatif (APP_FLOW F-M7) |
+| `pro-manager.walk_in.first_name` | « Prénom » | 30 caractères maximum |
+| `pro-manager.walk_in.phone` | « Téléphone » | +33 |
+| `pro-manager.walk_in.service` | « Prestation » | — |
+| `pro-manager.walk_in.stylist` | « Coiffeur » | — |
+| `common.first_available` | « Premier disponible » | Partagée avec l'app client (F-C3) |
+| `pro-manager.walk_in.submit` | « Inscrire » | Libellé indicatif (APP_FLOW F-M7) |
 | `notifications.ticket_created.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; contient rang, heure, code du ticket, lien de suivi (APP_FLOW §7) |
 | `errors.queue.already_has_active_ticket` | — (à rédiger) | Ne nomme pas l'autre salon |
 | `errors.queue.queue_closed` | — (à rédiger) | Partagée avec S-08 |
 | `errors.queue.queue_full` | — (à rédiger) | Partagée avec S-08 |
 | `errors.queue.rate_limited` | — (à rédiger) | — |
 | `errors.validation.phone` | — (à rédiger) | Numéro +33 |
-| `errors.validation.firstName` | — (à rédiger) | 1 à 30 caractères |
+| `errors.validation.first_name` | — (à rédiger) | 1 à 30 caractères |
 
 ## Questions ouvertes
 - **PRD / APP_FLOW** : le PRD liste « prénom, téléphone, prestation, coiffeur optionnel », alors qu'APP_FLOW F-M7 donne la prestation comme facultative. La prestation est-elle obligatoire pour un walk-in ?

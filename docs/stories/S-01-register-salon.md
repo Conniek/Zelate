@@ -104,13 +104,13 @@
 | --- | --- | --- |
 | `pro-manager.signup.account.title` | — (à rédiger) | Étape 1 « Compte » |
 | `pro-manager.signup.salon.title` | « Salon » | Libellé indicatif (APP_FLOW F-M1) |
-| `pro-manager.signup.salon.siretValid` | ✓ (pictogramme, texte alternatif à rédiger) | Accessible au lecteur d'écran (RGAA AA) |
-| `pro-manager.signup.salon.siretToVerify` | « à vérifier » | Libellé indicatif (APP_FLOW F-M1), avec ⚠ |
+| `pro-manager.signup.salon.siret_valid` | ✓ (pictogramme, texte alternatif à rédiger) | Accessible au lecteur d'écran (RGAA AA) |
+| `pro-manager.signup.salon.siret_to_verify` | « à vérifier » | Libellé indicatif (APP_FLOW F-M1), avec ⚠ |
 | `pro-manager.signup.hairdressing.title` | « Vous et la coiffure » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.hairdressing.label` | « Je coiffe aussi » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.submit` | « Envoyer mon dossier » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.pending.title` | — (à rédiger) | Écran `/signup/pending` |
-| `errors.validation.siretFormat` | — (à rédiger) | SIRET de 14 chiffres |
+| `errors.validation.siret_format` | — (à rédiger) | SIRET de 14 chiffres |
 | `notifications.signup_resume.email` | — (à rédiger) | E-mail de reprise du brouillon, lien valable 7 jours |
 
 ## Questions ouvertes

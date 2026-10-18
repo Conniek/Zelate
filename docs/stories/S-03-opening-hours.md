@@ -78,17 +78,17 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `pro-manager.hours.title` | « Horaires » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.hours.addRange` | « Ajouter une plage » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.hours.copyToWeek` | « Copier sur la semaine » | Libellé indicatif (APP_FLOW F-M2) |
+| `pro-manager.hours.add_range` | « Ajouter une plage » | Libellé indicatif (APP_FLOW F-M2) |
+| `pro-manager.hours.copy_to_week` | « Copier sur la semaine » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.hours.closures.title` | « Fermetures exceptionnelles » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.hours.closures.from` | « Du » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.hours.closures.to` | « Au » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.hours.closures.reason` | « Motif » | 120 caractères maximum |
-| `errors.validation.hoursOrder` | — (à rédiger) | Fermeture avant ou égale à l'ouverture |
-| `errors.validation.hoursOverlap` | — (à rédiger) | Plages qui se chevauchent |
-| `errors.validation.atLeastOneOpenDay` | — (à rédiger) | — |
-| `errors.validation.closureDates` | — (à rédiger) | Date de fin avant la date de début |
-| `errors.validation.closureReasonLength` | — (à rédiger) | 120 caractères maximum |
+| `errors.validation.hours_order` | — (à rédiger) | Fermeture avant ou égale à l'ouverture |
+| `errors.validation.hours_overlap` | — (à rédiger) | Plages qui se chevauchent |
+| `errors.validation.at_least_one_open_day` | — (à rédiger) | — |
+| `errors.validation.closure_dates` | — (à rédiger) | Date de fin avant la date de début |
+| `errors.validation.closure_reason_length` | — (à rédiger) | 120 caractères maximum |
 
 ## Questions ouvertes
 - **APP_FLOW** : que copie exactement « Copier sur la semaine » ? Vers les 7 jours, les jours ouvrés, ou seulement les jours sans plage ? Les plages déjà saisies sont-elles remplacées ?

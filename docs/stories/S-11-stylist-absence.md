@@ -100,17 +100,17 @@
 | --- | --- | --- |
 | `pro-manager.presence.menu.absent` | « Absent » | Libellé indicatif (APP_FLOW F-M8) |
 | `pro-manager.presence.menu.late` | « En retard » | Libellé indicatif (APP_FLOW F-M8) |
-| `pro-manager.presence.menu.leavingEarly` | « Part plus tôt » | Libellé indicatif (APP_FLOW F-M8) |
+| `pro-manager.presence.menu.leaving_early` | « Part plus tôt » | Libellé indicatif (APP_FLOW F-M8) |
 | `pro-manager.presence.menu.break` | « Pause » | Libellé indicatif (APP_FLOW F-M8) |
-| `common.breakType.meal` | « repas » | PRD §5.2 |
-| `common.breakType.short` | « courte » | PRD §5.2 |
-| `common.breakType.unexpected` | « imprévu » | PRD §5.2 |
+| `common.break_type.meal` | « repas » | PRD §5.2 |
+| `common.break_type.short` | « courte » | PRD §5.2 |
+| `common.break_type.unexpected` | « imprévu » | PRD §5.2 |
 | `pro-manager.presence.impact.reassigned` | « réassignés automatiquement » | Libellé indicatif (APP_FLOW F-M8) |
-| `pro-manager.presence.impact.clientToConfirm` | « à confirmer par le client » | Libellé indicatif (APP_FLOW F-M8) |
+| `pro-manager.presence.impact.client_to_confirm` | « à confirmer par le client » | Libellé indicatif (APP_FLOW F-M8) |
 | `pro-manager.presence.confirm` | « Confirmer » | Libellé indicatif (APP_FLOW F-M8) |
 | `notifications.stylist_change_required.push` | — (à rédiger) | Push ; choix « attendre » ou « premier disponible » |
 | `notifications.stylist_change_required.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; lien de suivi pour répondre |
-| `notifications.estimate_changed.reason.stylistUnavailable` | — (à rédiger) | Raison montrée au client |
+| `notifications.estimate_changed.reason.stylist_unavailable` | — (à rédiger) | Raison montrée au client |
 | `notifications.cancelled_by_salon.sms` | — (à rédiger) | Partagée avec S-12 ; **160 caractères GSM-7 maximum** |
 
 ## Questions ouvertes

@@ -43,9 +43,9 @@
 | --- | --- | --- |
 | `pro-manager.summary.title` | — (à rédiger) | Page `/dashboard/summary` |
 | `pro-manager.summary.served` | — (à rédiger) | Pluriel ICU |
-| `pro-manager.summary.announcedWait` | — (à rédiger) | Minutes |
-| `pro-manager.summary.actualWait` | — (à rédiger) | Minutes |
-| `pro-manager.summary.noShows` | — (à rédiger) | Pluriel ICU |
+| `pro-manager.summary.announced_wait` | — (à rédiger) | Minutes |
+| `pro-manager.summary.actual_wait` | — (à rédiger) | Minutes |
+| `pro-manager.summary.no_shows` | — (à rédiger) | Pluriel ICU |
 | `pro-manager.summary.cancellations` | — (à rédiger) | Pluriel ICU |
 | `notifications.daily_summary.email.subject` | — (à rédiger) | E-mail |
 | `notifications.daily_summary.email.body` | — (à rédiger) | Mêmes indicateurs que la page |

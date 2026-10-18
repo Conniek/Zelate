@@ -81,18 +81,18 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.board.header.waitingCount` | — (à rédiger) | Pluriel ICU |
-| `pro-manager.board.header.averageWait` | — (à rédiger) | Durée en minutes |
+| `pro-manager.board.header.waiting_count` | — (à rédiger) | Pluriel ICU |
+| `pro-manager.board.header.average_wait` | — (à rédiger) | Durée en minutes |
 | `pro-manager.board.header.synced` | « synchronisé » | Libellé indicatif (APP_FLOW F-M6) |
-| `pro-manager.board.ticket.awaitingClientChoice` | « en attente de réponse » | APP_FLOW §7 |
+| `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | APP_FLOW §7 |
 | `pro-manager.board.empty` | — (à rédiger) | État vide (APP_FLOW §8) |
-| `pro-manager.board.offlineBanner` | — (à rédiger) | Partagée avec S-08 |
-| `common.presenceStatus.<status>` | — (à rédiger) | Un libellé par valeur de `presence_status` (`offline`, `available`, `in_service`, `on_break`, `late`, `absent`, `off_duty`) |
-| `common.ticketStatus.<status>` | — (à rédiger, dont « appelé ») | Un libellé par valeur de `ticket_status` |
-| `common.approachStatus.<status>` | — (à rédiger) | Valeurs à arrêter (voir questions ouvertes) |
+| `pro-manager.board.offline_banner` | — (à rédiger) | Partagée avec S-08 |
+| `common.presence_status.<status>` | — (à rédiger) | Un libellé par valeur de `presence_status` (`offline`, `available`, `in_service`, `on_break`, `late`, `absent`, `off_duty`) |
+| `common.ticket_status.<status>` | — (à rédiger, dont « appelé ») | Un libellé par valeur de `ticket_status` |
+| `common.approach_status.<status>` | — (à rédiger) | Valeurs à arrêter (voir questions ouvertes) |
 
 ## Questions ouvertes
-- **APP_FLOW / BACKEND_SCHEMA (contradiction)** : les valeurs du statut d'approche ne sont pas les mêmes dans les deux documents. APP_FLOW F-S4 dit « pas parti, en route, arrivé, en retard de X min ». BACKEND_SCHEMA §4.13 dit « arrivé, en retard de X min, confirmé, sans réponse ». Sans GPS (H7), « pas parti » et « en route » ne peuvent pas être calculés. Quelle liste garder ?
+- **Résolu le 18/10** : APP_FLOW F-S4 reprend la liste de BACKEND_SCHEMA (confirmé à T-30, en retard de X min, sans réponse, arrivé). Question d'origine : les valeurs du statut d'approche ne sont pas les mêmes dans les deux documents. APP_FLOW F-S4 dit « pas parti, en route, arrivé, en retard de X min ». BACKEND_SCHEMA §4.13 dit « arrivé, en retard de X min, confirmé, sans réponse ». Sans GPS (H7), « pas parti » et « en route » ne peuvent pas être calculés. Quelle liste garder ?
 - **APP_FLOW** : comment l'« attente moyenne » de l'en-tête est-elle calculée ? Est-ce la moyenne des attentes estimées des tickets en attente, `current_wait_minutes`, ou autre chose ?
 - **APP_FLOW / TRD** : F-M6 parle des « tickets assignés » de chaque coiffeur. Mais d'après ADR-015, un ticket sans préférence n'est attribué qu'au moment de l'appel. La colonne montre-t-elle les tickets pressentis (`estimated_member_id`) ?
 - **APP_FLOW / PRD** : APP_FLOW §7 indique « compteur d'absences » sur le dashboard au moment de la libération. Qu'est-ce qui est affiché ? Si ce sont les absences du client sur 30 jours, est-ce compatible avec l'isolation par salon ?

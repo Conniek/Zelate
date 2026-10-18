@@ -65,7 +65,7 @@
 | --- | --- | --- |
 | `pro-manager.setup.test.start` | « Lancer un test » | Libellé indicatif (APP_FLOW F-M3) |
 | `pro-manager.setup.test.passed` | « Test réussi » | Libellé indicatif (APP_FLOW F-M3) |
-| `pro-manager.setup.test.ticketName` | « Test » | Prénom du client fictif (APP_FLOW F-M3) |
+| `pro-manager.setup.test.ticket_name` | « Test » | Prénom du client fictif (APP_FLOW F-M3) |
 | `pro-manager.setup.publish` | « Publier mon salon » | Libellé indicatif (APP_FLOW F-M3) |
 | `pro-manager.setup.checklist.<item>` | — (à rédiger) | Un libellé par condition : dossier validé, test réussi, horaires, 1 coiffeur actif, 1 prestation |
 | `errors.queue.<code>` | — (à rédiger) | Refus de `create_test_ticket` sur un salon publié (code à définir) |

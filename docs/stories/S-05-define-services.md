@@ -84,10 +84,10 @@
 | `pro-manager.services.field.duration` | — (à rédiger) | Unité « min » ; 15 à 180 |
 | `pro-manager.services.field.price` | — (à rédiger) | Format fr-FR en euros |
 | `pro-manager.services.field.specialty` | — (à rédiger) | Liste `common.specialties.<code>` |
-| `errors.validation.serviceDuration` | — (à rédiger) | Rappelle 15 à 180 min, multiple de 5 |
-| `errors.validation.serviceName` | — (à rédiger) | 2 à 60 caractères |
-| `errors.validation.servicePrice` | — (à rédiger) | Prix positif ou nul |
-| `errors.validation.atLeastOneActiveService` | — (à rédiger) | — |
+| `errors.validation.service_duration` | — (à rédiger) | Rappelle 15 à 180 min, multiple de 5 |
+| `errors.validation.service_name` | — (à rédiger) | 2 à 60 caractères |
+| `errors.validation.service_price` | — (à rédiger) | Prix positif ou nul |
+| `errors.validation.at_least_one_active_service` | — (à rédiger) | — |
 
 ## Questions ouvertes
 - **PRD / APP_FLOW** : la liste des suggestions pré-remplies (noms, durées, prix, spécialités) n'est écrite nulle part.

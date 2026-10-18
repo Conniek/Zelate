@@ -75,7 +75,7 @@ erDiagram
 | `eta_response` | `on_time`, `late` | « J'annule » donne le statut `cancelled` |
 | `end_of_day_choice` | `stay`, `cancel` | Réponse à l'alerte de fin de journée ; `cancel` donne le statut `cancelled` |
 | `closing_decision` | `serve`, `cancel` | Décision du gérant pour un client resté après la fermeture |
-| `cancel_reason` | `client_cancelled`, `removed_by_salon`, `stylist_unavailable`, `queue_closed`, `end_of_day` | — |
+| `cancel_reason` | `client_cancelled`, `removed_by_salon`, `stylist_unavailable`, `end_of_day` | « Fermer la file » n'annule aucun ticket : seule la fin de journée (H9) le fait |
 | `removal_reason` | `emergency`, `client_request`, `duplicate`, `inappropriate_behaviour`, `other` | Motif de retrait par le gérant (S-12) |
 | `actor_type` | `client`, `stylist`, `manager`, `system`, `admin` | — |
 | `ticket_event_type` | `created`, `assigned`, `reassigned`, `estimate_changed`, `eta_responded`, `postponed`, `stylist_change_requested`, `stylist_change_resolved`, `arrival_confirmed`, `called`, `service_started`, `duration_adjusted`, `completed`, `cancelled`, `no_show`, `end_of_day_warned`, `end_of_day_responded` | — |
@@ -277,7 +277,7 @@ Les tables `salon_devices` et `stylist_sessions` ne sont créées qu'au lot 2 (t
 | `eta_response` | `eta_response` | | Réponse à T-30 |
 | `declared_delay_minutes` | smallint | 5 à 30 | Retard déclaré |
 | `arrived_at` | timestamptz | | Arrivée validée au salon par le code du ticket |
-| `stylist_change_pending_since` | timestamptz | | Coiffeur demandé devenu indisponible, réponse du client attendue (`resolve_stylist_change`) ; sans réponse en 10 min : « premier disponible » si le coiffeur est absent pour la journée, sinon attente (règle proposée, à valider en PLN-1) |
+| `stylist_change_pending_since` | timestamptz | | Coiffeur demandé devenu indisponible, réponse du client attendue (`resolve_stylist_change`) ; sans réponse en 10 min : « premier disponible » si le coiffeur est absent pour la journée, sinon attente (décision n° 15 du 16/10) |
 | `estimated_start_at` | timestamptz | | Heure de passage courante |
 | `initial_estimated_start_at` | timestamptz | | Heure annoncée à l'inscription (métrique) |
 | `t30_estimated_start_at` | timestamptz | | Heure annoncée à T-30 (indicateur principal) |
@@ -346,7 +346,7 @@ Mêmes colonnes que `ticket_events`, sans `ticket_id`, avec `type salon_event_ty
 | `channel` | `notification_channel` | NN | |
 | `template` | `notification_template` | NN | |
 | `params` | jsonb | NN, défaut `{}` | Variables du modèle (prénom, heure, code…), **sans téléphone** |
-| `dedupe_key` | text | NN | Ex. `your_turn`, `estimate_changed:v7` |
+| `dedupe_key` | text | NN | Ex. `your_turn:1` (numéro d'appel, pour qu'un second appel après « Prendre le suivant » reparte), `estimate_changed:v7` |
 | `status` | `notification_status` | NN, défaut `pending` | |
 | `skip_reason` | text | | `sms_cap_reached`, `push_active`, `no_consent`… |
 | `provider_message_id` | text | | |

@@ -85,20 +85,20 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.queueStatus.open` | « Ouvrir » | Libellé indicatif (APP_FLOW F-M5) |
-| `pro-manager.queueStatus.pause` | « Pause » | Libellé indicatif (APP_FLOW F-M5) |
-| `pro-manager.queueStatus.close` | « Fermer » | Libellé indicatif (APP_FLOW F-M5) |
-| `pro-manager.queueStatus.closeConfirm` | « Les {count} clients en attente seront servis jusqu'à la fin de journée » | APP_FLOW F-M5 ; pluriel ICU (0, 1, plusieurs) |
-| `common.queueStatus.closed` | « Fermée » | PRD §5.2 |
-| `common.queueStatus.open` | « Ouverte » | PRD §5.2 |
-| `common.queueStatus.paused` | « En pause » | PRD §5.2 |
-| `common.queueStatus.full` | « Complète » | PRD §5.2 |
-| `pro-manager.board.offlineBanner` | — (à rédiger) | Commun aux écrans du dashboard (APP_FLOW §8) |
+| `pro-manager.queue_status.open` | « Ouvrir » | Libellé indicatif (APP_FLOW F-M5) |
+| `pro-manager.queue_status.pause` | « Pause » | Libellé indicatif (APP_FLOW F-M5) |
+| `pro-manager.queue_status.close` | « Fermer » | Libellé indicatif (APP_FLOW F-M5) |
+| `pro-manager.queue_status.close_confirm` | « Les {count} clients en attente seront servis jusqu'à la fin de journée » | APP_FLOW F-M5 ; pluriel ICU (0, 1, plusieurs) |
+| `common.queue_status.closed` | « Fermée » | PRD §5.2 |
+| `common.queue_status.open` | « Ouverte » | PRD §5.2 |
+| `common.queue_status.paused` | « En pause » | PRD §5.2 |
+| `common.queue_status.full` | « Complète » | PRD §5.2 |
+| `pro-manager.board.offline_banner` | — (à rédiger) | Commun aux écrans du dashboard (APP_FLOW §8) |
 | `errors.queue.queue_closed` | — (à rédiger) | — |
 | `errors.queue.queue_full` | — (à rédiger) | — |
 
 ## Questions ouvertes
-- **PRD / APP_FLOW (contradiction)** : selon PRD §5.2 (transition 6), §5.4 (« Annulation par le salon : retrait, fermeture, fin de journée ») et `cancel_reason` = `queue_closed`, la fermeture annule les tickets en attente. Selon APP_FLOW F-M5 et F-M12, les clients en attente « seront servis » et « restent ». Lequel est juste ?
+- **Résolu le 18/10** : « Fermer la file » n'annule aucun ticket ; seule la fin de journée (H9) annule. PRD (transition 6, §5.4) et BACKEND_SCHEMA (`cancel_reason`) sont corrigés. Question d'origine : selon PRD §5.2 (transition 6), §5.4 (« Annulation par le salon : retrait, fermeture, fin de journée ») et `cancel_reason` = `queue_closed`, la fermeture annule les tickets en attente. Selon APP_FLOW F-M5 et F-M12, les clients en attente « seront servis » et « restent ». Lequel est juste ?
 - **PRD / APP_FLOW** : pendant une pause de la file, les coiffeurs peuvent-ils encore appeler les clients en attente ? Le PRD dit « traités à la reprise », APP_FLOW dit seulement « les inscrits restent ».
 - **TRD** : quel code renvoie `join_queue` sur une file en pause ? Est-ce `queue_closed`, comme le suppose cette story, ou un autre code ?
 - **PRD / APP_FLOW** : le PRD promet « en un clic », mais APP_FLOW F-M5 demande une confirmation pour « Fermer ». Faut-il accepter deux clics pour la fermeture ?

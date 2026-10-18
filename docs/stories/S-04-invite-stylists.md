@@ -74,13 +74,13 @@
 | `pro-manager.team.add` | « Ajouter un coiffeur » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.team.status.invited` | « invité » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.team.status.active` | « actif » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.setup.teamPhones.reminder` | « Chaque coiffeur active son compte depuis son invitation et installe Zelaté Pro sur son téléphone. » | Reprend le contenu de APP_FLOW F-M2, formulation à valider |
+| `pro-manager.setup.team_phones.reminder` | « Chaque coiffeur active son compte depuis son invitation et installe Zelaté Pro sur son téléphone. » | Reprend le contenu de APP_FLOW F-M2, formulation à valider |
 | `common.specialties.<code>` | — (à rédiger, un libellé par code) | Codes `women_cut`, `men_cut`, `kids_cut`, `beard`, `color`, `highlights`, `braids`, `curly_hair`, `styling`, `treatment` (BACKEND_SCHEMA §4.5) |
 | `notifications.member_invitation.email.subject` | — (à rédiger) | E-mail |
 | `notifications.member_invitation.email.body` | — (à rédiger) | Lien à usage unique, valable 72 h ; nom du salon et prénom du coiffeur |
-| `errors.team.specialtyRequired` | — (à rédiger) | Au moins une spécialité |
-| `errors.team.emailAlreadyUsed` | — (à rédiger) | Ne nomme pas un autre salon |
-| `errors.team.limitReached` | — (à rédiger) | Rappelle la limite de 20 |
+| `errors.team.specialty_required` | — (à rédiger) | Au moins une spécialité |
+| `errors.team.email_already_used` | — (à rédiger) | Ne nomme pas un autre salon |
+| `errors.team.limit_reached` | — (à rédiger) | Rappelle la limite de 20 |
 
 ## Questions ouvertes
 - **PRD / BACKEND_SCHEMA** : le PRD dit « 20 coiffeurs maximum », alors que BACKEND_SCHEMA §4.4 dit « 20 membres actifs maximum par salon ». Le gérant fait-il partie des 20 ? Les coiffeurs « invités » et « désactivés » comptent-ils ?

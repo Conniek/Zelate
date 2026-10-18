@@ -287,7 +287,7 @@ packages/i18n/src/fr/
   legal.json          consentements, CGU, confidentialité
 ```
 
-- Clés hiérarchiques en anglais : `client.ticket.tracking.title`.
+- Clés hiérarchiques en anglais, chaque segment en `snake_case` : `client.ticket.tracking.title`, `notifications.your_turn.sms`, `errors.queue.queue_closed`. Les modèles de notification suivent `notifications.<template>.<push|sms|email>[.<title|body|subject>]`, où `<template>` est la valeur de l'enum `notification_template`.
 - Types générés depuis `fr` : une clé manquante ou mal écrite ne compile pas.
 - ESLint `i18next/no-literal-string` interdit les textes en dur dans les composants.
 - Pluriels et variables au format ICU (`i18next-icu`).

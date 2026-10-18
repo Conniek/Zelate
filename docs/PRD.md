@@ -129,7 +129,7 @@ Reprises de la spec MVP v0.1 et mises à jour avec l'atelier ; c'est la référe
 | 3 | Appelé → En attente | « Prendre le suivant » | Coiffeur | Retard déclaré par le client ; recul de 2 places au plus | Notification avec raison ; journal |
 | 4 | Appelé → En prestation | « Commencer » | Coiffeur | Arrivée validée par le code du ticket | Durée prévue enregistrée ; recalcul |
 | 5 | En prestation → Terminé | « Terminer » | Coiffeur | — | Durée réelle ; coiffeur disponible ; recalcul |
-| 6 | En attente ou Appelé → Annulé | Annulation, retrait, fermeture, fin de journée | Client, gérant avec motif, système | — | Notification avec motif ; les suivants avancent |
+| 6 | En attente ou Appelé → Annulé | Annulation par le client, retrait par le gérant, fin de journée (H9) | Client, gérant avec motif, système | — | Notification avec motif ; les suivants avancent |
 | 7 | Appelé → Absent | 10 min sans arrivée | Système | Rappel envoyé à 5 min | Compteur d'absences du client ; les suivants avancent |
 | 8 | En attente → En attente (choix demandé) | Coiffeur demandé absent, en retard ou partant plus tôt | Système, gérant | — | Le client choisit « attendre » ou « premier disponible » ; sans réponse en 10 min : premier disponible si le coiffeur est absent toute la journée, sinon il attend |
 
@@ -175,7 +175,7 @@ T_k = t_0 + R_c + \sum_{i<k} d_i \qquad R_c = \max\left(m,\; D_{\text{en cours}}
 | Complète (automatique) | La prochaine prestation finirait après la fermeture : nouveaux tickets refusés, salons proches proposés |
 
 **Fin de journée (H9)**
-- À partir de **2 h avant la fermeture** (valeur réglable par salon), chaque événement relance le calcul. Tout client dont la fin estimée dépasse l'heure de fermeture reçoit **une seule** alerte : « Vous risquez de ne pas être pris avant la fermeture », avec le choix **« Je reste »** ou **« J'annule »**.
+- À partir de **2 h avant la fermeture** (valeur par défaut, réglable par salon après le pilote), chaque événement relance le calcul. Tout client dont la fin estimée dépasse l'heure de fermeture reçoit **une seule** alerte : « Vous risquez de ne pas être pris avant la fermeture », avec le choix **« Je reste »** ou **« J'annule »**.
 - Si son heure redevient sûre, il est simplement notifié du changement d'heure (règle des 10 min).
 - À l'heure de fermeture, le gérant voit les clients restants et choisit, pour chacun ou pour tous : **« Servir »** ou **« Annuler avec excuses »**. Sans action de sa part, ils sont **annulés automatiquement 15 min après la fermeture**, avec un message d'excuse et des salons proches.
 - Aucun ticket ne passe d'un jour à l'autre.
@@ -261,7 +261,7 @@ Le push est le canal par défaut ; le SMS ne part que si le client n'a pas de pu
 | Recul | Retard déclaré (H5) | Oui | Non |
 | Choix de coiffeur | Coiffeur demandé indisponible | Oui | Si pas de push, dans la limite du plafond |
 | Risque de fin de journée | H9, une fois | Oui | Si pas de push, dans la limite du plafond |
-| Annulation par le salon | Retrait, fermeture, fin de journée | Oui | Oui, hors plafond |
+| Annulation par le salon | Retrait, fin de journée (H9) | Oui | Oui, hors plafond |
 
 Le détail de ce que voit chaque écran est dans [APP_FLOW §7](./APP_FLOW.md#7-événements-système-et-notifications).
 
