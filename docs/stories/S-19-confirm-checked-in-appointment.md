@@ -129,18 +129,18 @@
 | --- | --- | --- |
 | `pro-manager.board.pending_appointments.banner` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.appointments.pending.title` | « À confirmer » | Libellé indicatif (APP_FLOW F-M13) |
-| `pro-manager.appointments.pending.announced_time` | _À rédiger_ | Heure annoncée par le client |
-| `pro-manager.appointments.pending.merge_suggestion` | _À rédiger_ | Rapprochement avec un rendez-vous saisi (DESIGN_SYSTEM `PendingConfirmationCard`) |
-| `pro-manager.appointments.pending.unknown_stylist` | _À rédiger_ | Client qui a choisi « Je ne sais plus » |
+| `pro-manager.appointments.pending.announced_time` | Rendez-vous annoncé à {time} | Heure annoncée par le client |
+| `pro-manager.appointments.pending.merge_suggestion` | Rapprocher du rendez-vous déjà saisi : {first_name}, {time}, avec {stylist_name} | Rapprochement avec un rendez-vous saisi (DESIGN_SYSTEM `PendingConfirmationCard`) |
+| `pro-manager.appointments.pending.unknown_stylist` | Coiffeur non précisé par le client | Client qui a choisi « Je ne sais plus » |
 | `common.actions.confirm` | « Confirmer » | APP_FLOW F-M13, F-S4 ; partagée avec C-11 |
 | `common.actions.reject` | « Refuser » | APP_FLOW F-M13, F-S4 ; partagée avec C-11 |
 | `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 |
-| `notifications.appointment_confirmed.push.title` / `.body` | _À rédiger_ | Push ; heure de passage (APP_FLOW §7) |
-| `notifications.appointment_rejected.push.title` / `.body` | _À rédiger_ | Push seulement, pas de SMS (PRD §5.4) ; avec l'action « Rejoindre la file » |
+| `notifications.appointment_confirmed.push.title` / `.body` |Titre : Rendez-vous confirmé<br>Corps : {salon_name} confirme votre rendez-vous. Passage prévu vers {time}.| Push ; heure de passage (APP_FLOW §7) |
+| `notifications.appointment_rejected.push.title` / `.body` |Titre : Rendez-vous non confirmé<br>Corps : {salon_name} n'a pas pu confirmer votre rendez-vous. Vous pouvez rejoindre la file.| Push seulement, pas de SMS (PRD §5.4) ; avec l'action « Rejoindre la file » |
 | `client.ticket.appointment_rejected.join_queue` | « Rejoindre la file » | APP_FLOW F-C12, §7 |
-| `errors.queue.already_resolved` | _À rédiger_ | Partagée |
-| `errors.queue.ticket_other_salon` | _À rédiger_ | Partagée avec C-05, S-12 |
-| `errors.queue.forbidden` | _À rédiger_ | Partagée |
+| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Partagée |
+| `errors.queue.ticket_other_salon` | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. | Partagée avec C-05, S-12 |
+| `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Partagée |
 
 ## Questions ouvertes
 - **TRD §6.2 / BACKEND_SCHEMA §4.13** : quand le client a choisi « Je ne sais plus », `confirm_appointment` n'a pas de `member_id`, alors qu'un rendez-vous hors `pending_confirmation` doit toujours avoir `assigned_member_id`. Comment le gérant choisit-il le coiffeur à la confirmation ? Et qui est « le coiffeur concerné » (TRD) : aucun coiffeur ne voit-il ce signalement ?

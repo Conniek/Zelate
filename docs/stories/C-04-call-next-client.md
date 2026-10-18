@@ -134,14 +134,14 @@
 | --- | --- | --- |
 | `pro-stylist.queue.call` | « Appeler » | Bouton `xl`, état de chargement pendant l'envoi |
 | `pro-stylist.call.title` | « Appel en cours » | APP_FLOW F-S5 |
-| `pro-stylist.call.countdown` | À rédiger (REQ-3) | Compteur de 10 min |
+| `pro-stylist.call.countdown` | {minutes, plural, =0 {Place libérée dans moins d'1 min} other {Place libérée dans # min}} | Compteur de 10 min |
 | `common.ticket_status.waiting` | « En attente » | PRD §5.2 |
 | `common.ticket_status.called` | « Appelé » | PRD §5.2 |
-| `notifications.your_turn.push.title` / `.body` | À rédiger (REQ-3) | Push de priorité haute ; prénom du coiffeur, adresse, code du ticket, compteur de 10 min ; partagé avec les stories client |
-| `notifications.your_turn.sms` | À rédiger (REQ-3) | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5 : nom du salon tronqué à 40, caractères hors GSM-7 translittérés ; longueurs du prénom du coiffeur et de l'adresse : voir questions) ; prénom du coiffeur, adresse, code ; envoyé même si le push est actif, même plafond atteint (E1), même sans « Me prévenir » |
-| `errors.queue.no_eligible_ticket` | À rédiger (REQ-3) | Aucun texte dans les documents |
-| `errors.queue.call_already_in_progress` | À rédiger (REQ-3) | Un client déjà appelé ou en prestation (TRD §6.2) |
-| `errors.queue.invalid_transition` | À rédiger (REQ-3) | Code commun (TRD §6.2) ; scénario 6 si TRD §14 est confirmé |
+| `notifications.your_turn.push.title` / `.body` |Titre : C'est votre tour !<br>Corps : {stylist_first_name} vous attend, {address}. Code {code}. Vous avez 10 min pour arriver.| Push de priorité haute ; prénom du coiffeur, adresse, code du ticket, compteur de 10 min ; partagé avec les stories client |
+| `notifications.your_turn.sms` | Zelaté : c'est votre tour ! {stylist_first_name} vous attend, {address}. Code {code}. Venez sous 10 min : {link} | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5 : nom du salon tronqué à 40, caractères hors GSM-7 translittérés ; longueurs du prénom du coiffeur et de l'adresse : voir questions) ; prénom du coiffeur, adresse, code ; envoyé même si le push est actif, même plafond atteint (E1), même sans « Me prévenir » |
+| `errors.queue.no_eligible_ticket` | Aucun client à appeler pour l'instant. Il a peut-être été pris par un collègue : vérifiez votre file. | Aucun texte dans les documents |
+| `errors.queue.call_already_in_progress` | Vous avez déjà un client appelé ou en prestation. Finissez avec lui avant d'appeler le suivant. | Un client déjà appelé ou en prestation (TRD §6.2) |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun (TRD §6.2) ; scénario 6 si TRD §14 est confirmé |
 
 ## Questions ouvertes
 - **Résolu le 18/10 (E1)** : le SMS « Votre tour » part toujours, hors plafond, comme les annulations par le salon (PRD §5.1, §5.4 ; BACKEND_SCHEMA §4.16). Question d'origine : si le plafond de 3 SMS est déjà atteint, le SMS « Votre tour » part-il ?

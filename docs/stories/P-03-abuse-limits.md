@@ -100,12 +100,12 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `errors.queue.already_has_active_ticket` | _À rédiger (absent des docs)_ | Partagé avec U-04 ; ne révèle ni numéro ni autre salon |
-| `errors.queue.rate_limited` | _À rédiger (absent des docs)_ | Plafond de création de tickets ; partagé avec U-04 |
-| `errors.auth.otp_rate_limited` | _À rédiger (absent des docs)_ | Plafond de codes SMS ; partagé avec U-03 |
-| `errors.auth.phone_not_supported` | _À rédiger (absent des docs)_ | Partagé avec U-03 |
-| `notifications.no_show_warning.push` | _À rédiger (absent des docs)_ | Avertissement seul, sans blocage (E10) |
-| `notifications.no_show_warning.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus, accents translittérés (K5) ; si pas de push |
+| `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | Partagé avec U-04 ; ne révèle ni numéro ni autre salon |
+| `errors.queue.rate_limited` | Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez. | Plafond de création de tickets ; partagé avec U-04 |
+| `errors.auth.otp_rate_limited` | Trop de codes ont été demandés en peu de temps. Réessayez plus tard. | Plafond de codes SMS ; partagé avec U-03 |
+| `errors.auth.phone_not_supported` | Zelaté accepte pour l'instant les numéros français uniquement (+33). | Partagé avec U-03 |
+| `notifications.no_show_warning.push` | _À rédiger (clé absente du dictionnaire)_ | Avertissement seul, sans blocage (E10) |
+| `notifications.no_show_warning.sms` | Zelaté : vous comptez {count, plural, one {# absence} other {# absences}} en 30 jours. Si vous ne pouvez pas venir, annulez votre place : elle profitera à un autre client. | SMS : 160 caractères GSM-7 au plus, accents translittérés (K5) ; si pas de push |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E10) — Avertissement : envoyé au client, par notification, à la 5e absence en 30 jours, tous salons confondus ; voir scénarios 10 et 10 bis. Reste à rédiger le texte.

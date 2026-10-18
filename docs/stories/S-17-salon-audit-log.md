@@ -123,14 +123,14 @@
 | `pro-manager.audit.columns.date` | « Quand » | PRD §5.3 S-17 ; format fr-FR, heure de Paris |
 | `pro-manager.audit.columns.action` | « Quoi » | PRD §5.3 S-17 |
 | `pro-manager.audit.columns.reason` | « Motif » | PRD §5.3 S-17 |
-| `pro-manager.audit.filters.date` | _À rédiger_ | Filtre par date (APP_FLOW F-M11) |
-| `pro-manager.audit.filters.stylist` | _À rédiger_ | Filtre par coiffeur (APP_FLOW F-M11) |
-| `pro-manager.audit.filters.type` | _À rédiger_ | Filtre par type (APP_FLOW F-M11) |
-| `pro-manager.audit.event_type.<type>` | _À rédiger_ | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; à partager avec P-02 (`pro-manager.audit.event_type.<type>`) ? |
-| `pro-manager.audit.actor_type.<type>` | _À rédiger_ | Une clé par valeur de `actor_type` ; le client sans prénom |
-| `pro-manager.audit.reason.<reason_code>` | _À rédiger_ | Reprend `pro-manager.remove.reason.<removal_reason>` (S-12) pour les retraits |
-| `pro-manager.audit.load_more` | _À rédiger_ | Pagination |
-| `pro-manager.audit.empty` | _À rédiger_ | État vide (APP_FLOW §8) |
+| `pro-manager.audit.filters.date` | Période | Filtre par date (APP_FLOW F-M11) |
+| `pro-manager.audit.filters.stylist` | Coiffeur | Filtre par coiffeur (APP_FLOW F-M11) |
+| `pro-manager.audit.filters.type` | Type d'action | Filtre par type (APP_FLOW F-M11) |
+| `pro-manager.audit.event_type.<type>` | _À rédiger (clé absente du dictionnaire)_ | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; à partager avec P-02 (`pro-manager.audit.event_type.<type>`) ? |
+| `pro-manager.audit.actor_type.<type>` | _À rédiger (clé absente du dictionnaire)_ | Une clé par valeur de `actor_type` ; le client sans prénom |
+| `pro-manager.audit.reason.<reason_code>` | _À rédiger (clé absente du dictionnaire)_ | Reprend `pro-manager.remove.reason.<removal_reason>` (S-12) pour les retraits |
+| `pro-manager.audit.load_more` | Afficher plus | Pagination |
+| `pro-manager.audit.empty` | Aucune action pour ces filtres. Élargissez la période ou retirez un filtre. | État vide (APP_FLOW §8) |
 
 ## Questions ouvertes
 - **BACKEND_SCHEMA §8.1 / TRD §6.3 / PRD §5.3** : S-17 et F-M11 demandent un filtre par coiffeur, mais `get_audit_log` n'a aucun paramètre de membre (`salon_id?`, `from`, `to`, `type?`, `cursor?`). Par ailleurs TRD §6.3 omet `type?`, que BACKEND_SCHEMA §8.1 contient.

@@ -82,10 +82,10 @@
 | `client.cancel_dialog.body` | « Votre place sera donnée au suivant » | — |
 | `client.cancel_dialog.confirm` | « Oui, annuler » | — |
 | `client.cancel_dialog.keep` | « Garder ma place » | — |
-| `client.ticket.end.reason.client_cancelled` | _À rédiger (absent des docs)_ | — |
+| `client.ticket.end.reason.client_cancelled` | Vous avez annulé votre place. Elle a été donnée au client suivant. | — |
 | `client.ticket.end.rejoin` | « Rejoindre une autre file » | Partagé avec U-06 |
-| `errors.queue.invalid_transition` | _À rédiger (absent des docs)_ | Partagé avec U-07, U-11, U-12 |
-| `errors.queue.already_resolved` | _À rédiger (absent des docs)_ | Partagé avec U-11, U-12 |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Partagé avec U-07, U-11, U-12 |
+| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Partagé avec U-11, U-12 |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E3) — Annuler une fois appelé : annulation libre, sans absence comptée, bouton proposé aussi une fois appelé (APP_FLOW F-C8) ; voir scénario 4 bis.

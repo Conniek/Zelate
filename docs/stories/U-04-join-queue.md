@@ -178,26 +178,26 @@
 | `common.actions.next` | « Suivant » | — |
 | `client.join.service.unknown` | « Je ne sais pas encore » | — |
 | `client.join.stylist.first_available` | « Premier disponible » | Présélectionné |
-| `client.join.stylist.estimated_time` | _À rédiger (absent des docs)_ | Variable `time` |
-| `client.join.stylist.absent_today` | _À rédiger (absent des docs)_ | Variable `firstName` |
+| `client.join.stylist.estimated_time` | Passage vers {time} | Variable `time` |
+| `client.join.stylist.absent_today` | {first_name} ne travaille pas aujourd'hui. Nous avons choisi « Premier disponible » pour vous. | Variable `firstName` |
 | `client.join.arrival.asap` | « Dès que possible » | Présélectionné |
 | `client.join.arrival.around` | « J'arrive vers… » | Pas de 5 min |
 | `client.join.summary.call_rule` | « une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min » | Chiffres fixés par H4 |
 | `legal.consent.tracking_notifications.label` | « Me prévenir quand mon tour approche » | Case décochée par défaut (K11) |
-| `legal.consent.tracking_notifications.explanation` | _À rédiger_ (APP_FLOW F-C3, indicatif : « sans elle, vous recevez seulement l'inscription et « votre tour » ») | — |
+| `legal.consent.tracking_notifications.explanation` | Nous vous prévenons 30 min et 10 min avant votre tour, si votre heure change ou si la fermeture approche. Sans cette case, vous recevez seulement les messages indispensables, comme « C'est votre tour ». (APP_FLOW F-C3, indicatif : « sans elle, vous recevez seulement l'inscription et « votre tour » ») | — |
 | `client.join.confirm` | « Confirmer ma place » | — |
 | `client.join.guard.already_has_ticket` | « Vous avez déjà une place » | — |
 | `client.join.view_my_ticket` | « Voir ma place » | — |
 | `client.nearby_salons.link` | « Salons proches » | Partagé avec U-02, U-11 |
-| `errors.queue.already_has_active_ticket` | _À rédiger (absent des docs)_ | — |
-| `errors.queue.queue_closed` | _À rédiger (absent des docs)_ | — |
-| `errors.queue.queue_full` | _À rédiger (absent des docs)_ | — |
-| `errors.queue.queue_paused` | _À rédiger (absent des docs)_ | Partagé avec U-05 |
-| `errors.queue.service_unavailable` | _À rédiger (absent des docs)_ | — |
-| `errors.queue.stylist_unavailable` | _À rédiger (absent des docs)_ | — |
-| `errors.queue.rate_limited` | _À rédiger (absent des docs)_ | Partagé avec P-03 |
-| `notifications.ticket_created.push` | _À rédiger (absent des docs)_ | Variables : rang, heure, code ; message indispensable (part sans consentement, K11) |
-| `notifications.ticket_created.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus, avec rang, heure, code et lien court `zelate.fr/t/xxxxxxxx` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés (K5) |
+| `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | — |
+| `errors.queue.queue_closed` | La file est fermée : aucune nouvelle inscription n'est possible pour le moment. | — |
+| `errors.queue.queue_full` | La file est complète pour aujourd'hui : les prochaines prestations finiraient après la fermeture. | — |
+| `errors.queue.queue_paused` | La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise. | Partagé avec U-05 |
+| `errors.queue.service_unavailable` | Cette prestation n'est plus proposée pour le moment. Choisissez-en une autre, puis réessayez. | — |
+| `errors.queue.stylist_unavailable` | Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. | — |
+| `errors.queue.rate_limited` | Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez. | Partagé avec P-03 |
+| `notifications.ticket_created.push` | _À rédiger (clé absente du dictionnaire)_ | Variables : rang, heure, code ; message indispensable (part sans consentement, K11) |
+| `notifications.ticket_created.sms` | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} | SMS : 160 caractères GSM-7 au plus, avec rang, heure, code et lien court `zelate.fr/t/xxxxxxxx` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés (K5) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (K11) — Case de consentement : décochée par défaut ; sans elle, seuls `ticket_created` et `your_turn` partent, les autres notifications passent en `skipped` (`no_consent`) ; voir scénarios 10, 11 et 11 bis.

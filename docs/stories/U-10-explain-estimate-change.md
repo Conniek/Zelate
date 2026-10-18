@@ -95,11 +95,11 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `client.ticket.change_banner.estimate` | _À rédiger (absent des docs)_ | Variables `time`, `reason` |
-| `client.ticket.change_banner.postponed` | _À rédiger (absent des docs)_ | Variables `position`, `reason` |
-| `client.ticket.change_reason.<code>` | _À rédiger (liste des raisons absente des docs)_ | Une clé par raison |
-| `notifications.estimate_changed.push` | _À rédiger (absent des docs)_ | Push seulement ; nouvelle heure et raison |
-| `notifications.postponed.push` | _À rédiger (absent des docs)_ | Partagé avec U-07 ; push seulement ; nouvelle position et raison |
+| `client.ticket.change_banner.estimate` | Nouvelle heure de passage : vers {time}. {reason} | Variables `time`, `reason` |
+| `client.ticket.change_banner.postponed` | Votre place a reculé : {position, plural, one {# client} other {# clients}} avant vous. {reason} | Variables `position`, `reason` |
+| `client.ticket.change_reason.<code>` | _À rédiger (clé absente du dictionnaire)_ | Une clé par raison |
+| `notifications.estimate_changed.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement ; nouvelle heure et raison |
+| `notifications.postponed.push` | _À rédiger (clé absente du dictionnaire)_ | Partagé avec U-07 ; push seulement ; nouvelle position et raison |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E11) — Référence du seuil de 10 min : la dernière heure annoncée au client (`tickets.last_notified_start_at`), écarts cumulés ; voir scénarios 1 à 4 bis.

@@ -224,10 +224,10 @@
 | `pro-stylist.queue.pending_appointment.title` | « Rendez-vous à confirmer » | Bandeau APP_FLOW F-S4 ; `PendingConfirmationCard`, annoncé par `aria-live="polite"` |
 | `pro-stylist.queue.pending_appointment.confirm` | « Confirmer » | APP_FLOW F-S4 |
 | `pro-stylist.queue.pending_appointment.reject` | « Refuser » | APP_FLOW F-S4 |
-| `notifications.appointment_confirmed.push.title` / `.body` | À rédiger (REQ-3) | Heure de passage ; push seulement |
-| `notifications.appointment_rejected.push.title` / `.body` | À rédiger (REQ-3) | Refus avec « Rejoindre la file » ; push seulement, pas de SMS (client sur place) |
-| `errors.queue.already_resolved` | À rédiger (REQ-3) | Rendez-vous déjà confirmé ou refusé |
-| `errors.queue.ticket_other_salon` | À rédiger (REQ-3) | Voir C-05 |
+| `notifications.appointment_confirmed.push.title` / `.body` |Titre : Rendez-vous confirmé<br>Corps : {salon_name} confirme votre rendez-vous. Passage prévu vers {time}.| Heure de passage ; push seulement |
+| `notifications.appointment_rejected.push.title` / `.body` |Titre : Rendez-vous non confirmé<br>Corps : {salon_name} n'a pas pu confirmer votre rendez-vous. Vous pouvez rejoindre la file.| Refus avec « Rejoindre la file » ; push seulement, pas de SMS (client sur place) |
+| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Rendez-vous déjà confirmé ou refusé |
+| `errors.queue.ticket_other_salon` | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. | Voir C-05 |
 
 ## Questions ouvertes
 - **Résolu le 18/10** : APP_FLOW F-S4 reprend la liste de BACKEND_SCHEMA (confirmé à T-30, en retard de X min, sans réponse, arrivé). Question d'origine : les valeurs du statut d'approche différaient : APP_FLOW F-S4 « pas parti, en route, arrivé, en retard de X min » ; BACKEND_SCHEMA §4.13 « arrivé, en retard de X min, confirmé, sans réponse », calculées depuis `arrived_at`, `eta_response`, `declared_delay_minutes`. « Pas parti » et « en route » ne se calculent pas sans GPS (H7). Quelle liste retenir ?

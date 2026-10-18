@@ -206,11 +206,11 @@
 | `pro-manager.appointments.title` | « Rendez-vous du jour » | Libellé indicatif (APP_FLOW §2.2, F-M13) |
 | `pro-manager.appointments.new` | « + Rendez-vous » | Libellé indicatif (APP_FLOW F-M13) ; raccourci `R` indiqué |
 | `pro-manager.appointments.form.first_name` | « Prénom » | 30 caractères maximum |
-| `pro-manager.appointments.form.time` | _À rédiger_ | Pas de 5 min, horaires d'ouverture |
+| `pro-manager.appointments.form.time` | Heure | Pas de 5 min, horaires d'ouverture |
 | `pro-manager.appointments.form.stylist` | « Coiffeur » | — |
 | `pro-manager.appointments.form.service` | « Prestation » | Facultative |
 | `pro-manager.appointments.form.phone` | « Téléphone » | Facultatif, +33 ; jamais prérempli en modification |
-| `pro-manager.appointments.form.submit` | _À rédiger_ | — |
+| `pro-manager.appointments.form.submit` | Ajouter le rendez-vous | — |
 | `pro-manager.appointments.edit` | « Modifier » | Libellé indicatif (APP_FLOW F-M13) |
 | `pro-manager.appointments.cancel` | « Annuler » | Libellé indicatif (APP_FLOW F-M13) |
 | `pro-manager.appointments.status.upcoming` | « À venir » | APP_FLOW F-M13 |
@@ -219,21 +219,21 @@
 | `pro-manager.appointments.status.pending_confirmation` | « À confirmer » | APP_FLOW F-M13, DESIGN_SYSTEM §2.4 |
 | `common.appointment.badge` | « RDV {time} » | DESIGN_SYSTEM §2.4 (`AppointmentBadge`) |
 | `common.appointment.badge_late` | « RDV {time} · +{minutes} min » | DESIGN_SYSTEM §2.4 |
-| `pro-manager.appointments.empty` | _À rédiger_ | État vide (APP_FLOW §8) |
-| `notifications.ticket_created.sms` | _À rédiger_ | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues (TRD §9) ; variante rendez-vous : heure du rendez-vous, heure de passage, code, lien `zelate.fr/t/xxxxxxxx` (APP_FLOW §7) ; partagée avec S-10 |
-| `notifications.appointment_delay.push.title` / `.body` | _À rédiger_ | Exemple indicatif APP_FLOW F-C13 : « Le salon a du retard, venez vers 14h20 » |
-| `notifications.appointment_delay.sms` | _À rédiger_ | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues, accents translittérés (TRD §9) |
-| `notifications.estimate_changed.push.title` / `.body` | _À rédiger_ | Partagée ; raison « rendez-vous déplacé » à prévoir |
-| `notifications.cancelled_by_salon.push` / `.sms` | _À rédiger_ | Partagée avec S-12 ; SMS ≤ 160 caractères GSM-7 |
-| `errors.queue.appointment_overlap` | _À rédiger_ | — |
-| `errors.queue.outside_opening_hours` | _À rédiger_ | Partagée avec U-14 |
-| `errors.queue.appointment_in_past` | _À rédiger_ | — |
-| `errors.queue.appointment_not_editable` | _À rédiger_ | — |
-| `errors.queue.already_has_active_ticket` | _À rédiger_ | Partagée ; ne nomme pas l'autre salon |
-| `errors.queue.invalid_phone` | _À rédiger_ | Partagée avec S-10 |
-| `errors.queue.rate_limited` | _À rédiger_ | Partagée |
-| `errors.queue.forbidden` | _À rédiger_ | Partagée |
-| `errors.validation.first_name` | _À rédiger_ | Partagée avec S-10 ; 1 à 30 caractères |
+| `pro-manager.appointments.empty` | Aucun rendez-vous aujourd'hui. Ajoutez-en un avec « + Rendez-vous ». | État vide (APP_FLOW §8) |
+| `notifications.ticket_created.sms` | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues (TRD §9) ; variante rendez-vous : heure du rendez-vous, heure de passage, code, lien `zelate.fr/t/xxxxxxxx` (APP_FLOW §7) ; partagée avec S-10 |
+| `notifications.appointment_delay.push.title` / `.body` |Titre : Le salon a du retard<br>Corps : {salon_name} a du retard sur votre rendez-vous de {appointment_time}. Venez vers {time}.| Exemple indicatif APP_FLOW F-C13 : « Le salon a du retard, venez vers 14h20 » |
+| `notifications.appointment_delay.sms` | {salon_name} a du retard sur votre rendez-vous de {appointment_time} : venez vers {time}. Suivi : {link} | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues, accents translittérés (TRD §9) |
+| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Partagée ; raison « rendez-vous déplacé » à prévoir |
+| `notifications.cancelled_by_salon.push` / `.sms` |Push : _À rédiger (clé absente)_<br>SMS : {salon_name} a annulé votre place : {reason}. Toutes nos excuses. Salons proches : {link}| Partagée avec S-12 ; SMS ≤ 160 caractères GSM-7 |
+| `errors.queue.appointment_overlap` | Ce créneau chevauche un autre rendez-vous de ce coiffeur. Choisissez une autre heure ou un autre coiffeur. | — |
+| `errors.queue.outside_opening_hours` | Cette heure est en dehors des horaires d'ouverture du salon. Choisissez une heure pendant l'ouverture. | Partagée avec U-14 |
+| `errors.queue.appointment_in_past` | Cette heure est déjà passée. Choisissez une heure à venir. | — |
+| `errors.queue.appointment_not_editable` | Ce rendez-vous ne peut plus être modifié ni annulé, car il n'est plus en attente. | — |
+| `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | Partagée ; ne nomme pas l'autre salon |
+| `errors.queue.invalid_phone` | Ce numéro n'est pas valide. Saisissez un numéro de téléphone français. | Partagée avec S-10 |
+| `errors.queue.rate_limited` | Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez. | Partagée |
+| `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Partagée |
+| `errors.validation.first_name` | Indiquez un prénom de 30 caractères au plus. | Partagée avec S-10 ; 1 à 30 caractères |
 
 ## Questions ouvertes
 - **PRD §9 n° 9 (Ely, avec avis RGPD)** : un rendez-vous saisi avec téléphone n'a aucun consentement « Me prévenir ». Or BACKEND_SCHEMA §4.16 passe en `skipped` (`no_consent`) tout modèle autre que `ticket_created` et `your_turn` sans `tracking_consent_at`, et ce consentement est rangé dans `profiles`, que ce client n'a pas. En l'état, les alertes de retard R5 (scénarios 20 à 22) ne partiraient jamais. L'alerte de retard compte-t-elle parmi les messages indispensables, ou faut-il recueillir l'accord du client (par exemple au premier SMS) ?

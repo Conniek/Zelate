@@ -178,33 +178,33 @@
 | `pro-stylist.appointments.title` | « Mes rendez-vous » | APP_FLOW §2.2, F-S10 |
 | `pro-stylist.appointments.new` | « + Rendez-vous » | Libellé indicatif (APP_FLOW F-S10) |
 | `pro-stylist.appointments.form.first_name` | « Prénom » | 30 caractères maximum |
-| `pro-stylist.appointments.form.time` | _À rédiger_ | Pas de 5 min, horaires d'ouverture |
+| `pro-stylist.appointments.form.time` | Heure | Pas de 5 min, horaires d'ouverture |
 | `pro-stylist.appointments.form.service` | « Prestation » | Facultative |
 | `pro-stylist.appointments.form.phone` | « Téléphone » | Facultatif, +33 ; jamais prérempli |
-| `pro-stylist.appointments.form.submit` | _À rédiger_ | — |
+| `pro-stylist.appointments.form.submit` | Ajouter | — |
 | `pro-stylist.appointments.edit` | « Modifier » | APP_FLOW F-S10 |
 | `pro-stylist.appointments.cancel` | « Annuler » | APP_FLOW F-S10 |
 | `pro-stylist.appointments.status.upcoming` | « À venir » | APP_FLOW F-S10 |
 | `pro-stylist.appointments.status.late` | « En retard de {minutes} min » | APP_FLOW F-S10 ; ICU |
 | `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 ; partagée avec S-19 |
 | `pro-stylist.queue.pending_appointment_banner` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-S4) ; `aria-live="polite"` |
-| `pro-stylist.appointments.merge_suggestion` | _À rédiger_ | Fusion avec un rendez-vous déjà saisi (APP_FLOW F-S10) |
+| `pro-stylist.appointments.merge_suggestion` | Vous aviez déjà saisi {first_name} à {time}. En confirmant, les deux rendez-vous n'en feront qu'un. | Fusion avec un rendez-vous déjà saisi (APP_FLOW F-S10) |
 | `common.actions.confirm` | « Confirmer » | Partagée avec S-19 |
 | `common.actions.reject` | « Refuser » | Partagée avec S-19 |
 | `common.appointment.badge` | « RDV {time} » | DESIGN_SYSTEM §2.4 ; partagée avec S-18 |
-| `pro-stylist.appointments.empty` | _À rédiger_ | État vide (APP_FLOW §8) |
-| `notifications.ticket_created.sms` | _À rédiger_ | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; partagée avec S-10, S-18 |
-| `notifications.appointment_confirmed.push.title` / `.body` | _À rédiger_ | Partagée avec S-19 |
-| `notifications.appointment_rejected.push.title` / `.body` | _À rédiger_ | Push seulement ; partagée avec S-19 |
-| `notifications.cancelled_by_salon.push` / `.sms` | _À rédiger_ | Partagée avec S-12, S-18 ; SMS ≤ 160 caractères GSM-7 |
-| `errors.queue.appointment_overlap` | _À rédiger_ | Partagée avec S-18 |
-| `errors.queue.outside_opening_hours` | _À rédiger_ | Partagée |
-| `errors.queue.appointment_in_past` | _À rédiger_ | Partagée avec S-18 |
-| `errors.queue.appointment_not_editable` | _À rédiger_ | Partagée avec S-18 |
-| `errors.queue.already_has_active_ticket` | _À rédiger_ | Partagée ; ne nomme pas l'autre salon |
-| `errors.queue.invalid_phone` | _À rédiger_ | Partagée |
-| `errors.queue.already_resolved` | _À rédiger_ | Partagée |
-| `errors.queue.forbidden` | _À rédiger_ | Partagée |
+| `pro-stylist.appointments.empty` | Aucun rendez-vous aujourd'hui. Ajoutez ici ceux de vos clients. | État vide (APP_FLOW §8) |
+| `notifications.ticket_created.sms` | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; partagée avec S-10, S-18 |
+| `notifications.appointment_confirmed.push.title` / `.body` |Titre : Rendez-vous confirmé<br>Corps : {salon_name} confirme votre rendez-vous. Passage prévu vers {time}.| Partagée avec S-19 |
+| `notifications.appointment_rejected.push.title` / `.body` |Titre : Rendez-vous non confirmé<br>Corps : {salon_name} n'a pas pu confirmer votre rendez-vous. Vous pouvez rejoindre la file.| Push seulement ; partagée avec S-19 |
+| `notifications.cancelled_by_salon.push` / `.sms` |Push : _À rédiger (clé absente)_<br>SMS : {salon_name} a annulé votre place : {reason}. Toutes nos excuses. Salons proches : {link}| Partagée avec S-12, S-18 ; SMS ≤ 160 caractères GSM-7 |
+| `errors.queue.appointment_overlap` | Ce créneau chevauche un autre rendez-vous de ce coiffeur. Choisissez une autre heure ou un autre coiffeur. | Partagée avec S-18 |
+| `errors.queue.outside_opening_hours` | Cette heure est en dehors des horaires d'ouverture du salon. Choisissez une heure pendant l'ouverture. | Partagée |
+| `errors.queue.appointment_in_past` | Cette heure est déjà passée. Choisissez une heure à venir. | Partagée avec S-18 |
+| `errors.queue.appointment_not_editable` | Ce rendez-vous ne peut plus être modifié ni annulé, car il n'est plus en attente. | Partagée avec S-18 |
+| `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | Partagée ; ne nomme pas l'autre salon |
+| `errors.queue.invalid_phone` | Ce numéro n'est pas valide. Saisissez un numéro de téléphone français. | Partagée |
+| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Partagée |
+| `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Partagée |
 
 ## Questions ouvertes
 - **TRD §6.2** : « `member_id` (imposé pour un coiffeur) » : si un coiffeur envoie le `member_id` d'un autre, la commande est-elle refusée (`forbidden`) ou le serveur la crée-t-il pour lui-même en remplaçant le `member_id` ? Le scénario 5 ne tranche pas.

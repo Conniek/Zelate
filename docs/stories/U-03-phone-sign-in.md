@@ -104,21 +104,21 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `client.signin.phone.label` | _À rédiger (absent des docs)_ | — |
+| `client.signin.phone.label` | Numéro de téléphone mobile | — |
 | `client.signin.phone.prefix` | « +33 » | Fixé, non modifiable |
 | `client.signin.send_code` | « Recevoir le code » | — |
-| `client.signin.code.label` | _À rédiger (absent des docs)_ | 6 cases |
+| `client.signin.code.label` | Code à 6 chiffres reçu par SMS | 6 cases |
 | `client.signin.resend` | « Renvoyer le code » | Actif après 30 s |
-| `client.signin.resend_countdown` | _À rédiger (absent des docs)_ | Variable `seconds` |
-| `client.signin.first_name.label` | _À rédiger (absent des docs)_ | Obligatoire, 30 caractères max |
+| `client.signin.resend_countdown` | Renvoyer le code dans {seconds} s | Variable `seconds` |
+| `client.signin.first_name.label` | Votre prénom | Obligatoire, 30 caractères max |
 | `client.signin.create_account` | « Créer mon compte » | Lien de F-C10 |
-| `errors.auth.invalid_phone` | _À rédiger (absent des docs)_ | — |
-| `errors.auth.phone_not_supported` | _À rédiger (absent des docs)_ | Numéro hors +33 |
-| `errors.auth.invalid_code` | _À rédiger (absent des docs)_ | — |
-| `errors.auth.code_expired` | _À rédiger (absent des docs)_ | — |
-| `errors.auth.too_many_attempts` | _À rédiger_ (APP_FLOW, indicatif : « attendre 5 min ») | — |
-| `errors.auth.otp_rate_limited` | _À rédiger (absent des docs)_ | Partagé avec P-03 |
-| `notifications.auth.otp_code.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus, code à 6 chiffres |
+| `errors.auth.invalid_phone` | Ce numéro n'est pas valide. Vérifiez-le, puis réessayez. | — |
+| `errors.auth.phone_not_supported` | Zelaté accepte pour l'instant les numéros français uniquement (+33). | Numéro hors +33 |
+| `errors.auth.invalid_code` | Ce code n'est pas le bon. Vérifiez le SMS, puis réessayez. | — |
+| `errors.auth.code_expired` | Ce code a expiré. Demandez-en un nouveau. | — |
+| `errors.auth.too_many_attempts` | Trop d'essais. Patientez 5 min, puis demandez un nouveau code. (APP_FLOW, indicatif : « attendre 5 min ») | — |
+| `errors.auth.otp_rate_limited` | Trop de codes ont été demandés en peu de temps. Réessayez plus tard. | Partagé avec P-03 |
+| `notifications.auth.otp_code.sms` | Zelaté : votre code de connexion est {code}. Il est valable 5 min. Ne le donnez à personne.<br><br>@zelate.fr #{code} | SMS : 160 caractères GSM-7 au plus, code à 6 chiffres |
 
 ## Questions ouvertes
 - **PRD U-03 / APP_FLOW F-C3** : le PRD fixe « 5 min » comme durée de validité du code. APP_FLOW ajoute « au 3e échec : attendre 5 min ». Les 5 min d'APP_FLOW sont-elles un blocage distinct après 3 échecs ? Le « 3e échec » désigne-t-il 3 codes erronés ou 3 demandes de renvoi ?

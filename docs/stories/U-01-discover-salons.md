@@ -111,7 +111,7 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `client.home.geolocation.explanation` | _À rédiger (absent des docs)_ | Affiché avant la demande système |
+| `client.home.geolocation.explanation` | Zelaté utilise votre position pour vous montrer les salons ouverts autour de vous. Vous pouvez aussi chercher par adresse ou ville. | Affiché avant la demande système |
 | `client.home.search.label` | « Adresse ou ville » | — |
 | `client.home.tabs.list` | « Liste » | — |
 | `client.home.tabs.map` | « Carte » | — |
@@ -119,9 +119,9 @@
 | `client.home.wait_badge` | « ~{minutes} min » (exemple APP_FLOW : « ~25 min ») | Variable `minutes` |
 | `client.home.freshness` | « mis à jour il y a {minutes} min » | Pluriel ICU |
 | `client.home.freshness_stale` | « à vérifier » | Au-delà de 5 min |
-| `client.home.next_free_slot` | _À rédiger_ (APP_FLOW, indicatif : « Créneau libre à 15h20 ») | Variable `time` ; partagé avec U-16 |
+| `client.home.next_free_slot` | Créneau libre à {time} (APP_FLOW, indicatif : « Créneau libre à 15h20 ») | Variable `time` ; partagé avec U-16 |
 | `client.home.map.locate_me` | « Me localiser » | — |
-| `client.home.empty.message` | _À rédiger (absent des docs)_ | — |
+| `client.home.empty.message` | Aucun salon ouvert à moins de 5 km pour le moment. | — |
 | `client.home.empty.widen` | « Élargir à 10 km » | — |
 | `client.home.active_ticket_banner` | « Ma place » | — |
 | `common.queue.closed_with_next_opening` | « Fermé · ouvre {day} à {time} » (exemple APP_FLOW F-C2 : « Fermé · ouvre demain à 9h00 ») | Partagé avec U-02 |

@@ -73,8 +73,8 @@
 | `client.qr.choice.join_queue` | « Rejoindre la file » | — |
 | `client.qr.choice.have_appointment` | « J'ai rendez-vous » | Partagé avec U-14 |
 | `client.qr.invalid` | « Ce QR code n'est plus valide, demandez à l'accueil » | — |
-| `errors.queue.queue_paused` | _À rédiger (absent des docs)_ | Partagé avec U-04 |
-| `notifications.ticket_created.sms` | _À rédiger (absent des docs)_ | Partagé avec U-04 ; SMS : 160 caractères GSM-7 au plus, avec lien court `zelate.fr/t/xxxxxxxx` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés (K5) |
+| `errors.queue.queue_paused` | La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise. | Partagé avec U-04 |
+| `notifications.ticket_created.sms` | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} | Partagé avec U-04 ; SMS : 160 caractères GSM-7 au plus, avec lien court `zelate.fr/t/xxxxxxxx` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés (K5) |
 
 ## Questions ouvertes
 - **APP_FLOW F-C4** : l'entrée par QR mène directement aux deux choix puis à l'étape 1, sans passer par la fiche qui affiche « Fermé », « File en pause » ou « Complet pour aujourd'hui ». Faut-il montrer cet état dès le scan, ou seulement au moment de confirmer (erreur `queue.queue_closed`, `queue.queue_paused` ou `queue.queue_full`) ? Le choix « J'ai rendez-vous » reste-t-il proposé quand la file est en pause ou complète (`check_in_appointment` ne refuse que `queue_closed`, TRD §6.2) ?

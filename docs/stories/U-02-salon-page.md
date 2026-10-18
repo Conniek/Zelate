@@ -99,15 +99,15 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `client.salon.wait.people_ahead` | _À rédiger_ (APP_FLOW, indicatif : « Personnes avant vous ») | Pluriel ICU |
-| `client.salon.wait.estimated_time` | _À rédiger (absent des docs)_ | Variable `time` |
+| `client.salon.wait.people_ahead` | {count, plural, =0 {Personne n'attend en ce moment} one {# personne avant vous} other {# personnes avant vous}} (APP_FLOW, indicatif : « Personnes avant vous ») | Pluriel ICU |
+| `client.salon.wait.estimated_time` | Passage estimé vers {time} | Variable `time` |
 | `client.salon.hours.title` | « Horaires » | — |
 | `client.salon.services.title` | « Prestations » | — |
-| `client.salon.services.next_free_slot` | _À rédiger_ (PRD §5.2, indicatif : « prochain créneau libre à 15h20 ») | Variable `time` ; partagé avec U-16 |
+| `client.salon.services.next_free_slot` | Prochain créneau libre à {time} (PRD §5.2, indicatif : « prochain créneau libre à 15h20 ») | Variable `time` ; partagé avec U-16 |
 | `client.salon.stylists.title` | « Coiffeurs » | — |
 | `client.salon.stylist.status.available` | « disponible » | — |
 | `client.salon.stylist.status.busy` | « en prestation » | — |
-| `client.salon.stylist.status.away` | _À rédiger (voir questions)_ | — |
+| `client.salon.stylist.status.away` | indisponible pour le moment | — |
 | `common.actions.directions` | « Itinéraire » | Partagé avec U-06 |
 | `common.actions.close` | « Fermer » | — |
 | `client.salon.join` | « Rejoindre la file » | — |

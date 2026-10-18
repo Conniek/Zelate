@@ -148,18 +148,18 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `client.ticket.reassignment.banner` | « Le salon propose un autre coiffeur » | APP_FLOW F-C5 |
-| `client.ticket.reassignment.new_time` | _À rédiger (absent des docs)_ | Variables `firstName`, `time` |
-| `client.ticket.reassignment.time_left` | _À rédiger (absent des docs)_ | Temps restant sur 10 min (DESIGN_SYSTEM `ReassignmentPrompt`) |
+| `client.ticket.reassignment.new_time` | Avec {first_name} : passage prévu vers {time} | Variables `firstName`, `time` |
+| `client.ticket.reassignment.time_left` | {minutes, plural, =0 {Moins d'une minute pour répondre} other {Encore # min pour répondre}} | Temps restant sur 10 min (DESIGN_SYSTEM `ReassignmentPrompt`) |
 | `client.ticket.reassignment.accept` | « Accepter » | — |
 | `client.ticket.reassignment.refuse` | « Refuser » | — |
-| `notifications.reassignment_request.push` | _À rédiger (absent des docs)_ | Push seulement, deux actions « Accepter » et « Refuser » ; pas de modèle SMS |
+| `notifications.reassignment_request.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement, deux actions « Accepter » et « Refuser » ; pas de modèle SMS |
 | `pro-manager.reassign.delay_warning` | « L'heure du client reculerait de {minutes} min : il recevra une demande » | APP_FLOW F-M10 ; remplace le texte de S-13 |
 | `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | Partagé avec U-12 |
-| `errors.queue.already_resolved` | _À rédiger (absent des docs)_ | Même code pour `cancel_ticket`, `resolve_stylist_change`, `respond_end_of_day` (TRD §6.2) |
-| `errors.queue.invalid_transition` | _À rédiger (absent des docs)_ | Code commun |
-| `errors.queue.forbidden` | _À rédiger (absent des docs)_ | Code commun |
-| `errors.queue.reassignment_pending` | _À rédiger (absent des docs)_ | Côté gérant |
-| `errors.queue.stylist_unavailable` | _À rédiger (absent des docs)_ | Côté gérant ; partagé avec U-04 |
+| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Même code pour `cancel_ticket`, `resolve_stylist_change`, `respond_end_of_day` (TRD §6.2) |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun |
+| `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Code commun |
+| `errors.queue.reassignment_pending` | Une demande de changement de coiffeur attend déjà la réponse du client. Patientez 10 min au plus. | Côté gérant |
+| `errors.queue.stylist_unavailable` | Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. | Côté gérant ; partagé avec U-04 |
 
 ## Questions ouvertes
 - **BACKEND_SCHEMA §4.13 / TRD ADR-015** : à l'acceptation, quelle colonne fixe le nouveau coiffeur ? `requested_member_id` (ma préférence devient Sam), `estimated_member_id` (recalculé à chaque événement, donc la réaffectation ne tiendrait pas) ou `assigned_member_id` (réservé à l'appel) ? Si j'avais demandé Léa, l'acceptation remplace-t-elle ma demande ? (Question déjà posée dans S-13.)

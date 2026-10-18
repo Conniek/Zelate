@@ -70,7 +70,7 @@
 | `pro-stylist.summary.avg_duration_by_service` | « Durée moyenne par prestation » | APP_FLOW F-S9 |
 | `pro-stylist.summary.planned_vs_actual` | « Écart prévu / réel » | APP_FLOW F-S9 ; sens à préciser (voir questions) |
 | `pro-stylist.summary.back_to_queue` | « Retour à ma file » | APP_FLOW F-S9 |
-| `pro-stylist.summary.empty` | À rédiger (REQ-3) | État vide : phrase et action suivante (APP_FLOW §8) |
+| `pro-stylist.summary.empty` | Aucun client servi aujourd'hui. Votre bilan se remplira à la première prestation terminée. | État vide : phrase et action suivante (APP_FLOW §8) |
 | `common.units.minutes` | « {count} min » | Voir C-02 |
 
 ## Questions ouvertes
