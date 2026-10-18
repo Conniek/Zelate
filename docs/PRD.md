@@ -1,19 +1,19 @@
 # PRD — Zelaté
 
-> **Product Requirements Document** · version 1.0 · 16/10/2026 · statut : validé en atelier avec Ely le 16/10/2026
-> Sources : cahiers des charges Utilisateurs, Salon et Coiffeur ; « Synthèse du cahier des charges & plan d'action » (13/10) ; « Spécification fonctionnelle du MVP » v0.1 (13/10) ; atelier de validation de l'étape 0 (16/10).
+> **Product Requirements Document** · version 1.1 · 18/10/2026 · statut : validé avec Ely (ateliers du 16/10 et du 18/10/2026)
+> Sources : cahiers des charges Utilisateurs, Salon et Coiffeur ; « Synthèse du cahier des charges & plan d'action » (13/10) ; « Spécification fonctionnelle du MVP » v0.1 (13/10) ; atelier de validation de l'étape 0 (16/10) ; questions à trancher avant les user stories définitives (18/10).
 > Documents liés : [TRD](./TRD.md) · [APP_FLOW](./APP_FLOW.md) · [DESIGN_SYSTEM](./DESIGN_SYSTEM.md) · [BACKEND_SCHEMA](./BACKEND_SCHEMA.md) · [IMPLEMENTATION_PLAN](./IMPLEMENTATION_PLAN.md)
 
 Ce document dit **quoi** construire et **pourquoi**. Le **comment** est dans le TRD et le schéma backend. En cas de contradiction entre deux documents, c'est ce PRD qui fait foi pour une règle métier, et le TRD pour un choix technique ; la contradiction est signalée et corrigée dans les deux.
 
-Depuis la v1.0, ce PRD **remplace la spec MVP v0.1** comme référence : les règles du moteur de file y sont reprises (§5.2) avec les décisions de l'atelier. Le journal des décisions est au §11.
+Depuis la v1.0, ce PRD **remplace la spec MVP v0.1** comme référence : les règles du moteur de file y sont reprises (§5.2) avec les décisions de l'atelier. Le journal des décisions est au §11. La v1.1 ajoute les rendez-vous du salon (H10) et les règles tranchées après l'écriture des user stories.
 
 ---
 
 ## 1. Aperçu
 
 ### Le problème
-Dans un salon de coiffure sans rendez-vous, le client ne sait pas combien de temps il va attendre. Il attend sur place, renonce, ou revient trop tard. Le salon, lui, perd des clients aux heures pleines et n'a aucune visibilité sur sa file. Le coiffeur jongle entre la prestation en cours et les questions des clients qui attendent.
+Dans un salon de coiffure, le client ne sait pas combien de temps il va attendre, qu'il vienne sans rendez-vous ou avec un rendez-vous que le salon n'arrive pas à tenir. Il attend sur place, renonce, ou revient trop tard. Le salon, lui, perd des clients aux heures pleines et n'a aucune visibilité sur sa file. Le coiffeur jongle entre la prestation en cours et les questions des clients qui attendent.
 
 ### La solution
 Zelaté est une **file d'attente virtuelle** qui relie en temps réel trois interfaces :
@@ -27,6 +27,8 @@ Zelaté est une **file d'attente virtuelle** qui relie en temps réel trois inte
 
 Le client rejoint la file d'un salon proche depuis l'app, ou en scannant le QR code affiché au salon, sans rien installer. Il suit sa position et son heure de passage, reçoit une alerte quand son tour approche, et arrive juste à temps. Il donne son code de ticket au coiffeur, qui le prend en charge et termine en un geste. Chaque action recalcule l'attente de tous.
 
+Le salon peut aussi y inscrire **ses rendez-vous**, pris sur Planity ou dans son carnet : ses clients suivent alors leur attente réelle quand le salon prend du retard, et les clients de dernière minute se placent dans les trous de la journée sans jamais retarder un rendez-vous.
+
 ### La phrase produit
 > Trouvez votre style, pas une salle d'attente.
 
@@ -36,16 +38,17 @@ Le client rejoint la file d'un salon proche depuis l'app, ou en scannant le QR c
 
 ### Objectifs du MVP (pilote de 1 à 3 salons)
 1. **Prouver la boucle** : un client rejoint la file, un coiffeur l'appelle, le prend en charge et termine, et l'attente se recalcule pour tous en moins de 2 secondes.
-2. **Annoncer une heure fiable** : 80 % des clients commencent à 10 minutes près de l'heure annoncée 30 minutes avant (indicateur principal, §8).
-3. **Ne rien ajouter à la charge du salon** : une inscription walk-in prend 10 secondes, une action coiffeur tient en un geste sur son téléphone.
-4. **Servir les clients sans app** : le QR code de l'affiche et le SMS couvrent les clients qui n'installent rien (estimés à 70 % au départ dans le cahier Salon).
+2. **Servir aussi les salons à rendez-vous** : les rendez-vous du salon et les clients de dernière minute partagent la même journée, et chacun voit son attente réelle.
+3. **Annoncer une heure fiable** : 80 % des clients commencent à 10 minutes près de l'heure annoncée 30 minutes avant (indicateur principal, §8).
+4. **Ne rien ajouter à la charge du salon** : une inscription walk-in prend 10 secondes, une action coiffeur tient en un geste sur son téléphone.
+5. **Servir les clients sans app** : le QR code de l'affiche et le SMS couvrent les clients qui n'installent rien (estimés à 70 % au départ dans le cahier Salon).
 
 ### Objectifs business (après le pilote)
 - Démontrer aux salons un gain mesurable : moins d'abandons, file mieux répartie entre coiffeurs.
 - Préparer la V1 payante (créneau à 2 €, heures creuses) sur une base de données d'usage réelle.
 
 ### Non-objectifs du MVP
-- Pas de prise de rendez-vous à heure fixe ni de créneau payant (V1).
+- Pas de prise de rendez-vous par le client dans Zelaté ni de créneau payant (V1) : au MVP, les rendez-vous sont pris ailleurs (Planity, carnet) et saisis ou confirmés par le salon.
 - Pas d'avis, de favoris, de fidélité, de paiement, de pénalité d'annulation (V1 et au-delà).
 - Pas de bouton « Appeler le client » avec numéro masqué : au pilote, messages prédéfinis par SMS (V1).
 - Pas de tablette partagée au salon : elle arrive au lot 2 (location financée par Innov'Up).
@@ -61,7 +64,7 @@ Le client rejoint la file d'un salon proche depuis l'app, ou en scannant le QR c
 
 | Persona | Profil | Ce qu'il veut | Ce qui le ferait abandonner |
 | --- | --- | --- | --- |
-| **Client** | Particulier, 18-55 ans, smartphone, coiffure sans rendez-vous (coupe, barbe, tresses, couleur) | Savoir combien il attend et ne pas perdre sa place s'il s'absente | Une heure annoncée fausse, une inscription longue, une place perdue sans explication |
+| **Client** | Particulier, 18-55 ans, smartphone, coiffure sans rendez-vous ou avec un rendez-vous pris au salon (coupe, barbe, tresses, couleur) | Savoir combien il attend et ne pas perdre sa place s'il s'absente | Une heure annoncée fausse, une inscription longue, une place perdue sans explication |
 | **Client invité** | Passe devant le salon ou s'inscrit à l'accueil, n'installe rien | Être prévenu par SMS | Devoir créer un compte |
 | **Coiffeur** | Salarié ou indépendant au fauteuil, mains occupées, utilise son propre téléphone au lot 1 | Voir son prochain client et agir sans interrompre sa prestation | Plus de gestes que la feuille papier, des données clients sur son téléphone personnel |
 | **Gérant** | Patron du salon, coiffe parfois lui-même | Une vue claire de la file et de l'équipe, moins de clients perdus | Une configuration longue, un outil qui contredit son planning |
@@ -75,9 +78,9 @@ Le client rejoint la file d'un salon proche depuis l'app, ou en scannant le QR c
 
 | Acteur | MVP (pilote) | V1 | V2 et au-delà |
 | --- | --- | --- | --- |
-| Client | Liste + carte des salons, fiche salon, rejoindre la file gratuite (app ou QR de l'affiche, sans installation), identification par code SMS, coiffeur demandé en option, suivi en temps réel, notifications push + SMS de secours, réponse à « votre tour approche », alerte de fin de journée, annulation, retard signalé | Avis et notes, favoris, créneau payant 2 €, offres heures creuses, historique, réservation pour un tiers, pénalités éventuelles | Fidélité et parrainage, recommandations, coiffeurs à domicile |
-| Coiffeur | Espace coiffeur sur son téléphone (compte personnel), disponible / pause / fin de journée, ma file, appeler, valider l'arrivée par le code du ticket, commencer avec durée, ajuster +5 / +15 / +30 / +45 min, terminer, client en retard | Tablettes partagées du salon avec code PIN (lot 2), bouton « Appeler » à numéro masqué, tutoriel, notes privées, statistiques personnelles | Badges, formation, profil et marketplace emploi |
-| Salon | Inscription + vérification SIRET, wizard (horaires, équipe, prestations), QR code de l'affiche, test et publication, ouvrir / pause / fermer, interrupteur « Je coiffe », dashboard temps réel, walk-in en 10 s, absence et retard d'un coiffeur, retrait motivé, réaffectation, fin de journée | Import CSV, tour guidé, heures creuses manuelles, rapport détaillé, gestion des avis, confirmation des RDV payants par le gérant, appel masqué | Multi-salons, intégrations, marketing automatisé, prédiction d'affluence |
+| Client | Liste + carte des salons avec le prochain créneau libre, fiche salon, rejoindre la file gratuite (app ou QR de l'affiche, sans installation), identification par code SMS, coiffeur demandé en option, suivi en temps réel, notifications push + SMS de secours, réponse à « votre tour approche », alerte de fin de journée, annulation, retard signalé, compte ; **client avec rendez-vous** : se signaler à l'arrivée, suivre son attente réelle, être prévenu du retard avant de partir | Avis et notes, favoris, créneau payant 2 €, alerte « créneau libre » aux clients proches, offres heures creuses, historique, réservation pour un tiers, pénalités éventuelles | Fidélité et parrainage, recommandations, coiffeurs à domicile |
+| Coiffeur | Espace coiffeur sur son téléphone (compte personnel), disponible / pause / fin de journée, ma file, appeler, valider l'arrivée par le code du ticket, commencer avec durée, ajuster +5 / +15 / +30 / +45 min, terminer, client en retard, saisie et confirmation de ses rendez-vous | Tablettes partagées du salon avec code PIN (lot 2), bouton « Appeler » à numéro masqué, tutoriel, notes privées, statistiques personnelles | Badges, formation, profil et marketplace emploi |
+| Salon | Inscription + vérification SIRET, wizard (horaires, équipe, prestations), QR code de l'affiche, test et publication, ouvrir / pause / fermer, interrupteur « Je coiffe », dashboard temps réel, walk-in en 10 s, absence et retard d'un coiffeur, retrait motivé, réaffectation, fin de journée, journal du salon, **rendez-vous du jour** (saisie, confirmation des rendez-vous signalés par les clients) | Écran de salle d'attente, synchronisation avec Planity (si possible), étapes de prestation et avancement, import CSV, tour guidé, heures creuses manuelles, rapport détaillé, gestion des avis, confirmation des RDV payants par le gérant, appel masqué | Prendre un autre client pendant un temps de pose, alerte renfort (coiffeurs volants), multi-salons, intégrations, marketing automatisé, prédiction d'affluence |
 | Plateforme | Validation manuelle des salons, journal d'audit, limitation des abus | Validation automatique (SIRET actif + code NAF coiffure), paiements et remboursements | Analytique avancée, tests A/B |
 
 ---
@@ -98,21 +101,31 @@ Toutes ces règles sont **validées** (atelier du 16/10/2026).
 | H6 | Le **numéro du client n'est jamais affiché** au salon ni au coiffeur ; les messages partent de la plateforme. L'appel à numéro masqué vient en V1. |
 | H7 | **L'arrivée se valide par le code du ticket** (5 caractères) que le client donne au coiffeur. Pas de QR à l'arrivée, pas de GPS. |
 | H8 | Le client peut **déclarer son heure d'arrivée** ; si son tour vient avant, le suivant passe et le client reprend la tête de file dès son arrivée. |
-| H9 | **Fin de journée** : à partir de 2 h avant la fermeture, le moteur prévient une fois chaque client qui finirait après la fermeture ; à la fermeture, le gérant décide pour ceux qui sont restés. |
+| H9 | **Fin de journée** : à partir de 2 h avant la dernière fermeture de la journée, le moteur prévient une fois chaque client qui finirait après ; à la fermeture, le gérant décide pour tous les clients restants. |
+| H10 | **Rendez-vous du salon** : un rendez-vous est un créneau fixe dans la journée de son coiffeur. Un client de dernière minute ne passe avant que si sa prestation finit avant l'heure du rendez-vous (aucune marge pour l'instant). Le client avec rendez-vous garde sa priorité jusqu'à 10 min de retard, et il est pris en avance si cela ne retarde personne (détail au §5.2). |
 
 **Décisions d'Ely (cahier Coiffeur), à respecter partout :**
 - Jamais de numéro de téléphone client visible par les coiffeurs ni par les salons.
 - Réorganisation et retrait de la file strictement encadrés, toujours justifiés au client.
-- Un rendez-vous est confirmé par le gérant, pas par le coiffeur (s'applique au créneau payant de la V1).
+- Un rendez-vous est confirmé par le salon : un rendez-vous signalé par le client à son arrivée est confirmé d'un geste par le gérant ou le coiffeur concerné. Le créneau payant de la V1 reste confirmé par le gérant.
 
 **Autres règles validées :**
 - Un client n'a **qu'un seul ticket actif** à la fois, tous salons confondus.
-- Changer le coiffeur d'un client ne le fait **jamais reculer**, sauf accord du client.
-- Le client **annule sans pénalité** avant d'être appelé (un système de pénalité pourra être étudié plus tard).
-- Le client peut déclarer un **retard de 5 à 30 min** ; au-delà, il annule et se réinscrit.
-- Toute variation d'heure de **10 min ou plus** et tout recul sont **expliqués** au client.
-- **Absences répétées** : avertissement seul après **5 absences en 30 jours**.
-- Seul le **gérant** inscrit un client présent au salon (walk-in).
+- Changer le coiffeur d'un client ne le fait **jamais reculer**, sauf accord du client : il reçoit une demande « accepter / refuser » ; sans réponse en 10 min, rien ne change.
+- Le client **annule sans pénalité**, même une fois appelé ; ce n'est pas compté comme une absence (un système de pénalité pourra être étudié plus tard).
+- Le client peut déclarer un **retard de 5 à 30 min** ; au-delà, il annule et se réinscrit. Un retard déclaré ne le fait reculer que si le coiffeur choisit « Prendre le suivant » ; une fois appelé, son compteur de 10 min part de l'heure d'arrivée qu'il a annoncée.
+- Toute variation d'heure de **10 min ou plus** et tout recul sont **expliqués** au client. L'écart se mesure par rapport à la dernière heure annoncée au client, et les petits écarts s'additionnent.
+- La **position** affichée au client est le nombre de clients avant lui chez son coiffeur (demandé ou pressenti).
+- **Absences répétées** : avertissement par notification à la **5e absence en 30 jours**, tous salons confondus.
+- Seul le **gérant** inscrit un client présent au salon (walk-in) ; la prestation est facultative (30 min comptées par défaut).
+- La **spécialité** d'une prestation est facultative ; « je ne sais pas encore » est accepté par tous les coiffeurs.
+- **File en pause** : plus de nouvelles inscriptions, mais les coiffeurs continuent d'appeler les clients déjà inscrits.
+- Le **SMS « votre tour »** part toujours, même si le plafond de 3 SMS est atteint.
+- **Coiffeur indisponible** : un client en prestation est terminé par le gérant ; un client appelé passe en tête et est pris par le premier coiffeur libre. Quand le coiffeur demandé est absent toute la journée ou désactivé, le client ne peut plus « attendre » : il choisit « premier disponible » ou annule. La même règle s'applique quand le gérant coupe « Je coiffe ».
+- Le **gérant peut clore une prestation** qu'un coiffeur a oublié de terminer ; l'action est inscrite au journal.
+- Un **changement d'horaires ou de prestations** dans la journée ne modifie pas les tickets déjà en file ; les nouveaux horaires comptent pour la fin de journée.
+- Un **SIRET introuvable ou inactif** n'empêche pas l'envoi du dossier : il part « à vérifier » et l'équipe Zelaté décide.
+- La case **« Me prévenir »** est décochée par défaut. Sans elle, le client reçoit seulement les messages indispensables : l'inscription et « votre tour ».
 - Chaque salon ne voit que ses propres données (isolation par salon).
 - **Aucune donnée client n'est stockée sur le téléphone du coiffeur** : affichage seulement, rien en cache, déconnexion à distance par le gérant.
 
@@ -124,14 +137,15 @@ Reprises de la spec MVP v0.1 et mises à jour avec l'atelier ; c'est la référe
 
 | # | Transition | Déclencheur | Acteur | Conditions | Effets |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Création → En attente | Rejoindre la file, scan du QR de l'affiche, inscription à l'accueil | Client ou gérant | File ouverte et non complète ; aucun autre ticket actif pour ce numéro | Rang, coiffeur pressenti, heure estimée, notification d'inscription |
+| 1 | Création → En attente | Rejoindre la file, scan du QR de l'affiche, inscription à l'accueil, rendez-vous saisi par le salon | Client, gérant, coiffeur (ses rendez-vous) | File ouverte et non complète (sauf rendez-vous) ; aucun autre ticket actif pour ce numéro | Rang, coiffeur pressenti ou attribué, heure estimée, notification d'inscription |
+| 1b | Création → À confirmer → En attente | Client qui se signale pour un rendez-vous en scannant l'affiche | Client, puis gérant ou coiffeur qui confirme | — | Tant qu'il n'est pas confirmé, le ticket est visible mais n'entre pas dans le calcul ; un refus l'annule avec un message |
 | 2 | En attente → Appelé | « Appeler » | Coiffeur, gérant qui coiffe | Premier ticket éligible pour ce coiffeur (règle 4 ci-dessous, H8) ; coiffeur disponible | Attribution définitive au coiffeur ; « votre tour » par push et SMS ; compteur de 10 min lancé |
-| 3 | Appelé → En attente | « Prendre le suivant » | Coiffeur | Retard déclaré par le client ; recul de 2 places au plus | Notification avec raison ; journal |
+| 3 | Appelé → En attente | « Prendre le suivant » | Coiffeur | Retard déclaré par le client ; recul de 2 places au plus (seule façon de faire reculer un client en retard) | Notification avec raison ; journal |
 | 4 | Appelé → En prestation | « Commencer » | Coiffeur | Arrivée validée par le code du ticket | Durée prévue enregistrée ; recalcul |
-| 5 | En prestation → Terminé | « Terminer » | Coiffeur | — | Durée réelle ; coiffeur disponible ; recalcul |
-| 6 | En attente ou Appelé → Annulé | Annulation par le client, retrait par le gérant, fin de journée (H9) | Client, gérant avec motif, système | — | Notification avec motif ; les suivants avancent |
-| 7 | Appelé → Absent | 10 min sans arrivée | Système | Rappel envoyé à 5 min | Compteur d'absences du client ; les suivants avancent |
-| 8 | En attente → En attente (choix demandé) | Coiffeur demandé absent, en retard ou partant plus tôt | Système, gérant | — | Le client choisit « attendre » ou « premier disponible » ; sans réponse en 10 min : premier disponible si le coiffeur est absent toute la journée, sinon il attend |
+| 5 | En prestation → Terminé | « Terminer » | Coiffeur, ou gérant si le coiffeur a oublié | — | Durée réelle ; coiffeur disponible ; recalcul ; journal si c'est le gérant |
+| 6 | En attente ou Appelé → Annulé | Annulation par le client (sans pénalité, même appelé), retrait par le gérant, rendez-vous refusé, fin de journée (H9) | Client, gérant avec motif, système | — | Notification avec motif ; les suivants avancent |
+| 7 | Appelé → Absent | 10 min sans arrivée (à partir de l'heure d'arrivée annoncée si le client a déclaré un retard) | Système | Rappel envoyé à 5 min | Compteur d'absences du client ; les suivants avancent |
+| 8 | En attente → En attente (choix demandé) | Coiffeur demandé absent, en retard ou partant plus tôt | Système, gérant, coiffeur (fin de journée) | — | Le client choisit « attendre » ou « premier disponible » ; sans réponse en 10 min, il attend. Coiffeur absent toute la journée ou désactivé : seulement « premier disponible » ou annuler ; sans réponse, premier disponible |
 
 L'arrivée au salon n'est pas un état mais un horodatage. Un client déjà arrivé et en tête peut être pris directement : l'appel et le début s'enchaînent.
 
@@ -144,6 +158,7 @@ T_k = t_0 + R_c + \sum_{i<k} d_i \qquad R_c = \max\left(m,\; D_{\text{en cours}}
 - t0 = maintenant, ou fin de pause / heure d'arrivée prévue du coiffeur si elle est plus tardive.
 - R = temps restant de la prestation en cours : durée prévue moins temps écoulé, avec un minimum m = 5 min quand elle déborde ; 0 si le coiffeur est libre.
 - d = durée de la prestation de chaque ticket placé avant chez ce coiffeur ; 30 min quand le client a choisi « je ne sais pas encore ».
+- Un rendez-vous ne commence jamais avant son heure prévue, sauf si le coiffeur est libre et que cela ne retarde personne (H10).
 - Attente affichée = le plus tardif entre T et l'arrivée déclarée, moins maintenant, arrondi aux 5 min supérieures, avec l'heure de la dernière mise à jour.
 
 **Distribution (H1)**
@@ -152,6 +167,16 @@ T_k = t_0 + R_c + \sum_{i<k} d_i \qquad R_c = \max\left(m,\; D_{\text{en cours}}
 3. **Ordre** : ordre d'inscription au salon, sauf ticket non encore arrivé à son heure déclarée (H8) ou retard déclaré (H5).
 4. **Quand un coiffeur se libère**, son prochain client est le premier ticket éligible de la file : un ticket qui le demande, ou un ticket sans préférence dont il maîtrise la prestation. Les tickets qui demandent un autre coiffeur sont sautés sans perdre leur rang.
 5. **Gérant** : « Je coiffe » activé = coiffeur ordinaire ; désactivé = exclu de la distribution, avec un bouton « Je prends le prochain ».
+6. **Rendez-vous** : un rendez-vous est attribué dès sa saisie au coiffeur choisi et occupe un créneau fixe. Un client sans rendez-vous n'est placé avant lui que si sa prestation finit avant l'heure du rendez-vous (marge de 0 min pour l'instant, à revoir à l'usage).
+7. **Client avec rendez-vous en retard** : il garde sa priorité jusqu'à 10 min après l'heure du rendez-vous ; au-delà, il est pris dès que possible sans retarder les rendez-vous suivants.
+8. **Client avec rendez-vous en avance** : il est pris avant son heure si son coiffeur est libre et que cela ne retarde personne.
+
+**Prochain créneau libre**
+- Pour chaque prestation, le moteur cherche le premier trou assez long chez un coiffeur qui la maîtrise : durée de la prestation, sans marge pour l'instant.
+- La fiche et la carte du salon affichent ce « prochain créneau libre à 15h20 » ; seules les prestations qui tiennent dans un trou y apparaissent.
+
+**Prévenir avant de partir (rendez-vous)**
+- Si le salon a saisi le téléphone du client, celui-ci est prévenu dès que son heure de passage dépasse de 10 min l'heure de son rendez-vous (« venez à 14h20 »), puis à chaque nouvel écart de 10 min. Ces messages comptent dans le plafond de 3 SMS.
 
 **Statuts du coiffeur**
 
@@ -175,9 +200,10 @@ T_k = t_0 + R_c + \sum_{i<k} d_i \qquad R_c = \max\left(m,\; D_{\text{en cours}}
 | Complète (automatique) | La prochaine prestation finirait après la fermeture : nouveaux tickets refusés, salons proches proposés |
 
 **Fin de journée (H9)**
-- À partir de **2 h avant la fermeture** (valeur par défaut, réglable par salon après le pilote), chaque événement relance le calcul. Tout client dont la fin estimée dépasse l'heure de fermeture reçoit **une seule** alerte : « Vous risquez de ne pas être pris avant la fermeture », avec le choix **« Je reste »** ou **« J'annule »**.
+- À partir de **2 h avant la dernière fermeture de la journée** (valeur par défaut, réglable par salon après le pilote), chaque événement relance le calcul. Tout client dont la fin estimée dépasse l'heure de fermeture reçoit **une seule** alerte : « Vous risquez de ne pas être pris avant la fermeture », avec le choix **« Je reste »** ou **« J'annule »**.
 - Si son heure redevient sûre, il est simplement notifié du changement d'heure (règle des 10 min).
-- À l'heure de fermeture, le gérant voit les clients restants et choisit, pour chacun ou pour tous : **« Servir »** ou **« Annuler avec excuses »**. Sans action de sa part, ils sont **annulés automatiquement 15 min après la fermeture**, avec un message d'excuse et des salons proches.
+- À l'heure de fermeture, le gérant voit **tous** les clients restants (qu'ils aient répondu ou non) et choisit, pour chacun ou pour tous : **« Servir »** ou **« Annuler avec excuses »**. Sans action de sa part, ils sont **annulés automatiquement 15 min après la fermeture**, avec un message d'excuse et des salons proches.
+- Un client que le gérant a choisi de « Servir » mais qui n'est pas pris avant la fin de la journée est annulé avec un message d'excuse.
 - Aucun ticket ne passe d'un jour à l'autre.
 
 ### 5.3 Exigences par acteur
@@ -204,6 +230,9 @@ Priorité : **I** = indispensable au MVP, **S** = souhaitable au MVP. Les identi
 | S-14 | Recevoir un récapitulatif de fin de journée par e-mail et sur le dashboard | S |
 | S-15 | Voir, à partir de 2 h avant la fermeture, les clients à risque ; à la fermeture, choisir « Servir » ou « Annuler avec excuses » pour les clients restants | I |
 | S-16 | Déconnecter à distance le compte d'un coiffeur (téléphone perdu, départ du salon) | I |
+| S-17 | Consulter le journal de son salon : qui, quand, quoi, motif ; filtres par date, coiffeur et type | I |
+| S-18 | Saisir, modifier et annuler les rendez-vous du jour : prénom, heure, prestation, coiffeur, téléphone facultatif (jamais réaffiché une fois saisi) | I |
+| S-19 | Confirmer ou refuser d'un geste un rendez-vous signalé par un client à son arrivée | I |
 
 **Coiffeur (espace coiffeur, sur son téléphone)**
 
@@ -219,6 +248,7 @@ Priorité : **I** = indispensable au MVP, **S** = souhaitable au MVP. Les identi
 | C-08 | Terminer la prestation ; durée réelle enregistrée ; prochain client mis en avant | I |
 | C-09 | Gérer un client appelé qui n'arrive pas : compteur de 10 min, « Prendre le suivant » si le client a déclaré un retard (2 places max) ; libération automatique à 10 min | I |
 | C-10 | Voir son bilan du jour | S |
+| C-11 | Saisir les rendez-vous de ses propres clients et confirmer ceux qui se signalent pour lui | I |
 
 **Client**
 
@@ -233,9 +263,14 @@ Priorité : **I** = indispensable au MVP, **S** = souhaitable au MVP. Les identi
 | U-07 | Répondre à « votre tour approche » : à l'heure, en retard de 5 à 30 min, ou j'annule | I |
 | U-08 | Annuler sa place sans pénalité | I |
 | U-09 | Installer l'application et activer les notifications, avec guide pour iPhone ; refus sans conséquence | I |
-| U-10 | Savoir pourquoi son heure de passage change | S |
+| U-10 | Savoir pourquoi son heure de passage change | I |
 | U-11 | Être prévenu une fois s'il risque de ne pas être pris avant la fermeture, et choisir « Je reste » ou « J'annule » | I |
 | U-12 | Choisir « attendre » ou « premier disponible » quand le coiffeur demandé devient indisponible | I |
+| U-13 | Gérer son compte : prénom, consentements, export de ses données, suppression du compte | I |
+| U-14 | Se signaler à son arrivée pour un rendez-vous pris au salon (QR de l'affiche : prénom, heure, coiffeur), puis suivre son attente une fois confirmé | I |
+| U-15 | Être prévenu avant de partir quand le salon a du retard sur son rendez-vous | I |
+| U-16 | Voir sur la carte et la fiche du salon le prochain créneau libre pour chaque prestation | I |
+| U-17 | Accepter ou refuser une réaffectation qui recule son heure | S |
 
 **Plateforme**
 
@@ -243,24 +278,28 @@ Priorité : **I** = indispensable au MVP, **S** = souhaitable au MVP. Les identi
 | --- | --- | --- |
 | P-01 | Valider ou refuser un salon à la main, avec résultat SIRET affiché ; refus motivé envoyé au gérant | I |
 | P-02 | Consulter le journal d'audit : qui, quand, quoi, motif ; filtrable par salon | I |
-| P-03 | Limiter les abus : un ticket actif par numéro, plafonds de codes SMS par numéro et par IP, avertissement après 5 absences en 30 jours | S |
+| P-03 | Limiter les abus : un ticket actif par numéro, plafonds de codes SMS (5 par heure et par numéro, 20 par heure et par IP), avertissement à la 5e absence en 30 jours | I |
 
 ### 5.4 Notifications
 
-Le push est le canal par défaut ; le SMS ne part que si le client n'a pas de push actif, sauf « votre tour » qui part toujours par les deux canaux. **Plafond : 3 SMS par ticket**, hors annulation par le salon. Pendant le pilote, les SMS sont **pris en charge par Zelaté** ; le modèle de facturation sera décidé avec le coût réel mesuré.
+Le push est le canal par défaut ; le SMS ne part que si le client n'a pas de push actif, sauf « votre tour » qui part toujours par les deux canaux. **Plafond : 3 SMS par ticket**, hors annulation par le salon et hors « votre tour », qui partent toujours. Sans la case « Me prévenir », seuls l'inscription et « votre tour » sont envoyés. Pendant le pilote, les SMS sont **pris en charge par Zelaté** ; le modèle de facturation sera décidé avec le coût réel mesuré.
 
 | Événement | Déclencheur | Push | SMS |
 | --- | --- | --- | --- |
 | Inscription | Ticket créé | Oui | Si pas de push (SMS 1) |
 | Votre tour approche | Heure de passage à 30 min ou moins, une fois | Oui, avec trois réponses | Non, la page de suivi porte les réponses |
 | Préparez-vous | Heure de passage à 10 min ou moins | Oui | Si pas de push (SMS 2) |
-| Votre tour | Le coiffeur appelle | Oui, priorité haute | Toujours (SMS 3) |
+| Votre tour | Le coiffeur appelle | Oui, priorité haute | Toujours, même plafond atteint |
 | Rappel | 5 min après l'appel sans arrivée | Oui | Non |
 | Place libérée | 10 min après l'appel sans arrivée | Oui | Non |
 | Changement d'heure | Variation de 10 min ou plus | Oui | Non |
 | Recul | Retard déclaré (H5) | Oui | Non |
 | Choix de coiffeur | Coiffeur demandé indisponible | Oui | Si pas de push, dans la limite du plafond |
 | Risque de fin de journée | H9, une fois | Oui | Si pas de push, dans la limite du plafond |
+| Retard sur un rendez-vous | Heure de passage 10 min ou plus après l'heure du rendez-vous, puis tous les 10 min de plus | Oui | Si pas de push, dans la limite du plafond |
+| Demande de réaffectation | Le gérant veut réaffecter le client à un coiffeur plus tardif | Oui, avec « accepter / refuser » | Non |
+| Rendez-vous refusé | Le salon ne confirme pas un rendez-vous signalé | Oui | Non (le client est sur place) |
+| Avertissement d'absences | 5e absence en 30 jours | Oui | Si pas de push |
 | Annulation par le salon | Retrait, fin de journée (H9) | Oui | Oui, hors plafond |
 
 Le détail de ce que voit chaque écran est dans [APP_FLOW §7](./APP_FLOW.md#7-événements-système-et-notifications).
@@ -305,9 +344,9 @@ Le détail technique de chaque exigence est dans le [TRD](./TRD.md).
 
 | Espace | Écrans | Déjà dans le prototype |
 | --- | --- | --- |
-| Client | Accueil (liste + carte), fiche salon, rejoindre la file (prestation, coiffeur, heure d'arrivée), identification par code SMS, récapitulatif, ticket avec son code, suivi en temps réel, compteur après appel, réponse T-30, alerte de fin de journée, choix de coiffeur, annulation, suivi par lien SMS, guide d'installation, compte | Recherche liste + carte, fiche salon en panneau, choix de l'heure, bandeau ticket |
-| Espace coiffeur (téléphone) | Connexion, ma file, prochain client, appel en cours avec compteur, saisie du code d'arrivée, prestation en cours, client en retard, pause, bilan du jour | File coiffeur, prochaine cliente (à adapter au téléphone) |
-| Dashboard | Connexion, inscription salon, attente de validation, wizard (horaires, équipe, prestations, QR de l'affiche, test), vue temps réel, interrupteur « Je coiffe », inscription walk-in, déclaration d'absence, retrait, réaffectation, fin de journée, équipe, prestations, horaires, journal, récapitulatif | Charge par coiffeur |
+| Client | Accueil (liste + carte, prochain créneau libre), fiche salon, rejoindre la file (prestation, coiffeur, heure d'arrivée), se signaler pour un rendez-vous, identification par code SMS, récapitulatif, ticket avec son code, suivi en temps réel, compteur après appel, réponse T-30, alerte de fin de journée, choix de coiffeur, réponse à une réaffectation, annulation, suivi par lien SMS, guide d'installation, compte | Recherche liste + carte, fiche salon en panneau, choix de l'heure, bandeau ticket |
+| Espace coiffeur (téléphone) | Connexion, ma file, prochain client, appel en cours avec compteur, saisie du code d'arrivée, prestation en cours, client en retard, pause, mes rendez-vous, bilan du jour | File coiffeur, prochaine cliente (à adapter au téléphone) |
+| Dashboard | Connexion, inscription salon, attente de validation, wizard (horaires, équipe, prestations, QR de l'affiche, test), vue temps réel, interrupteur « Je coiffe », inscription walk-in, déclaration d'absence, retrait, réaffectation, rendez-vous du jour, fin de journée, équipe, prestations, horaires, journal, récapitulatif | Charge par coiffeur |
 | Admin | Liste des dossiers, détail d'un dossier, journal d'audit | — |
 
 La navigation et l'effet de chaque clic sont décrits dans [APP_FLOW](./APP_FLOW.md) ; les composants et les jetons visuels dans [DESIGN_SYSTEM](./DESIGN_SYSTEM.md).
@@ -324,6 +363,8 @@ L'indicateur principal du pilote, validé le 16/10, est la **précision de l'heu
 | Écart à l'inscription | Écart entre l'heure annoncée à l'inscription et le début réel, par salon et par prestation | Suivi, sert à calibrer les durées | Spec MVP |
 | Temps pour obtenir un ticket | De l'ouverture de la fiche salon (ou du scan QR) au ticket créé | Médiane < 60 s | Spec MVP |
 | Temps d'inscription walk-in | De l'ouverture du formulaire à la création du ticket | Médiane ≤ 10 s | S-10 |
+| Retard sur les rendez-vous | Écart entre l'heure du rendez-vous et le début réel | Suivi, par salon | H10 |
+| Clients de dernière minute placés entre deux rendez-vous | Tickets sans rendez-vous servis dans un trou / tickets sans rendez-vous | Suivi | H10 |
 | Taux de complétion | Tickets terminés / tickets créés | ≥ 85 % | Proposition (exemple du cahier Coiffeur : 89 %) |
 | Taux d'absence (no-show) | Tickets « absent » / tickets créés | ≤ 8 % | Proposition (exemple du cahier Coiffeur : 5 %) |
 | Taux d'annulation client | Tickets annulés par le client / tickets créés | Suivi | Cahier Coiffeur |
@@ -343,12 +384,14 @@ L'indicateur principal du pilote, validé le 16/10, est la **précision de l'heu
 ## 9. Questions ouvertes et risques
 
 ### Questions ouvertes
-1. **Salons pilotes** : lesquels, combien (1 à 3), à partir de quand. *Bloque la clôture de l'étape 0.*
+1. **Salons pilotes** : lesquels, combien (1 à 3), à partir de quand.
 2. Durée de conservation de 12 mois : à confirmer avec un conseil RGPD.
-3. Disponibilité de la marque « Zelaté » à l'INPI (les domaines zelate.com et zelate.fr étaient libres le 16/10).
-4. Lot 2 : nombre de tablettes, calendrier de la location et du financement Innov'Up.
-5. Système de pénalité d'annulation : à étudier après le pilote.
-6. Modèle de facturation des SMS : à fixer avec le coût réel du pilote.
+3. Synchronisation avec Planity : faisabilité à vérifier avant la V1.
+4. Marge entre un client de dernière minute et un rendez-vous (0 min aujourd'hui) : à revoir après le pilote.
+5. Disponibilité de la marque « Zelaté » à l'INPI (les domaines zelate.com et zelate.fr étaient libres le 16/10).
+6. Lot 2 : nombre de tablettes, calendrier de la location et du financement Innov'Up.
+7. Système de pénalité d'annulation : à étudier après le pilote.
+8. Modèle de facturation des SMS : à fixer avec le coût réel du pilote.
 
 ### Risques
 
@@ -360,6 +403,7 @@ L'indicateur principal du pilote, validé le 16/10, est la **précision de l'heu
 | Coiffeurs sur leur téléphone personnel | Réticence, téléphone oublié ou déchargé, données clients exposées | Aucune donnée stockée sur l'appareil, déconnexion à distance, le gérant peut agir à sa place depuis le dashboard ; tablettes au lot 2 |
 | Adoption par les coiffeurs | Retour au papier | Gestes uniques, test terrain avant le pilote |
 | Fraude au trafic SMS (codes OTP) | Facture SMS | Plafonds par numéro, par IP et par pays (+33 uniquement) |
+| Double saisie des rendez-vous (Planity et Zelaté) | Rendez-vous oubliés, attente fausse | Saisie rapide, signalement par le client à l'arrivée ; synchronisation en V1 si possible |
 
 ---
 
@@ -383,6 +427,9 @@ L'indicateur principal du pilote, validé le 16/10, est la **précision de l'heu
 | Absent | `no_show` | Client appelé qui n'est pas venu dans les 10 min |
 | Fin de journée | `end_of_day` | Fenêtre de 2 h avant la fermeture où les clients à risque sont prévenus |
 | T-30, T-10 | `turn_approaching`, `get_ready` | Alertes 30 et 10 min avant l'heure de passage |
+| Rendez-vous | `appointment` | Ticket à heure fixe, saisi par le salon ou signalé par le client à son arrivée |
+| À confirmer | `pending_confirmation` | Rendez-vous signalé par un client, en attente de la confirmation du salon |
+| Prochain créneau libre | `next_free_slot` | Premier trou assez long pour une prestation chez un coiffeur qui la maîtrise |
 | Tablette (lot 2) | `device` | Appareil partagé du salon, appairé par le gérant, déverrouillé par PIN |
 
 ---
@@ -420,3 +467,34 @@ Atelier de validation de l'étape 0 avec Ely, 16/10/2026, et précisions du mêm
 | 28 | Indicateur principal | 80 % des clients à 10 min près de l'heure annoncée à T-30 |
 | 29 | Salons pilotes | À désigner |
 | 30 | Qui tranche | Ely pour les règles métier, Koni pour les choix techniques |
+
+Questions tranchées le 18/10/2026 (doc « Questions à trancher avant les user stories définitives »).
+
+| N° | Sujet | Décision |
+| --- | --- | --- |
+| 31 | Périmètre du MVP | File de dernière minute + rendez-vous du salon + prochain créneau libre ; écran de salle d'attente, alerte « créneau libre », synchronisation Planity et étapes de prestation en V1 ; temps de pose et alerte renfort en V2 ; vivier de coiffeurs volants = autre application |
+| R1 | Priorité des rendez-vous | Un client de dernière minute passe avant un rendez-vous seulement si sa prestation finit avant |
+| R2 | Retard à un rendez-vous | Priorité gardée 10 min ; ensuite pris dès que possible sans retarder les rendez-vous suivants |
+| R3 | Avance à un rendez-vous | Pris plus tôt si cela ne retarde personne |
+| R4 | Saisie des rendez-vous | Par le salon, ou signalés par le client à l'arrivée puis confirmés d'un geste |
+| R5 | Prévenir avant de partir | Oui, dès 10 min de retard puis tous les 10 min, dans le plafond de SMS |
+| R6 | Qui saisit | Le gérant et chaque coiffeur pour ses clients |
+| R7 | Marge | Aucune pour l'instant, partout (R1 et créneau libre) ; à revoir à l'usage |
+| E1 | SMS « votre tour » | Part toujours, même plafond atteint |
+| E2 | Retard déclaré | Recul seulement par « Prendre le suivant » ; compteur de 10 min à partir de l'heure annoncée |
+| E3 | Annulation une fois appelé | Libre, pas d'absence comptée |
+| E4 | File en pause | Les inscrits continuent d'être appelés |
+| E5 | Fin de journée | Dernière plage ; tous les restants ; « Servi » non pris = annulé avec excuses |
+| E6 | Coiffeur indisponible en cours | Prestation terminée par le gérant ; client appelé repris en tête |
+| E7 | Coiffeur absent toute la journée | Pas de choix « attendre » |
+| E8 | « Je coiffe » coupé | Même règle qu'un coiffeur absent |
+| E9 | Réaffectation qui recule | Demande au client ; sans réponse en 10 min, rien ne change |
+| E10 | Absences répétées | À la 5e, tous salons, par notification |
+| E11 | Seuil de 10 min | Par rapport à la dernière heure annoncée ; écarts cumulés |
+| E12 | Prestation et spécialité | Facultatives ; « je ne sais pas encore » accepté par tous |
+| E13 | Position | Clients avant lui chez son coiffeur |
+| E14 | SIRET introuvable | Dossier « à vérifier » |
+| E15 | « Terminer » oublié | Le gérant peut clore, avec trace au journal |
+| E16 | Changements dans la journée | Tickets existants inchangés ; horaires pris en compte pour la fin de journée |
+| K11 | Consentement | Case décochée par défaut ; messages indispensables seulement sans elle |
+| K12 | Écrans sans exigence | Ajout de U-13 (compte client) et S-17 (journal du salon) |
