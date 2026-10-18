@@ -1,0 +1,102 @@
+{
+  "actions": {
+    "confirm": "Confirmer",
+    "reject": "Refuser",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "next": "Suivant",
+    "save": "Enregistrer",
+    "close": "Fermer",
+    "retry": "Réessayer",
+    "directions": "Itinéraire",
+    "sign_out": "Se déconnecter"
+  },
+  "first_available": "Premier disponible",
+  "queue_status": {
+    "open": "Ouverte",
+    "paused": "En pause",
+    "closed": "Fermée",
+    "full": "Complète"
+  },
+  "queue": {
+    "closed_with_next_opening": "Fermé · ouvre {day} à {time}"
+  },
+  "ticket_status": {
+    "pending_confirmation": "À confirmer",
+    "waiting": "En attente",
+    "called": "Appelé",
+    "in_service": "En prestation",
+    "completed": "Terminé",
+    "cancelled": "Annulé",
+    "no_show": "Absent"
+  },
+  "client_ticket_status": {
+    "called": "C'est votre tour"
+  },
+  "appointment": {
+    "badge": "RDV {time}",
+    "badge_late": "RDV {time} · +{minutes} min"
+  },
+  "free_slot": "Créneau libre à {time}",
+  "approach_status": {
+    "confirmed": "Confirmé",
+    "late": "En retard de {minutes} min",
+    "no_response": "Sans réponse",
+    "arrived": "Arrivé"
+  },
+  "presence_status": {
+    "offline": "Hors ligne",
+    "available": "Disponible",
+    "in_service": "En prestation",
+    "on_break": "En pause",
+    "late": "En retard",
+    "absent": "Absent",
+    "off_duty": "Fin de journée"
+  },
+  "break_type": {
+    "meal": "Repas",
+    "short": "Courte",
+    "unexpected": "Imprévu"
+  },
+  "specialties": {
+    "women_cut": "Coupe femme",
+    "men_cut": "Coupe homme",
+    "kids_cut": "Coupe enfant",
+    "beard": "Barbe",
+    "color": "Coloration",
+    "highlights": "Mèches",
+    "braids": "Tresses",
+    "curly_hair": "Cheveux bouclés, frisés et crépus",
+    "styling": "Coiffage",
+    "treatment": "Soin"
+  },
+  "units": {
+    "minutes": "{count} min",
+    "approx_minutes": "~{count} min",
+    "clients": "{count, plural, =0 {Aucun client} one {# client} other {# clients}}",
+    "price": "{amount} €"
+  },
+  "days": {
+    "today": "aujourd'hui",
+    "tomorrow": "demain"
+  },
+  "weekdays": {
+    "monday": "lundi",
+    "tuesday": "mardi",
+    "wednesday": "mercredi",
+    "thursday": "jeudi",
+    "friday": "vendredi",
+    "saturday": "samedi",
+    "sunday": "dimanche"
+  },
+  "formats": {
+    "time": "{hours}h{minutes}",
+    "time_range": "{start} – {end}",
+    "date": "{date, date, long}",
+    "date_with_weekday": "{date, date, full}"
+  },
+  "app_update": {
+    "toast": "Nouvelle version disponible",
+    "reload": "Recharger"
+  }
+}

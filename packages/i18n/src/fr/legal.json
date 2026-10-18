@@ -1,0 +1,15 @@
+{
+  "consent": {
+    "tracking_notifications": {
+      "label": "Me prévenir quand mon tour approche",
+      "explanation": "Nous vous prévenons 30 min et 10 min avant votre tour, si votre heure change ou si la fermeture approche. Sans cette case, vous recevez seulement les messages indispensables, comme « C'est votre tour ».",
+      "switch": "Notifications de suivi",
+      "given_at": "Accordé le {date, date, long}"
+    }
+  },
+  "links": {
+    "terms": "Conditions générales d'utilisation",
+    "privacy": "Politique de confidentialité",
+    "legal_notice": "Mentions légales"
+  }
+}
