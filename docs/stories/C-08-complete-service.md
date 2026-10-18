@@ -1,0 +1,88 @@
+# C-08 · Terminer la prestation
+
+**En tant que** coiffeur, **je veux** terminer la prestation d'un geste sûr, **afin que** la durée réelle soit enregistrée, que l'attente se recalcule pour tous et que mon prochain client s'affiche.
+
+- Priorité : I (PRD §5.3)
+- Règles appliquées : H2 ; PRD §5.2 transition 5 ; PRD §5.1 règle des 10 min ; PRD §7.1 principe 2 (les gestes critiques refusent le double déclenchement)
+- Parcours : F-S7 → F-S4 (APP_FLOW §4) ; F-C5 (écran de fin côté client)
+- Commandes et données : `complete_service` · tables `tickets` (`completed_at`, `actual_duration_minutes`), `stylist_presence`, `ticket_events`, `notifications` (et peut-être `salon_members.served_today_count`, voir questions)
+
+## Scénarios
+
+### 1. Terminer par un appui long
+- **Étant donné** Inès en prestation avec Léa depuis 14h00, durée prévue 30 min
+- **Quand** à 14h32, Inès maintient « Terminer » pendant 600 ms
+- **Alors** le ticket passe de « En prestation » à « Terminé » (`completed`, `completed_at` renseigné)
+- **Et** la durée réelle enregistrée est de 32 min (`actual_duration_minutes`)
+- **Et** le statut d'Inès redevient « Disponible »
+- **Et** Inès revient sur « Ma file », avec son prochain client en haut
+- **Et** l'heure de passage des clients suivants est recalculée
+- **Et** Léa voit l'écran de fin avec la raison et « Rejoindre une autre file »
+- **Et** le journal du ticket enregistre un événement `completed`
+- **Et** le dashboard affiche Inès « Disponible » en moins de 2 s
+
+### 2. Appui trop bref
+- **Étant donné** Inès en prestation
+- **Quand** elle touche « Terminer » et relâche avant 600 ms
+- **Alors** la prestation n'est pas terminée directement
+- **Et** le ticket reste « En prestation »
+
+### 3. Terminer au clavier
+- **Étant donné** Inès en prestation, le focus sur « Terminer »
+- **Quand** elle appuie sur Entrée puis confirme
+- **Alors** le ticket passe à « Terminé »
+
+### 4. Prestation plus courte que prévu
+- **Étant donné** Inès en prestation depuis 14h00, durée prévue 45 min
+- **Quand** elle termine à 14h25
+- **Alors** la durée réelle enregistrée est de 25 min
+- **Et** l'heure de passage des clients suivants avance
+- **Et** chaque client dont l'heure avance de 20 min reçoit une notification push de changement d'heure, avec la raison
+- **Et** aucun SMS n'est envoyé pour ce changement d'heure
+
+### 5. Le prochain client n'est pas appelé automatiquement
+- **Étant donné** Inès qui vient de terminer, avec un ticket éligible dans sa file
+- **Quand** elle revient sur « Ma file »
+- **Alors** le prochain client est affiché en haut, sans être appelé
+- **Et** le bouton « Appeler » est actif
+
+### 6. Double déclenchement
+- **Étant donné** Inès en prestation
+- **Quand** la commande `complete_service` est renvoyée avec le même `command_id` (réseau instable)
+- **Alors** la prestation n'est terminée qu'une fois
+- **Et** la réponse renvoyée est celle du premier traitement
+
+### 7. Prestation déjà terminée
+- **Étant donné** le ticket de Léa déjà « Terminé »
+- **Quand** une nouvelle commande `complete_service` est envoyée pour ce ticket
+- **Alors** la commande est refusée (code attendu `queue.invalid_transition`, à confirmer)
+- **Et** la durée réelle enregistrée ne change pas
+
+### 8. Ticket d'un autre coiffeur
+- **Étant donné** Léa en prestation chez Karim
+- **Quand** une commande `complete_service` est envoyée avec le compte d'Inès pour ce ticket
+- **Alors** la commande est refusée avec `queue.not_assigned_to_you`
+- **Et** le ticket reste « En prestation » chez Karim
+
+### 9. Connexion perdue
+- **Étant donné** Inès en prestation, dont l'écran affiche « Connexion perdue »
+- **Quand** elle veut terminer
+- **Alors** « Terminer » est désactivé
+- **Et** le ticket reste « En prestation » jusqu'au retour de la connexion
+
+## Textes à prévoir
+| Clé (anglais) | Texte (français) | Contrainte |
+| --- | --- | --- |
+| `pro-stylist.service.complete` | « Terminer » | Appui long de 600 ms avec remplissage progressif (DESIGN_SYSTEM `HoldButton`) |
+| `pro-stylist.service.complete_hint` | À rédiger (REQ-3) | Indication « maintenir pour terminer » pour l'utilisateur et le lecteur d'écran |
+| `pro-stylist.service.complete_confirm` | À rédiger (REQ-3) | Confirmation après Entrée (alternative clavier) |
+| `common.ticket_status.completed` | « Terminé » | PRD §5.2 |
+| `notifications.estimate_changed.push.title` / `.body` | À rédiger (REQ-3) | Push seulement ; raison : prestation précédente terminée plus tôt |
+| `errors.queue.invalid_transition` | À rédiger (REQ-3) | Voir C-04 |
+| `errors.queue.not_assigned_to_you` | À rédiger (REQ-3) | Voir C-06 |
+
+## Questions ouvertes
+- [APP_FLOW / DESIGN_SYSTEM] APP_FLOW F-S7 : « appui long 600 ms, ou appui + confirmation » ; DESIGN_SYSTEM : la confirmation est l'alternative clavier (Entrée puis confirmation). Un appui bref au doigt ouvre-t-il une confirmation, ou ne fait-il rien ?
+- [BACKEND_SCHEMA] Quand `salon_members.served_today_count` (critère d'égalité de la distribution, H1) augmente-t-il : à « Terminer », à « Commencer », à l'appel ? Comment `actual_duration_minutes` est-il arrondi (minute inférieure, supérieure) ?
+- [PRD] Si l'heure de fin de journée du coiffeur (`shift_end_at`) passe pendant la prestation, son statut après « Terminer » est-il « Fin de journée » ou « Disponible » ?
+- [PRD] Coiffeur qui oublie de toucher « Terminer » : aucune clôture automatique n'est prévue, la durée réelle et l'indicateur principal sont faussés. Le gérant peut-il terminer à sa place depuis le dashboard (le PRD §9 dit qu'il « peut agir à sa place ») ?
