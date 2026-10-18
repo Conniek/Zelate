@@ -108,13 +108,13 @@ Hors périmètre : l'envoi de l'invitation par le gérant (S-04), la coupure des
 | `pro-stylist.invite.activate_button` | « Activer mon compte » | Libellé indicatif (APP_FLOW F-S1), à valider en REQ-3 |
 | `pro-stylist.invite.check_email` | « Ouvrez le lien reçu sur votre téléphone » | Libellé indicatif (APP_FLOW F-S1) |
 | `pro-stylist.invite.link_invalid` | « Demandez une nouvelle invitation à votre gérant » | Lien expiré ou déjà utilisé (APP_FLOW F-S1) |
-| `pro-stylist.install.prompt` | À rédiger (REQ-3) | Proposition d'installer Zelaté Pro ; aucun texte dans les documents |
+| `pro-stylist.install.prompt` | Installez Zelaté Pro pour ouvrir votre file d'un geste. | Proposition d'installer Zelaté Pro ; aucun texte dans les documents |
 | `pro-stylist.install.ios_steps` | « Partager » → « Sur l'écran d'accueil » → « Ouvrir » | Guide en 3 images, repris de F-C9 |
-| `pro-stylist.signin.email_label` | À rédiger (REQ-3) | Champ e-mail ; espace de noms à confirmer (page `/signin` partagée avec le gérant) |
+| `pro-stylist.signin.email_label` | E-mail | Champ e-mail ; espace de noms à confirmer (page `/signin` partagée avec le gérant) |
 | `pro-stylist.signin.request_link` | « Recevoir mon lien » | Libellé indicatif (APP_FLOW F-S2) ; espace de noms à confirmer |
 | `pro-stylist.signin.access_revoked` | « Votre accès a été retiré, contactez votre gérant » | Compte désactivé (APP_FLOW §2.3, F-S2) |
 | `pro-stylist.signin.sessions_revoked` | « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » | Sessions coupées par le gérant (APP_FLOW §2.3, F-S2) |
-| `errors.queue.forbidden` | À rédiger (REQ-3) | Code commun : droit insuffisant ou membre révoqué (TRD §6.2) |
+| `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Code commun : droit insuffisant ou membre révoqué (TRD §6.2) |
 | `common.actions.sign_out` | « Se déconnecter » | APP_FLOW F-S2 |
 
 ## Questions ouvertes

@@ -160,19 +160,19 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `pro-stylist.call.reminder_sent` | « rappel envoyé » | APP_FLOW F-S5 / §7 |
-| `pro-stylist.call.declared_delay` | À rédiger (REQ-3) | Retard déclaré par le client, en minutes |
+| `pro-stylist.call.declared_delay` | Retard annoncé : {minutes} min | Retard déclaré par le client, en minutes |
 | `pro-stylist.take_next.button` | « Prendre le suivant » | APP_FLOW F-S8 |
 | `pro-stylist.take_next.confirm` | « {firstName} passera après {count} clients (2 maximum) » | APP_FLOW F-S8 ; pluriel ICU (1 client / 2 clients) |
-| `pro-stylist.call.released_banner` | À rédiger (REQ-3) | Bandeau d'information après la libération à 10 min |
+| `pro-stylist.call.released_banner` | Place de {first_name} libérée faute d'arrivée. Appelez le suivant. | Bandeau d'information après la libération à 10 min |
 | `common.ticket_status.no_show` | « Absent » | PRD §5.2 |
 | `notifications.arrival_reminder.push.body` | « Le salon vous attend, place libérée dans 5 min » | APP_FLOW F-C7 ; push seulement, pas de SMS |
-| `notifications.released_no_show.push.title` / `.body` | À rédiger (REQ-3) | Push seulement ; proposition de se réinscrire |
-| `notifications.postponed.push.title` / `.body` | À rédiger (REQ-3) | Push seulement ; nouvelle position et raison |
-| `errors.queue.postpone_limit_reached` | À rédiger (REQ-3) | Aucun texte dans les documents |
-| `errors.queue.not_assigned_to_you` | À rédiger (REQ-3) | Voir C-06 |
-| `errors.queue.invalid_transition` | À rédiger (REQ-3) | Code commun ; voir C-04 |
-| `notifications.no_show_warning.push.title` / `.body` | À rédiger (REQ-3) | Avertissement à la 5e absence en 30 jours, tous salons ; ne doit nommer aucun autre salon ; partagé avec P-03 |
-| `notifications.no_show_warning.sms` | À rédiger (REQ-3) | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5) ; seulement sans push actif ; partagé avec P-03 |
+| `notifications.released_no_show.push.title` / `.body` |Titre : Votre place a été libérée<br>Corps : Le délai pour arriver chez {salon_name} est dépassé. Vous pouvez vous réinscrire.| Push seulement ; proposition de se réinscrire |
+| `notifications.postponed.push.title` / `.body` |Titre : Votre place a reculé<br>Corps : Vous aviez annoncé un retard, le coiffeur a pris le client suivant. Il reste {count, plural, one {# client} other {# clients}} avant vous.| Push seulement ; nouvelle position et raison |
+| `errors.queue.postpone_limit_reached` | Ce client a déjà reculé de 2 places, le maximum. Attendez son arrivée : sa place sera libérée à la fin du délai. | Aucun texte dans les documents |
+| `errors.queue.not_assigned_to_you` | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket. | Voir C-06 |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun ; voir C-04 |
+| `notifications.no_show_warning.push.title` / `.body` |Titre : Pensez à annuler si vous ne venez pas<br>Corps : Vous comptez {count, plural, one {# absence} other {# absences}} en 30 jours. Si vous ne pouvez pas venir, annulez : la place revient à un autre client.| Avertissement à la 5e absence en 30 jours, tous salons ; ne doit nommer aucun autre salon ; partagé avec P-03 |
+| `notifications.no_show_warning.sms` | Zelaté : vous comptez {count, plural, one {# absence} other {# absences}} en 30 jours. Si vous ne pouvez pas venir, annulez votre place : elle profitera à un autre client. | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5) ; seulement sans push actif ; partagé avec P-03 |
 
 ## Questions ouvertes
 - **Résolu le 18/10 (E2)** : un retard déclaré ne fait reculer le client que si le coiffeur choisit « Prendre le suivant » ; la libération est repoussée à l'heure d'arrivée annoncée (PRD §5.1, TRD §6.2 `respond_eta` et `call_ticket`, BACKEND_SCHEMA `release_due_at`, APP_FLOW F-C6, F-C7, F-S5). Question d'origine : un client appelé qui a déclaré 20 min de retard voit-il sa place libérée à 10 min ?

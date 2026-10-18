@@ -109,13 +109,13 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `notifications.ticket_created.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus ; pour un rendez-vous, heure du rendez-vous, heure de passage, code et lien `zelate.fr/t/xxxxxxxx` ; partagé avec U-04 |
+| `notifications.ticket_created.sms` | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} | SMS : 160 caractères GSM-7 au plus ; pour un rendez-vous, heure du rendez-vous, heure de passage, code et lien `zelate.fr/t/xxxxxxxx` ; partagé avec U-04 |
 | `notifications.appointment_delay.push` | « Le salon a du retard, venez vers {time} » (indicatif, APP_FLOW F-C13) | Variable `time` |
 | `notifications.appointment_delay.sms` | « Le salon a du retard, venez vers {time} » (indicatif, APP_FLOW F-C13) | SMS : 160 caractères GSM-7 au plus, nom de salon tronqué à 40, accents translittérés ; dans le plafond de 3 SMS |
 | `client.ticket.appointment.summary` | « Rendez-vous à {scheduledTime} · passage prévu vers {startTime} » | Exemple APP_FLOW F-C5 ; partagé avec U-14 |
 | `common.appointment.badge_late` | « RDV {time} · +{minutes} min » | Exemple DESIGN_SYSTEM §2.4 « RDV 14h30 · +20 min » |
-| `errors.queue.invalid_phone` | _À rédiger (absent des docs)_ | Côté salon ; partagé avec S-10 |
-| `errors.queue.already_has_active_ticket` | _À rédiger (absent des docs)_ | Côté salon : ne nomme pas l'autre salon |
+| `errors.queue.invalid_phone` | Ce numéro n'est pas valide. Saisissez un numéro de téléphone français. | Côté salon ; partagé avec S-10 |
+| `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | Côté salon : ne nomme pas l'autre salon |
 
 ## Questions ouvertes
 - **PRD §9 question n° 9 / BACKEND_SCHEMA §3 et §4.16 / TRD §8** : un rendez-vous saisi par le salon n'a pas de profil client, donc pas de `tracking_consent_at`. Avec la règle actuelle (seuls `ticket_created` et `your_turn` partent sans consentement), l'alerte `appointment_delay` serait toujours marquée `skipped` (`no_consent`) : U-15 ne fonctionnerait jamais pour son public principal. À trancher par Ely, avec avis RGPD (scénario 12 en attente).

@@ -199,10 +199,10 @@
 | --- | --- | --- |
 | `client.qr_entry.join_queue` | « Rejoindre la file » | APP_FLOW F-C4 ; partagé avec U-05 |
 | `client.qr_entry.have_appointment` | « J'ai rendez-vous » | APP_FLOW F-C4 |
-| `client.check_in.progress` | _À rédiger (absent des docs)_ | Indicateur d'étape |
+| `client.check_in.progress` | Étape {step} sur {total} | Indicateur d'étape |
 | `client.check_in.time.label` | « Mon rendez-vous est à… » | Pas de 5 min, journée d'ouverture |
 | `client.check_in.stylist.dont_know` | « Je ne sais plus » | — |
-| `client.check_in.summary.title` | _À rédiger (absent des docs)_ | Salon, heure, coiffeur |
+| `client.check_in.summary.title` | Vérifiez votre rendez-vous | Salon, heure, coiffeur |
 | `legal.consent.tracking_notifications.label` | « Me prévenir quand mon tour approche » (libellé de F-C3 ; F-C12 dit seulement « Me prévenir ») | Case décochée par défaut ; partagé avec U-04 |
 | `client.check_in.confirm` | « Me signaler » | — |
 | `client.ticket.appointment.pending` | « Le salon confirme votre rendez-vous… » | Pas d'heure de passage |
@@ -214,18 +214,18 @@
 | `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 |
 | `common.actions.confirm` | « Confirmer » | — |
 | `common.actions.reject` | « Refuser » | — |
-| `notifications.appointment_confirmed.push` | _À rédiger (absent des docs)_ | Avec l'heure de passage |
-| `notifications.appointment_rejected.push` | _À rédiger (absent des docs)_ | Push seulement ; bouton « Rejoindre la file » |
-| `client.ticket.end.reason.appointment_rejected` | _À rédiger (absent des docs)_ | Écran de fin |
-| `errors.queue.queue_closed` | _À rédiger (absent des docs)_ | Partagé avec U-04 |
-| `errors.queue.outside_opening_hours` | _À rédiger (absent des docs)_ | — |
-| `errors.queue.already_has_active_ticket` | _À rédiger (absent des docs)_ | Partagé avec U-04 |
-| `errors.queue.already_resolved` | _À rédiger (absent des docs)_ | Côté salon |
-| `errors.queue.ticket_other_salon` | _À rédiger (absent des docs)_ | Côté salon |
-| `errors.queue.forbidden` | _À rédiger (absent des docs)_ | Code commun |
-| `errors.queue.invalid_transition` | _À rédiger (absent des docs)_ | Code commun |
-| `errors.queue.rate_limited` | _À rédiger (absent des docs)_ | Code commun ; partagé avec U-04 |
-| `errors.queue.invalid_payload` | _À rédiger (absent des docs)_ | Code commun |
+| `notifications.appointment_confirmed.push` | _À rédiger (clé absente du dictionnaire)_ | Avec l'heure de passage |
+| `notifications.appointment_rejected.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement ; bouton « Rejoindre la file » |
+| `client.ticket.end.reason.appointment_rejected` | Le salon n'a pas retrouvé votre rendez-vous. Vous pouvez rejoindre la file sans rendez-vous. | Écran de fin |
+| `errors.queue.queue_closed` | La file est fermée : aucune nouvelle inscription n'est possible pour le moment. | Partagé avec U-04 |
+| `errors.queue.outside_opening_hours` | Cette heure est en dehors des horaires d'ouverture du salon. Choisissez une heure pendant l'ouverture. | — |
+| `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | Partagé avec U-04 |
+| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Côté salon |
+| `errors.queue.ticket_other_salon` | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. | Côté salon |
+| `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Code commun |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun |
+| `errors.queue.rate_limited` | Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez. | Code commun ; partagé avec U-04 |
+| `errors.queue.invalid_payload` | Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. | Code commun |
 
 ## Questions ouvertes
 - **PRD §5.2 transition 1b / TRD §6.2** : la transition 1b n'a aucune condition (« — »), alors que TRD fait refuser `check_in_appointment` avec `queue_closed`. Et une **file en pause** : le signalement est-il accepté (aucun code `queue_paused` pour cette commande) ? Le test du scénario 17 suit le TRD ; il faut aligner le PRD.

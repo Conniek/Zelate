@@ -152,13 +152,13 @@
 | `client.ticket.end_of_day.stay` | « Je reste » | — |
 | `client.ticket.end_of_day.cancel` | « J'annule » | — |
 | `notifications.end_of_day_risk.push` | « Vous risquez de ne pas être pris avant la fermeture » | Push avec actions « Je reste » et « J'annule » |
-| `notifications.end_of_day_risk.sms` | _À rédiger_ (base : « Vous risquez de ne pas être pris avant la fermeture » + lien de suivi) | SMS : 160 caractères GSM-7 au plus ; dans le plafond de 3 SMS |
-| `notifications.cancelled_by_salon.end_of_day.push` | _À rédiger (absent des docs)_ | Motif, excuses, salons proches |
-| `notifications.cancelled_by_salon.end_of_day.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus ; hors plafond |
-| `client.ticket.end.reason.end_of_day` | _À rédiger (absent des docs)_ | — |
+| `notifications.end_of_day_risk.sms` | {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link} (base : « Vous risquez de ne pas être pris avant la fermeture » + lien de suivi) | SMS : 160 caractères GSM-7 au plus ; dans le plafond de 3 SMS |
+| `notifications.cancelled_by_salon.end_of_day.push` | _À rédiger (clé absente du dictionnaire)_ | Motif, excuses, salons proches |
+| `notifications.cancelled_by_salon.end_of_day.sms` | {salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. Salons proches : {link} | SMS : 160 caractères GSM-7 au plus ; hors plafond |
+| `client.ticket.end.reason.end_of_day` | Le salon ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. | — |
 | `client.nearby_salons.link` | « Salons proches » | Partagé avec U-02, U-04 |
-| `errors.queue.already_resolved` | _À rédiger (absent des docs)_ | Partagé avec U-08, U-12 |
-| `errors.queue.invalid_transition` | _À rédiger (absent des docs)_ | Partagé avec U-07, U-08, U-12 |
+| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Partagé avec U-08, U-12 |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Partagé avec U-07, U-08, U-12 |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E5) — Heure de fermeture : la fin de la dernière plage de la journée ; voir scénario 2 bis.

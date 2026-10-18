@@ -69,7 +69,7 @@
 | `client.install.ios_guide.step_share` | « Partager » | — |
 | `client.install.ios_guide.step_add_to_home` | « Sur l'écran d'accueil » | — |
 | `client.install.ios_guide.step_open` | « Ouvrir » | — |
-| `client.install.ios_guide.image_alt` | _À rédiger (absent des docs)_ | Alternative textuelle de chaque image (RGAA AA) |
+| `client.install.ios_guide.image_alt` | {step, select, share {Barre de Safari avec le bouton Partager, un carré et une flèche vers le haut} add_to_home {Menu de partage de Safari avec l'option Sur l'écran d'accueil} other {Écran d'accueil de l'iPhone avec l'icône Zelaté}} | Alternative textuelle de chaque image (RGAA AA) |
 | `client.install.actions.enable_notifications` | « Activer les notifications » | — |
 | `client.install.actions.later` | « Plus tard » | — |
 

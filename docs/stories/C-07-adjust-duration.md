@@ -120,22 +120,22 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `pro-stylist.service.in_progress` | « En cours » | APP_FLOW F-S7 |
-| `pro-stylist.service.elapsed_planned` | À rédiger (REQ-3) | Temps écoulé / prévu, annoncé au lecteur d'écran une fois par minute au plus |
-| `pro-stylist.service.estimated_end` | À rédiger (REQ-3) | Fin estimée |
+| `pro-stylist.service.elapsed_planned` | {elapsed_minutes} min sur {planned_minutes} min | Temps écoulé / prévu, annoncé au lecteur d'écran une fois par minute au plus |
+| `pro-stylist.service.estimated_end` | Fin vers {time} | Fin estimée |
 | `pro-stylist.service.adjust_5` | « +5 » | Nom accessible à rédiger (ex. durée en minutes) |
 | `pro-stylist.service.adjust_15` | « +15 » | Idem |
 | `pro-stylist.service.adjust_30` | « +30 » | Idem |
 | `pro-stylist.service.adjust_45` | « +45 » | Idem |
 | `common.app_update.toast` | « Nouvelle version » | APP_FLOW §8 ; jamais pendant une prestation |
 | `common.app_update.reload` | « Recharger » | APP_FLOW §8 |
-| `notifications.estimate_changed.push.title` / `.body` | À rédiger (REQ-3) | Push seulement ; raison : prestation en cours rallongée |
+| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Push seulement ; raison : prestation en cours rallongée |
 | `notifications.end_of_day_risk.push.body` | « Vous risquez de ne pas être pris avant la fermeture » | PRD §5.2 ; boutons « Je reste » / « J'annule » ; partagé avec U-11 |
-| `notifications.end_of_day_risk.sms` | À rédiger (REQ-3) | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale ; seulement sans push actif, dans le plafond de 3 SMS ; partagé avec U-11 |
-| `errors.queue.not_assigned_to_you` | À rédiger (REQ-3) | Voir C-06 |
-| `errors.queue.invalid_transition` | À rédiger (REQ-3) | Code commun ; voir C-04 |
-| `errors.queue.invalid_payload` | À rédiger (REQ-3) | Code commun : validation du contrat (TRD §6.2) |
-| `notifications.appointment_delay.push.title` / `.body` | À rédiger (REQ-3) | APP_FLOW F-C13 donne l'exemple « Le salon a du retard, venez vers 14h20 » ; partagé avec U-15 |
-| `notifications.appointment_delay.sms` | À rédiger (REQ-3) | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5) ; seulement sans push actif, dans le plafond de 3 SMS ; partagé avec U-15 |
+| `notifications.end_of_day_risk.sms` | {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link} | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale ; seulement sans push actif, dans le plafond de 3 SMS ; partagé avec U-11 |
+| `errors.queue.not_assigned_to_you` | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket. | Voir C-06 |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun ; voir C-04 |
+| `errors.queue.invalid_payload` | Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. | Code commun : validation du contrat (TRD §6.2) |
+| `notifications.appointment_delay.push.title` / `.body` |Titre : Le salon a du retard<br>Corps : {salon_name} a du retard sur votre rendez-vous de {appointment_time}. Venez vers {time}.| APP_FLOW F-C13 donne l'exemple « Le salon a du retard, venez vers 14h20 » ; partagé avec U-15 |
+| `notifications.appointment_delay.sms` | {salon_name} a du retard sur votre rendez-vous de {appointment_time} : venez vers {time}. Suivi : {link} | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5) ; seulement sans push actif, dans le plafond de 3 SMS ; partagé avec U-15 |
 
 ## Questions ouvertes
 - **Résolu le 18/10** en partie : PRD §5.1, APP_FLOW F-C5 et §7 disent « 10 min ou plus » (≥ 10 min). Reste : APP_FLOW F-S7 écrit encore « au-delà de 10 min d'écart » et TRD §6.2 (`adjust_duration`) « ±10 min ». Aligner ces deux formulations sur « 10 min ou plus ». Question d'origine : un client dont l'heure bouge d'exactement 10 min est-il notifié ?

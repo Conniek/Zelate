@@ -131,8 +131,8 @@
 | `pro-stylist.presence.end_of_day` | « Fin de journée » | Libellé indicatif |
 | `pro-stylist.presence.end_of_day_now` | « maintenant » | Choix de l'heure de fin (APP_FLOW F-S3) |
 | `pro-stylist.presence.end_of_day_later` | « plus tard » | Choix de l'heure de fin |
-| `pro-stylist.presence.end_of_day_confirm` | À rédiger (REQ-3) | Confirmation listant les prénoms des clients concernés ; pluriel ICU |
-| `pro-stylist.presence.break_countdown` | À rédiger (REQ-3) | Compte à rebours de la pause |
+| `pro-stylist.presence.end_of_day_confirm` | {count, plural, =0 {Aucun client n'attend chez vous.} one {{first_names} passera chez un collègue ou choisira de vous attendre.} other {{first_names} passeront chez vos collègues ou choisiront de vous attendre.}} | Confirmation listant les prénoms des clients concernés ; pluriel ICU |
+| `pro-stylist.presence.break_countdown` | Pause · encore {minutes} min | Compte à rebours de la pause |
 | `common.presence_status.offline` | « Hors ligne » | PRD §5.2 ; partagé avec le dashboard |
 | `common.presence_status.available` | « Disponible » | PRD §5.2 |
 | `common.presence_status.in_service` | « En prestation » | PRD §5.2 |
@@ -144,12 +144,12 @@
 | `common.break_type.short` | « courte » | APP_FLOW F-S3 |
 | `common.break_type.unexpected` | « imprévu » | APP_FLOW F-S3 |
 | `common.units.minutes` | « {count} min » | Durées 5, 10, 15, 30, 45, 60 |
-| `notifications.estimate_changed.push.title` / `.body` | À rédiger (REQ-3) | Push seulement, pas de SMS ; nouvelle heure et raison (pause, fin de journée du coiffeur) ; partagé avec U-10 |
-| `notifications.stylist_change_required.push.title` / `.body` | À rédiger (REQ-3) | « attendre » ou « premier disponible » ; partagé avec U-12 |
-| `notifications.stylist_change_required.sms` | À rédiger (REQ-3) | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (prénom ≤ 30, nom du salon tronqué à 40, caractères hors GSM-7 translittérés, lien court `zelate.fr/t/xxxxxxxx`, TRD §9, K5) ; seulement sans push actif, dans le plafond de 3 SMS, avec « Me prévenir » |
+| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Push seulement, pas de SMS ; nouvelle heure et raison (pause, fin de journée du coiffeur) ; partagé avec U-10 |
+| `notifications.stylist_change_required.push.title` / `.body` |Titre : Votre coiffeur n'est plus disponible<br>Corps : Attendre {stylist_first_name} ou prendre le premier coiffeur disponible ? Sans réponse, rien ne change.| « attendre » ou « premier disponible » ; partagé avec U-12 |
+| `notifications.stylist_change_required.sms` | {salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link} | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (prénom ≤ 30, nom du salon tronqué à 40, caractères hors GSM-7 translittérés, lien court `zelate.fr/t/xxxxxxxx`, TRD §9, K5) ; seulement sans push actif, dans le plafond de 3 SMS, avec « Me prévenir » |
 | `client.ticket.stylist_unavailable.wait` | « Attendre {firstName} » | APP_FLOW F-C5 ; partagé avec U-12 |
 | `client.ticket.stylist_unavailable.first_available` | « Premier disponible » | APP_FLOW F-C5 ; partagé avec U-12 |
-| `errors.queue.forbidden` | À rédiger (REQ-3) | Code commun (TRD §6.2) ; voir C-01 |
+| `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Code commun (TRD §6.2) ; voir C-01 |
 
 ## Questions ouvertes
 - [PRD / APP_FLOW] Quand la durée de pause est écoulée sans « Reprendre » : retour automatique à « Disponible », ou le coiffeur reste « En pause » ?

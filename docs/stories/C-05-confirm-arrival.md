@@ -74,11 +74,11 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `pro-stylist.arrival.enter_code` | « Saisir le code » | Libellé indicatif (APP_FLOW F-S5) |
-| `pro-stylist.arrival.code_pad_label` | À rédiger (REQ-3) | Pavé de 5 caractères ; nom accessible pour lecteur d'écran |
+| `pro-stylist.arrival.code_pad_label` | Code du ticket, 5 caractères | Pavé de 5 caractères ; nom accessible pour lecteur d'écran |
 | `pro-stylist.arrival.arrived` | « Arrivé » | APP_FLOW F-S5 |
-| `errors.queue.unknown_code` | À rédiger (REQ-3) | « Message clair, aucun changement » (APP_FLOW F-S5) |
-| `errors.queue.ticket_other_salon` | À rédiger (REQ-3) | Ne doit rien révéler du ticket de l'autre salon |
-| `errors.queue.invalid_transition` | À rédiger (REQ-3) | Ticket clos ou code déjà utilisé, si ce code est retenu |
+| `errors.queue.unknown_code` | Ce code ne correspond à aucun ticket. Vérifiez-le avec le client, puis réessayez. | « Message clair, aucun changement » (APP_FLOW F-S5) |
+| `errors.queue.ticket_other_salon` | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. | Ne doit rien révéler du ticket de l'autre salon |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Ticket clos ou code déjà utilisé, si ce code est retenu |
 
 ## Questions ouvertes
 - [TRD §6.2] Reste ouvert après K1 : le tableau des codes donne à `confirm_arrival` seulement `unknown_code` et `ticket_other_salon`, et dit qu'il « refuse un code […] d'un ticket clos » sans nommer le code. Code pour un ticket clos (terminé, annulé, absent) et pour un code « déjà utilisé » (PRD C-05) : le code commun `invalid_transition`, ou `unknown_code` ?

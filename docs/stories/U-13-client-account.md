@@ -134,15 +134,15 @@
 | --- | --- | --- |
 | `client.account.title` | « Compte » (libellé indicatif APP_FLOW §2.1) | — |
 | `client.account.first_name.label` | « Prénom » (libellé indicatif APP_FLOW F-C11) | 1 à 30 caractères |
-| `client.account.first_name.save` | _À rédiger (absent des docs)_ | — |
-| `errors.validation.first_name` | _À rédiger (absent des docs)_ | 1 à 30 caractères |
+| `client.account.first_name.save` | Enregistrer | — |
+| `errors.validation.first_name` | Indiquez un prénom de 30 caractères au plus. | 1 à 30 caractères |
 | `legal.consent.tracking_notifications.switch` | « Notifications de suivi » | Désactivé par défaut |
-| `legal.consent.tracking_notifications.given_at` | _À rédiger (absent des docs)_ | Variable `date`, format fr-FR |
+| `legal.consent.tracking_notifications.given_at` | Accordé le {date, date, long} | Variable `date`, format fr-FR |
 | `client.account.export` | « Télécharger mes données » | — |
 | `client.account.delete.label` | « Supprimer mon compte » | — |
-| `client.account.delete.confirm_first` | _À rédiger (absent des docs)_ | Première confirmation |
-| `client.account.delete.confirm_second` | _À rédiger (absent des docs)_ | Seconde confirmation, bouton destructif à droite (`ConfirmDialog`) |
-| `client.account.delete.done` | _À rédiger (absent des docs)_ | — |
+| `client.account.delete.confirm_first` | Supprimer votre compte ? Votre prénom et vos consentements seront effacés, et vos anciens passages ne seront plus reliés à vous. Une place en cours sera annulée. | Première confirmation |
+| `client.account.delete.confirm_second` | Cette suppression est définitive. Voulez-vous vraiment supprimer votre compte ? | Seconde confirmation, bouton destructif à droite (`ConfirmDialog`) |
+| `client.account.delete.done` | Votre compte a été supprimé. Merci d'avoir utilisé Zelaté. | — |
 | `client.account.sign_out` | « Se déconnecter » | — |
 | `common.actions.retry` | « Réessayer » | APP_FLOW §8 |
 

@@ -76,14 +76,14 @@
 | --- | --- | --- |
 | `pro-stylist.start.open` | « Commencer » | Bouton de la carte « Appel en cours », actif quand le client est arrivé |
 | `pro-stylist.start.sheet_title` | « Commencer la prestation » | APP_FLOW F-S6 |
-| `pro-stylist.start.service_label` | À rédiger (REQ-3) | Champ prestation |
-| `pro-stylist.start.duration_label` | À rédiger (REQ-3) | Durée modifiable par pas de 5 min |
+| `pro-stylist.start.service_label` | Prestation | Champ prestation |
+| `pro-stylist.start.duration_label` | Durée | Durée modifiable par pas de 5 min |
 | `pro-stylist.start.confirm` | « Commencer » | Bouton de la feuille |
 | `common.presence_status.in_service` | « En prestation » | Voir C-02 |
 | `common.ticket_status.in_service` | « En prestation » | PRD §5.2 |
-| `errors.queue.not_assigned_to_you` | À rédiger (REQ-3) | Aucun texte dans les documents |
-| `errors.queue.invalid_transition` | À rédiger (REQ-3) | Voir C-04 |
-| `notifications.estimate_changed.push.title` / `.body` | À rédiger (REQ-3) | Voir C-02 ; push seulement |
+| `errors.queue.not_assigned_to_you` | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket. | Aucun texte dans les documents |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Voir C-04 |
+| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Voir C-02 ; push seulement |
 
 ## Questions ouvertes
 - [PRD / BACKEND_SCHEMA] Bornes de la durée à la feuille « Commencer » : `tickets.planned_duration_minutes` va de 5 à 240 min, `services.duration_minutes` de 15 à 180 min. Le PRD ne dit rien. Lesquelles s'appliquent à la saisie du coiffeur ?

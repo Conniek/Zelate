@@ -97,14 +97,14 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `pro-stylist.service.complete` | « Terminer » | Appui long de 600 ms avec remplissage progressif (DESIGN_SYSTEM `HoldButton`) |
-| `pro-stylist.service.complete_hint` | À rédiger (REQ-3) | Indication « maintenir pour terminer » pour l'utilisateur et le lecteur d'écran |
-| `pro-stylist.service.complete_confirm` | À rédiger (REQ-3) | Confirmation après Entrée (alternative clavier) |
+| `pro-stylist.service.complete_hint` | Maintenez pour terminer | Indication « maintenir pour terminer » pour l'utilisateur et le lecteur d'écran |
+| `pro-stylist.service.complete_confirm` | Terminer la prestation de {first_name} ? | Confirmation après Entrée (alternative clavier) |
 | `common.ticket_status.completed` | « Terminé » | PRD §5.2 |
-| `notifications.estimate_changed.push.title` / `.body` | À rédiger (REQ-3) | Push seulement ; raison : prestation précédente terminée plus tôt |
-| `errors.queue.invalid_transition` | À rédiger (REQ-3) | Voir C-04 |
-| `errors.queue.not_assigned_to_you` | À rédiger (REQ-3) | Voir C-06 |
+| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Push seulement ; raison : prestation précédente terminée plus tôt |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Voir C-04 |
+| `errors.queue.not_assigned_to_you` | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket. | Voir C-06 |
 | `pro-manager.ticket_panel.complete` | « Terminer la prestation » | APP_FLOW F-M6, panneau ticket (E15) |
-| `pro-manager.ticket_panel.complete_confirm` | À rédiger (REQ-3) | Confirmation avant `complete_service` au nom du gérant |
+| `pro-manager.ticket_panel.complete_confirm` | Terminer la prestation pour {first_name} ? L'action sera inscrite au journal à votre nom. | Confirmation avant `complete_service` au nom du gérant |
 
 ## Questions ouvertes
 - [APP_FLOW / DESIGN_SYSTEM] APP_FLOW F-S7 : « appui long 600 ms, ou appui + confirmation » ; DESIGN_SYSTEM : la confirmation est l'alternative clavier (Entrée puis confirmation). Un appui bref au doigt ouvre-t-il une confirmation, ou ne fait-il rien ?
