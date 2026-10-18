@@ -336,7 +336,7 @@ Barre de statut toujours visible en haut de `/stylist/queue`.
 | Élément | Action | Ensuite |
 | --- | --- | --- |
 | Carte « En cours » | Prénom, prestation, temps écoulé / prévu, fin estimée | — |
-| « +5 », « +15 », « +30 », « +45 » | `adjust_duration` | Fin estimée mise à jour ; clients notifiés au-delà de 10 min d'écart |
+| « +5 », « +15 », « +30 », « +45 » | `adjust_duration` | Fin estimée mise à jour ; clients notifiés à partir de 10 min d'écart |
 | « Terminer » (appui long 600 ms, ou appui + confirmation) | `complete_service` | F-S4, prochain client en haut |
 
 Une prestation plus courte que prévu se termine simplement par « Terminer ».
@@ -453,7 +453,7 @@ Jamais de numéro de téléphone affiché.
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| Menu du coiffeur : « Absent », « En retard », « Part plus tôt », « Pause » | Formulaire (heure prévue, heure de fin, motif) | — |
+| Menu du coiffeur : « Absent », « En retard », « Part plus tôt », « Pause » | Formulaire (heure prévue, heure de fin ; pas de motif en texte libre, K10) | — |
 | Aperçu de l'impact | `preview_presence_change` : tickets touchés avec leur nouvelle heure, réassignés automatiquement (sans préférence), à confirmer par le client (avec préférence), rendez-vous à réaffecter ; client appelé repris en tête, client en prestation à terminer par le gérant (E6) | — |
 | « Confirmer » | `set_presence` | Clients notifiés ; ceux avec préférence choisissent « attendre » ou « premier disponible » |
 
@@ -469,7 +469,7 @@ Jamais de numéro de téléphone affiché.
 | Élément | Action | Ensuite |
 | --- | --- | --- |
 | Panneau ticket : « Changer de coiffeur » | Liste des coiffeurs avec la nouvelle heure estimée | — |
-| Choix sans recul | `reassign_ticket` | Client notifié si ±10 min |
+| Choix sans recul | `reassign_ticket` | Client notifié si son heure change de 10 min ou plus |
 | Choix avec recul | Message « L'heure du client reculerait de X min : il recevra une demande » → `reassign_ticket` | Demande envoyée au client (F-C5) ; ticket marqué « en attente de réponse » ; sans réponse en 10 min, rien ne change (E9) |
 
 ### F-M11 · Pages de configuration et journal

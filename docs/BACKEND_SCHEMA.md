@@ -479,14 +479,14 @@ Règles transverses :
 
 | Fonction | Paramètres | Renvoie | Sécurité |
 | --- | --- | --- | --- |
-| `search_salons` | `lat`, `lng`, `radius_m` (défaut 5000, max 20000), `query?` | Salons publiés triés par distance, avec attente | `security invoker` sur `public_salons` |
+| `search_salons` | `lat`, `lng`, `radius_m` (défaut 5000, max 20000), `query?` | Salons publiés triés par distance, avec attente et `next_free_slots` | `security invoker` sur `public_salons` |
 | `get_salon_public` | `slug` | Salon, prestations, horaires, coiffeurs | `security invoker` |
 | `resolve_qr_token` | `qr_token` | `slug` du salon publié | `security definer` |
 | `my_active_ticket` | — | Ticket actif du client + `salon` + `assigned_stylist_first_name` | `security invoker` |
 | `get_stylist_queue` | — | Pour le coiffeur connecté : ticket en cours, ticket appelé et prochains clients éligibles (qui le demandent ou sans préférence), avec statut d'approche | `security definer`, vérifie `member_id()` |
 | `get_salon_board` | `salon_id` | Coiffeurs avec présence, tickets actifs (dont rendez-vous à confirmer), indicateurs | `security definer`, vérifie `managed_salon_id()` (gérant seulement, K9) |
 | `preview_presence_change` | `member_id`, `status`, `until?` | Clients touchés avec leur heure actuelle et la nouvelle, sans rien écrire (K2) | `security definer`, vérifie `managed_salon_id()` |
-| `get_audit_log` | `salon_id?`, `from`, `to`, `type?`, `cursor?` | Événements paginés | Gérant (son salon) ou admin |
+| `get_audit_log` | `salon_id?`, `from`, `to`, `type?`, `member_id?` (acteur ou membre concerné), `cursor?` | Événements paginés | Gérant (son salon) ou admin |
 | `get_day_summary` | `salon_id`, `service_date`, `member_id?` | Clients servis, attente annoncée et réelle, absences, annulations | Gérant ; coiffeur connecté pour lui-même |
 
 ### 8.2 Écritures
@@ -508,7 +508,7 @@ Publication par **Broadcast** depuis les Edge Functions (ADR-009), sur des canau
 
 | Canal | Autorisé si (politique sur `realtime.messages`) | Événements |
 | --- | --- | --- |
-| `salon:{salon_id}` | `private.staff_salon_id() = salon_id` | `queue_updated`, `queue_status_changed`, `presence_changed` — charge : `{ version }` |
+| `salon:{salon_id}` | `private.staff_salon_id() = salon_id` | `queue_updated`, `queue_status_changed`, `presence_changed`, `appointment_pending` — charge : `{ version }` |
 | `ticket:{ticket_id}` | Le ticket appartient à `auth.uid()` | `ticket_updated` — charge : `{ version, status }` |
 | `salon-public:{salon_id}` | Public (ADR-018) | `salon_updated` — charge : `{ version }` |
 | `ticket-token:{token_key}` | Public ; `token_key` = 32 premiers caractères hexadécimaux du SHA-256 du jeton (ADR-018) | `ticket_updated` — charge : `{ version }` |

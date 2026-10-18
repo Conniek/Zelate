@@ -113,7 +113,7 @@ Toutes ces règles sont **validées** (atelier du 16/10/2026).
 - Un client n'a **qu'un seul ticket actif** à la fois, tous salons confondus.
 - Changer le coiffeur d'un client ne le fait **jamais reculer**, sauf accord du client : il reçoit une demande « accepter / refuser » ; sans réponse en 10 min, rien ne change.
 - Le client **annule sans pénalité**, même une fois appelé ; ce n'est pas compté comme une absence (un système de pénalité pourra être étudié plus tard).
-- Le client peut déclarer un **retard de 5 à 30 min** ; au-delà, il annule et se réinscrit. Un retard déclaré ne le fait reculer que si le coiffeur choisit « Prendre le suivant » ; une fois appelé, son compteur de 10 min part de l'heure d'arrivée qu'il a annoncée.
+- Le client peut déclarer un **retard de 5 à 30 min** ; au-delà, il annule et se réinscrit. Un retard déclaré ne le fait reculer que si le coiffeur choisit « Prendre le suivant » ; une fois appelé, il n'est libéré qu'à l'heure d'arrivée qu'il a annoncée, si elle est plus tardive que les 10 min (E2).
 - Toute variation d'heure de **10 min ou plus** et tout recul sont **expliqués** au client. L'écart se mesure par rapport à la dernière heure annoncée au client, et les petits écarts s'additionnent.
 - La **position** affichée au client est le nombre de clients avant lui chez son coiffeur (demandé ou pressenti).
 - **Absences répétées** : avertissement par notification à la **5e absence en 30 jours**, tous salons confondus.
@@ -144,7 +144,7 @@ Reprises de la spec MVP v0.1 et mises à jour avec l'atelier ; c'est la référe
 | 4 | Appelé → En prestation | « Commencer » | Coiffeur | Arrivée validée par le code du ticket | Durée prévue enregistrée ; recalcul |
 | 5 | En prestation → Terminé | « Terminer » | Coiffeur, ou gérant si le coiffeur a oublié | — | Durée réelle ; coiffeur disponible ; recalcul ; journal si c'est le gérant |
 | 6 | En attente ou Appelé → Annulé | Annulation par le client (sans pénalité, même appelé), retrait par le gérant, rendez-vous refusé, fin de journée (H9) | Client, gérant avec motif, système | — | Notification avec motif ; les suivants avancent |
-| 7 | Appelé → Absent | 10 min sans arrivée (à partir de l'heure d'arrivée annoncée si le client a déclaré un retard) | Système | Rappel envoyé à 5 min | Compteur d'absences du client ; les suivants avancent |
+| 7 | Appelé → Absent | 10 min sans arrivée, ou l'heure d'arrivée annoncée si le client a déclaré un retard et qu'elle est plus tardive | Système | Rappel envoyé à 5 min | Compteur d'absences du client ; les suivants avancent |
 | 8 | En attente → En attente (choix demandé) | Coiffeur demandé absent, en retard ou partant plus tôt | Système, gérant, coiffeur (fin de journée) | — | Le client choisit « attendre » ou « premier disponible » ; sans réponse en 10 min, il attend. Coiffeur absent toute la journée ou désactivé : seulement « premier disponible » ou annuler ; sans réponse, premier disponible |
 
 L'arrivée au salon n'est pas un état mais un horodatage. Un client déjà arrivé et en tête peut être pris directement : l'appel et le début s'enchaînent.
@@ -196,7 +196,7 @@ T_k = t_0 + R_c + \sum_{i<k} d_i \qquad R_c = \max\left(m,\; D_{\text{en cours}}
 | --- | --- |
 | Fermée | Aucun nouveau ticket ; affichée « Fermé » avec la prochaine ouverture |
 | Ouverte | Tickets acceptés tant que l'heure estimée de fin reste avant la fermeture |
-| En pause | Aucun nouveau ticket ; les tickets en cours restent et sont traités à la reprise |
+| En pause | Aucun nouveau ticket ; les tickets en cours restent et les coiffeurs continuent de les appeler (E4) |
 | Complète (automatique) | La prochaine prestation finirait après la fermeture : nouveaux tickets refusés, salons proches proposés |
 
 **Fin de journée (H9)**
@@ -392,7 +392,8 @@ L'indicateur principal du pilote, validé le 16/10, est la **précision de l'heu
 6. Lot 2 : nombre de tablettes, calendrier de la location et du financement Innov'Up.
 7. Système de pénalité d'annulation : à étudier après le pilote.
 8. Modèle de facturation des SMS : à fixer avec le coût réel du pilote.
-9. **Rendez-vous saisi par le salon avec le téléphone du client** : le client n'a coché aucune case « Me prévenir ». L'alerte de retard (R5) compte-t-elle parmi les messages indispensables, ou faut-il recueillir son accord (par exemple au premier SMS) ? *À trancher par Ely, avec un avis RGPD.*
+9. **Rendez-vous saisi par le salon avec le téléphone du client** : le client n'a coché aucune case « Me prévenir ». L'alerte de retard (R5) compte-t-elle parmi les messages indispensables, ou faut-il recueillir son accord (par exemple au premier SMS) ? *À trancher par Ely, avec un avis RGPD (question E17 de [docs/stories/README.md](./stories/README.md)).*
+10. **Questions E18 à E31** (règles métier) relevées pendant l'écriture des stories, listées avec une proposition dans [docs/stories/README.md](./stories/README.md#questions-ouvertes-après-la-v11).
 
 ### Risques
 

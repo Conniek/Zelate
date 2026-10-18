@@ -191,7 +191,7 @@ Corps commun : `{ command: string, command_id: uuid, payload: {...} }`. Contexte
 | `join_queue` | Client connecté | `salon_id`, `service_id` ou `unknown_service`, `requested_member_id?`, `declared_arrival_at?`, `channel` (`app`, `qr`), `notifications_consent` (faux par défaut, K11) | Crée le ticket, calcule le coiffeur pressenti et l'heure ; notification `ticket_created` |
 | `register_walk_in` | Gérant | `first_name`, `phone`, `service_id?` (30 min par défaut, E12), `requested_member_id?` | Crée le ticket `front_desk` et le contact privé ; SMS avec lien de suivi |
 | `create_appointment` | Gérant ; coiffeur pour lui-même | `first_name`, `scheduled_at`, `member_id` (imposé pour un coiffeur), `service_id?`, `phone?` | Ticket `appointment` au statut `waiting`, coiffeur fixé ; si téléphone : contact privé et SMS avec lien de suivi ; recalcul |
-| `update_appointment` | Gérant ; coiffeur concerné | `ticket_id`, `scheduled_at?`, `member_id?`, `service_id?`, `first_name?` | Modifie un rendez-vous encore `waiting` ; recalcul ; notification si l'heure change de 10 min ou plus |
+| `update_appointment` | Gérant ; coiffeur concerné | `ticket_id`, `scheduled_at?`, `member_id?`, `service_id?`, `first_name?`, `phone?` | Modifie un rendez-vous encore `waiting` ; recalcul ; notification si l'heure change de 10 min ou plus |
 | `cancel_appointment` | Gérant ; coiffeur concerné | `ticket_id` | `cancelled` (`removed_by_salon`) ; notification `cancelled_by_salon` si le client est joignable |
 | `check_in_appointment` | Client connecté (QR de l'affiche) | `salon_id`, `scheduled_time` (HH:MM du jour), `member_id?`, `service_id?`, `notifications_consent` | Ticket `appointment` au statut `pending_confirmation`, hors calcul ; prévient le gérant et le coiffeur choisi |
 | `confirm_appointment` | Gérant ; coiffeur concerné | `ticket_id`, `decision` (`confirm`, `reject`), `merge_into_ticket_id?` | `confirm` : `pending_confirmation → waiting`, ou fusion avec le rendez-vous déjà saisi par le salon ; `reject` : `cancelled` (`appointment_rejected`) avec notification |
@@ -202,7 +202,7 @@ Corps commun : `{ command: string, command_id: uuid, payload: {...} }`. Contexte
 | `confirm_arrival` | Coiffeur, gérant | `short_code` (5 caractères) | Horodate l'arrivée ; refuse un code d'un autre salon ou d'un ticket clos |
 | `call_ticket` | Coiffeur, gérant qui coiffe (« Je prends le prochain » si « Je coiffe » est coupé) | — (le serveur choisit le premier ticket éligible, règles 4 et 6 à 8) | `waiting → called`, aussi file en pause (E4) ; fixe `assigned_member_id` ; notification `your_turn` ; `release_due_at` = maintenant + 10 min, ou l'heure d'arrivée annoncée si elle est plus tardive (E2) |
 | `start_service` | Coiffeur attribué | `ticket_id`, `service_id`, `planned_duration_minutes` | `called → in_service` ; coiffeur `in_service` |
-| `adjust_duration` | Coiffeur attribué | `ticket_id`, `delta_minutes` (+5, +15, +30, +45) | Recalcul ; notifications si ±10 min |
+| `adjust_duration` | Coiffeur attribué | `ticket_id`, `delta_minutes` (+5, +15, +30, +45) | Recalcul ; notifications si l'heure d'un client change de 10 min ou plus (E11) |
 | `complete_service` | Coiffeur attribué ; gérant (E15) | `ticket_id` | `in_service → completed` ; coiffeur `available` ; journal avec l'acteur gérant le cas échéant |
 | `take_next` | Coiffeur attribué | `ticket_id` (celui qui a déclaré un retard) | Recul de 2 places max ; notification `postponed` ; le suivant est appelé |
 | `remove_ticket` | Gérant | `ticket_id`, `reason_code`, `note?` (≤ 200, rangée dans `tickets.removal_note`, jamais dans le journal, K10) | `cancelled` avec motif ; notification `cancelled_by_salon` |
@@ -244,7 +244,7 @@ Hors `queue-command` : `auth.otp_rate_limited` (plafond de codes SMS, `auth-send
 
 | Lecture | Moyen | Pour |
 | --- | --- | --- |
-| Salons proches | RPC `search_salons(lat, lng, radius_m, text?)` | Accueil client |
+| Salons proches | RPC `search_salons(lat, lng, radius_m, query?)`, avec `next_free_slots` | Accueil client |
 | Fiche salon | Vue `public_salons` + `services`, `opening_hours`, vue `public_stylists` | Fiche salon |
 | Mon ticket actif | RPC `my_active_ticket()` | App client |
 | File d'un coiffeur | RPC `get_stylist_queue()` (coiffeur connecté) | Espace coiffeur |
@@ -252,7 +252,7 @@ Hors `queue-command` : `auth.otp_rate_limited` (plafond de codes SMS, `auth-send
 | Aperçu d'une absence | RPC `preview_presence_change(member_id, status, until?)` : exécute le moteur sans rien écrire et renvoie les clients touchés et leur nouvelle heure (K2) | Dashboard |
 | Rendez-vous à confirmer | Inclus dans `get_salon_board` et `get_stylist_queue` | Dashboard, espace coiffeur |
 | Équipe, prestations, horaires | Tables, RLS gérant | Dashboard (écriture directe autorisée par RLS pour ces tables de configuration) |
-| Journal | RPC `get_audit_log(salon_id?, from, to, cursor)` | Dashboard, admin |
+| Journal | RPC `get_audit_log(salon_id?, from, to, type?, member_id?, cursor?)` | Dashboard, admin |
 
 Les tables de **configuration** (horaires, fermetures, prestations, spécialités des membres, infos du salon) sont modifiées directement par le gérant via supabase-js, sous RLS. Les tables de **file** (tickets, présences, événements, notifications) ne le sont jamais (ADR-003).
 
@@ -261,7 +261,7 @@ Les tables de **configuration** (horaires, fermetures, prestations, spécialité
 | Canal | Qui peut s'abonner | Messages |
 | --- | --- | --- |
 | `salon:{salon_id}` (privé) | Gérant et coiffeurs actifs du salon (appareils au lot 2) | `queue_updated { version }`, `queue_status_changed`, `presence_changed`, `appointment_pending` |
-| `ticket:{ticket_id}` (privé) | Propriétaire du ticket | `ticket_updated { version }` |
+| `ticket:{ticket_id}` (privé) | Propriétaire du ticket | `ticket_updated { version, status }` |
 | `salon-public:{salon_id}` (public, ADR-018) | Tout visiteur de la fiche salon | `salon_updated { version }` (attente, statut de la file, prochain créneau libre) |
 | `ticket-token:{token_key}` (public, ADR-018) | Porteur du lien `/t/:shortCode` | `ticket_updated { version }` |
 
