@@ -327,11 +327,11 @@ packages/i18n/src/fr/
   legal.json          consentements, CGU, confidentialité
 ```
 
-- Clés hiérarchiques en anglais, chaque segment en `snake_case` : `client.ticket.tracking.title`, `notifications.your_turn.sms`, `errors.queue.queue_closed`. Les modèles de notification suivent `notifications.<template>.<push|sms|email>[.<title|body|subject>]`, où `<template>` est la valeur de l'enum `notification_template`.
+- Clés hiérarchiques en anglais, chaque segment en `snake_case` : `client.ticket.tracking.title`, `notifications.your_turn.sms`, `errors.queue.queue_closed`. Les modèles de notification suivent `notifications.<template>[.<variante>].<push|sms|email>[.<title|body|subject>]`, où `<template>` est la valeur de l'enum `notification_template` (plus `auth.otp_code` et `signup_resume`, hors outbox) ; `<variante>` distingue un cas du même modèle (`ticket_created.appointment`, `stylist_change_required.no_wait`, `cancelled_by_salon.end_of_day`, `salon_decision.approved`) ; `notifications.<template>.reason.<code>` et `.actions.<action>` portent les motifs et les boutons des push. Variables ICU en `snake_case` (`{first_name}`, `{time}`).
 - Types générés depuis `fr` : une clé manquante ou mal écrite ne compile pas.
 - ESLint `i18next/no-literal-string` interdit les textes en dur dans les composants.
 - Pluriels et variables au format ICU (`i18next-icu`).
-- Un test vérifie que **chaque modèle SMS** tient en 160 caractères GSM-7 avec des valeurs de longueur maximale : prénom ≤ 30 caractères, nom du salon tronqué à 40 dans les SMS, accents et caractères hors GSM-7 translittérés avant l'envoi, lien court `zelate.fr/t/xxxxxxxx` (8 caractères, résolu côté serveur vers le jeton) (K5).
+- Un test vérifie que **chaque modèle SMS** tient en 160 caractères GSM-7 avec des valeurs de longueur maximale : prénom ≤ 30 caractères, nom du salon tronqué à 40 dans les SMS, accents et caractères hors GSM-7 translittérés avant l'envoi, lien court `zelate.fr/t/xxxxxxxx` (8 caractères, résolu côté serveur vers le jeton) (K5). 🟡 Adresse du salon tronquée à 30 caractères dans les SMS « préparez-vous » et « votre tour » (à confirmer, K20).
 - Chaque app ne charge que ses espaces de noms (`common` + les siens).
 
 ---

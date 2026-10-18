@@ -189,9 +189,9 @@
 | `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 ; partagée avec S-19 |
 | `pro-stylist.queue.pending_appointment_banner` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-S4) ; `aria-live="polite"` |
 | `pro-stylist.appointments.merge_suggestion` | _À rédiger_ | Fusion avec un rendez-vous déjà saisi (APP_FLOW F-S10) |
-| `common.appointment.confirm` | « Confirmer » | Partagée avec S-19 |
-| `common.appointment.reject` | « Refuser » | Partagée avec S-19 |
-| `common.appointment_badge` | « RDV {time} » | DESIGN_SYSTEM §2.4 ; partagée avec S-18 |
+| `common.actions.confirm` | « Confirmer » | Partagée avec S-19 |
+| `common.actions.reject` | « Refuser » | Partagée avec S-19 |
+| `common.appointment.badge` | « RDV {time} » | DESIGN_SYSTEM §2.4 ; partagée avec S-18 |
 | `pro-stylist.appointments.empty` | _À rédiger_ | État vide (APP_FLOW §8) |
 | `notifications.ticket_created.sms` | _À rédiger_ | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues ; partagée avec S-10, S-18 |
 | `notifications.appointment_confirmed.push.title` / `.body` | _À rédiger_ | Partagée avec S-19 |

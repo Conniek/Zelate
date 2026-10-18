@@ -73,7 +73,7 @@
 | --- | --- | --- |
 | `pro-manager.qr.title` | « QR code » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.qr.download` | « Télécharger le PDF A4 » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.qr.regenerate` | « Régénérer » | Libellé indicatif (APP_FLOW F-M2) |
+| `pro-manager.qr.regenerate.label` | « Régénérer » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.qr.regenerate.confirm` | — (à rédiger) | Doit dire que l'ancien QR cesse de fonctionner (APP_FLOW F-M2) |
 | `pro-manager.qr.poster.<element>` | — (à rédiger) | Textes imprimés sur l'affiche A4 |
 

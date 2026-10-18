@@ -87,8 +87,8 @@
 | `pro-manager.admin.audit.filters.period` | « Période » | — |
 | `pro-manager.admin.audit.filters.type` | « Type d'action » | — |
 | `pro-manager.admin.audit.filters.actor` | « Acteur » | — |
-| `pro-manager.admin.audit.event_type.<type>` | _À rédiger (absent des docs)_ | Une clé par valeur de `ticket_event_type` et de `salon_event_type` |
-| `pro-manager.admin.audit.actor_type.<type>` | _À rédiger (absent des docs)_ | Une clé par valeur de `actor_type` |
+| `pro-manager.audit.event_type.<type>` | _À rédiger (absent des docs)_ | Une clé par valeur de `ticket_event_type` et de `salon_event_type` |
+| `pro-manager.audit.actor_type.<type>` | _À rédiger (absent des docs)_ | Une clé par valeur de `actor_type` |
 | `pro-manager.admin.audit.empty` | _À rédiger (absent des docs)_ | — |
 
 ## Questions ouvertes

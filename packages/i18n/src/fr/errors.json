@@ -1,0 +1,66 @@
+{
+  "queue": {
+    "forbidden": "Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez.",
+    "invalid_transition": "Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran.",
+    "rate_limited": "Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez.",
+    "invalid_payload": "Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez.",
+    "queue_closed": "La file est fermée : aucune nouvelle inscription n'est possible pour le moment.",
+    "queue_paused": "La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise.",
+    "queue_full": "La file est complète pour aujourd'hui : les prochaines prestations finiraient après la fermeture.",
+    "already_has_active_ticket": "Ce numéro a déjà une place en cours. Une seule place à la fois est possible.",
+    "service_unavailable": "Cette prestation n'est plus proposée pour le moment. Choisissez-en une autre, puis réessayez.",
+    "stylist_unavailable": "Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez.",
+    "invalid_phone": "Ce numéro n'est pas valide. Saisissez un numéro de téléphone français.",
+    "appointment_overlap": "Ce créneau chevauche un autre rendez-vous de ce coiffeur. Choisissez une autre heure ou un autre coiffeur.",
+    "outside_opening_hours": "Cette heure est en dehors des horaires d'ouverture du salon. Choisissez une heure pendant l'ouverture.",
+    "appointment_in_past": "Cette heure est déjà passée. Choisissez une heure à venir.",
+    "appointment_not_editable": "Ce rendez-vous ne peut plus être modifié ni annulé, car il n'est plus en attente.",
+    "already_resolved": "Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran.",
+    "ticket_other_salon": "Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné.",
+    "invalid_delay": "Le retard doit être compris entre 5 et 30 min. Choisissez une autre durée.",
+    "unknown_code": "Ce code ne correspond à aucun ticket. Vérifiez-le avec le client, puis réessayez.",
+    "no_eligible_ticket": "Aucun client à appeler pour l'instant. Il a peut-être été pris par un collègue : vérifiez votre file.",
+    "call_already_in_progress": "Vous avez déjà un client appelé ou en prestation. Finissez avec lui avant d'appeler le suivant.",
+    "not_assigned_to_you": "Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket.",
+    "postpone_limit_reached": "Ce client a déjà reculé de 2 places, le maximum. Attendez son arrivée : sa place sera libérée à la fin du délai.",
+    "reassignment_pending": "Une demande de changement de coiffeur attend déjà la réponse du client. Patientez 10 min au plus.",
+    "salon_not_published": "Votre salon n'est pas encore publié : la file ne peut pas être ouverte. Publiez-le d'abord.",
+    "salon_already_published": "Votre salon est déjà publié : les tickets de test ne sont plus possibles."
+  },
+  "auth": {
+    "invalid_phone": "Ce numéro n'est pas valide. Vérifiez-le, puis réessayez.",
+    "phone_not_supported": "Zelaté accepte pour l'instant les numéros français uniquement (+33).",
+    "otp_rate_limited": "Trop de codes ont été demandés en peu de temps. Réessayez plus tard.",
+    "invalid_code": "Ce code n'est pas le bon. Vérifiez le SMS, puis réessayez.",
+    "code_expired": "Ce code a expiré. Demandez-en un nouveau.",
+    "too_many_attempts": "Trop d'essais. Patientez 5 min, puis demandez un nouveau code."
+  },
+  "validation": {
+    "siret_format": "Le SIRET compte 14 chiffres. Vérifiez votre saisie.",
+    "hours_order": "L'heure de fermeture doit être après l'heure d'ouverture.",
+    "hours_overlap": "Ces plages horaires se chevauchent. Modifiez-les pour qu'elles se suivent.",
+    "at_least_one_open_day": "Indiquez au moins un jour d'ouverture.",
+    "closure_dates": "La date de fin ne peut pas être avant la date de début.",
+    "closure_reason_length": "Le motif ne doit pas dépasser 120 caractères.",
+    "service_name": "Le nom de la prestation doit faire entre 2 et 60 caractères.",
+    "service_duration": "La durée doit être comprise entre 15 et 180 min, par pas de 5 min.",
+    "service_price": "Le prix ne peut pas être négatif.",
+    "at_least_one_active_service": "Gardez au moins une prestation active.",
+    "first_name": "Indiquez un prénom de 30 caractères au plus.",
+    "removal_note_length": "La note ne doit pas dépasser 200 caractères.",
+    "reject_reason_required": "Indiquez le motif du refus."
+  },
+  "team": {
+    "specialty_required": "Choisissez au moins une spécialité.",
+    "email_already_used": "Cette adresse e-mail est déjà utilisée. Vérifiez-la ou utilisez-en une autre.",
+    "limit_reached": "Votre salon compte déjà 20 coiffeurs, le maximum. Désactivez un compte pour en inviter un nouveau.",
+    "last_manager": "Le salon doit garder au moins un gérant : ce compte ne peut pas être désactivé."
+  },
+  "network": {
+    "request_failed": "La connexion a échoué. Vérifiez votre réseau, puis réessayez.",
+    "offline": "Vous êtes hors ligne. Reconnectez-vous à Internet pour continuer."
+  },
+  "generic": {
+    "unexpected": "Un problème est survenu de notre côté. Réessayez dans quelques instants."
+  }
+}

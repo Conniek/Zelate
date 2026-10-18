@@ -1,0 +1,483 @@
+{
+  "signup": {
+    "step": "Étape {step} sur {total}",
+    "draft_saved": "Brouillon enregistré",
+    "account": {
+      "title": "Votre compte",
+      "email": "E-mail",
+      "password": "Mot de passe",
+      "password_hint": "12 caractères minimum",
+      "first_name": "Prénom",
+      "last_name": "Nom"
+    },
+    "salon": {
+      "title": "Salon",
+      "name": "Nom du salon",
+      "phone": "Téléphone du salon",
+      "phone_hint": "Le numéro que vos clients peuvent appeler.",
+      "address": "Adresse du salon",
+      "address_hint": "Commencez à taper, puis choisissez l'adresse dans la liste.",
+      "siret": "SIRET",
+      "siret_hint": "14 chiffres",
+      "siret_checking": "Vérification du SIRET…",
+      "siret_valid": "SIRET vérifié : établissement actif, activité de coiffure",
+      "siret_to_verify": "À vérifier",
+      "siret_to_verify_hint": "Vous pouvez continuer : l'équipe Zelaté vérifiera votre dossier."
+    },
+    "hairdressing": {
+      "title": "Vous et la coiffure",
+      "label": "Je coiffe aussi",
+      "hint": "Vous recevrez aussi des clients. Vous pourrez changer ce choix à tout moment depuis le dashboard."
+    },
+    "review": {
+      "title": "Récapitulatif",
+      "edit": "Modifier"
+    },
+    "submit": "Envoyer mon dossier",
+    "pending": {
+      "title": "Dossier envoyé",
+      "body": "L'équipe Zelaté vérifie votre salon. Vous recevrez la réponse par e-mail.",
+      "setup_hint": "En attendant, préparez votre salon : horaires, équipe, prestations et QR code.",
+      "setup_cta": "Préparer mon salon"
+    }
+  },
+  "setup": {
+    "title": "Préparer mon salon",
+    "progress": "{done} sur {total} étapes terminées",
+    "team_phones": {
+      "title": "Téléphones de l'équipe",
+      "reminder": "Chaque coiffeur active son compte depuis son invitation et installe Zelaté Pro sur son téléphone."
+    },
+    "test": {
+      "title": "Test",
+      "intro": "Un client fictif « Test » rejoint la file. Appelez-le, saisissez son code, commencez puis terminez la prestation.",
+      "start": "Lancer un test",
+      "ticket_name": "Test",
+      "passed": "Test réussi"
+    },
+    "checklist": {
+      "title": "Avant de publier",
+      "application_approved": "Dossier validé par Zelaté",
+      "test_passed": "Test réussi",
+      "opening_hours": "Horaires renseignés",
+      "active_stylist": "Au moins 1 coiffeur actif",
+      "active_service": "Au moins 1 prestation",
+      "missing_hint": "Vous pourrez publier quand tous les points seront cochés.",
+      "pending_review_hint": "Votre dossier est en cours de validation : vous pourrez publier dès qu'il sera validé."
+    },
+    "publish": "Publier mon salon"
+  },
+  "hours": {
+    "title": "Horaires",
+    "range": {
+      "opens": "Ouverture",
+      "closes": "Fermeture",
+      "remove": "Supprimer la plage"
+    },
+    "day_closed": "Fermé",
+    "add_range": "Ajouter une plage",
+    "copy_to_week": "Copier sur la semaine",
+    "closures": {
+      "title": "Fermetures exceptionnelles",
+      "from": "Du",
+      "to": "Au",
+      "reason": "Motif (facultatif)",
+      "add": "Ajouter une fermeture"
+    }
+  },
+  "team": {
+    "title": "Équipe",
+    "add": "Ajouter un coiffeur",
+    "form": {
+      "first_name": "Prénom",
+      "last_name": "Nom",
+      "email": "E-mail",
+      "specialties": "Spécialités",
+      "specialties_hint": "Au moins une : le coiffeur reçoit les prestations qu'il maîtrise.",
+      "submit": "Envoyer l'invitation"
+    },
+    "status": {
+      "invited": "Invité",
+      "active": "Actif",
+      "deactivated": "Désactivé"
+    },
+    "menu": {
+      "label": "Actions pour {stylist_name}",
+      "revoke_sessions": "Déconnecter ses appareils",
+      "deactivate": "Désactiver"
+    },
+    "revoke_sessions": {
+      "title": "Déconnecter les appareils ?",
+      "confirm": "Toutes les sessions de ce compte seront coupées, par exemple sur un téléphone perdu ou changé. {stylist_name} pourra se reconnecter avec un lien reçu par e-mail.",
+      "submit": "Déconnecter les appareils"
+    },
+    "deactivate": {
+      "title": "Désactiver {stylist_name} ?",
+      "confirm": "L'accès sera retiré en 15 min au plus. {count, plural, =0 {Aucun client en attente ne demande ce coiffeur.} one {# client qui demandait {stylist_name} devra choisir « Premier disponible » ou annuler.} other {# clients qui demandaient {stylist_name} devront choisir « Premier disponible » ou annuler.}} Ses rendez-vous restants seront à réaffecter.",
+      "submit": "Désactiver"
+    }
+  },
+  "services": {
+    "title": "Prestations",
+    "suggestions_intro": "Cochez les prestations que vous proposez, puis ajustez la durée et le prix.",
+    "suggestions": {
+      "women_cut": "Coupe femme",
+      "men_cut": "Coupe homme",
+      "kids_cut": "Coupe enfant",
+      "beard": "Taille de barbe",
+      "color": "Coloration",
+      "highlights": "Mèches",
+      "braids": "Tresses",
+      "curly_hair": "Coupe cheveux bouclés",
+      "styling": "Brushing",
+      "treatment": "Soin"
+    },
+    "add": "Ajouter",
+    "field": {
+      "name": "Nom de la prestation",
+      "duration": "Durée (min)",
+      "duration_hint": "De 15 à 180 min, par pas de 5 min",
+      "price": "Prix (€)",
+      "specialty": "Spécialité requise",
+      "specialty_none": "Aucune"
+    }
+  },
+  "qr": {
+    "title": "QR code",
+    "download": "Télécharger le PDF A4",
+    "regenerate": {
+      "label": "Régénérer",
+      "confirm_title": "Régénérer le QR code ?",
+      "confirm": "L'ancien QR code cessera de fonctionner : les clients qui le scanneront ne pourront plus rejoindre la file. Imprimez la nouvelle affiche et remplacez l'ancienne.",
+      "confirm_submit": "Régénérer le QR code"
+    },
+    "poster": {
+      "welcome": "Bienvenue chez {salon_name}",
+      "headline": "Rejoignez la file sans attendre sur place",
+      "scan": "Scannez ce code avec l'appareil photo de votre téléphone.",
+      "benefit": "Suivez votre heure de passage en direct et revenez au bon moment.",
+      "appointment": "Vous avez rendez-vous ? Scannez et choisissez « J'ai rendez-vous ».",
+      "no_install": "Depuis votre navigateur, sans rien installer.",
+      "footer": "Zelaté"
+    }
+  },
+  "queue_status": {
+    "label": "État de la file",
+    "open": "Ouvrir",
+    "pause": "Pause",
+    "pause_hint": "Plus de nouveaux clients ; les inscrits restent et continuent d'être appelés.",
+    "close": "Fermer",
+    "close_confirm_title": "Fermer la file ?",
+    "close_confirm": "Aucun nouveau client ne pourra rejoindre la file. {count, plural, =0 {Aucun client n'attend en ce moment.} one {Le client en attente sera servi jusqu'à la fin de journée.} other {Les # clients en attente seront servis jusqu'à la fin de journée.}}",
+    "close_confirm_submit": "Fermer la file"
+  },
+  "board": {
+    "header": {
+      "waiting_count": "{count, plural, =0 {Aucun client en attente} one {# client en attente} other {# clients en attente}}",
+      "average_wait": "Attente moyenne ~{minutes} min",
+      "synced": "Synchronisé"
+    },
+    "offline_banner": "Connexion perdue : les actions sont bloquées jusqu'au retour du réseau.",
+    "hairdressing": {
+      "label": "Je coiffe"
+    },
+    "take_next": "Je prends le prochain",
+    "appointments": "Rendez-vous",
+    "pending_appointments": {
+      "banner": "{count, plural, one {# rendez-vous à confirmer} other {# rendez-vous à confirmer}}"
+    },
+    "ticket": {
+      "appointment_time": "RDV {time}",
+      "appointment_delay": "{minutes} min de retard",
+      "awaiting_client_answer": "En attente de réponse"
+    },
+    "empty": "Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct."
+  },
+  "walk_in": {
+    "open": "+ Client à l'accueil",
+    "shortcut": "Raccourci clavier : N",
+    "title": "Client à l'accueil",
+    "first_name": "Prénom",
+    "phone": "Téléphone",
+    "phone_hint": "Le client reçoit son lien de suivi par SMS. Le numéro est masqué dès l'enregistrement.",
+    "service": "Prestation (facultative)",
+    "service_hint": "Sans prestation, 30 min sont prévues.",
+    "stylist": "Coiffeur (facultatif)",
+    "submit": "Inscrire",
+    "success": "{first_name} est dans la file."
+  },
+  "ticket_panel": {
+    "complete": "Terminer la prestation",
+    "complete_confirm": "Terminer la prestation pour {first_name} ? L'action sera inscrite au journal à votre nom.",
+    "remove": "Retirer de la file",
+    "reassign": "Changer de coiffeur"
+  },
+  "presence": {
+    "menu": {
+      "label": "Statut de {stylist_name}",
+      "absent": "Absent",
+      "late": "En retard",
+      "leaving_early": "Part plus tôt",
+      "break": "Pause"
+    },
+    "form": {
+      "title": {
+        "absent": "{stylist_name} : absence",
+        "late": "{stylist_name} : retard",
+        "leaving_early": "{stylist_name} : départ plus tôt",
+        "break": "{stylist_name} : pause"
+      },
+      "expected_back_at": "Heure d'arrivée prévue",
+      "shift_end_at": "Heure de départ",
+      "break_type": "Type de pause",
+      "break_duration": "Durée de la pause"
+    },
+    "impact": {
+      "title": "Clients touchés",
+      "none": "Aucun client touché.",
+      "new_time": "Passage à {new_time} au lieu de {old_time}",
+      "reassigned": "{count, plural, one {# client réassigné automatiquement} other {# clients réassignés automatiquement}}",
+      "client_to_confirm": "{count, plural, one {# client demandait ce coiffeur : à confirmer par le client} other {# clients demandaient ce coiffeur : à confirmer par chaque client}}",
+      "appointments_to_reassign": "{count, plural, one {# rendez-vous à réaffecter} other {# rendez-vous à réaffecter}}",
+      "called_back_to_top": "{first_name} (appel en cours) passe en tête de file pour le premier coiffeur libre.",
+      "service_to_complete": "Prestation en cours pour {first_name} : à terminer par vous depuis le panneau du ticket.",
+      "nobody_notified_yet": "Aucun client n'est prévenu avant votre confirmation."
+    },
+    "confirm": "Confirmer"
+  },
+  "remove": {
+    "title": "Retirer {first_name} de la file",
+    "reason": {
+      "label": "Motif",
+      "emergency": "Urgence",
+      "client_request": "Demande du client",
+      "duplicate": "Doublon",
+      "inappropriate_behaviour": "Comportement inapproprié",
+      "other": "Autre motif"
+    },
+    "note": "Précision (facultative)",
+    "note_hint": "200 caractères maximum.",
+    "client_notice": "Le client sera prévenu avec ce motif, des excuses et des salons proches.",
+    "submit": "Retirer"
+  },
+  "reassign": {
+    "title": "Changer de coiffeur pour {first_name}",
+    "new_time": "Passage estimé à {time}",
+    "delay_warning": "L'heure du client reculerait de {minutes} min : il recevra une demande.",
+    "send_request": "Envoyer la demande",
+    "request_sent": "Demande envoyée. Sans réponse du client en 10 min, rien ne change."
+  },
+  "end_of_day": {
+    "banner": {
+      "title": "Fin de journée",
+      "body": "{count, plural, =0 {Aucun client ne risque de passer après la fermeture de {time}.} one {# client risque de ne pas être pris avant la fermeture de {time}.} other {# clients risquent de ne pas être pris avant la fermeture de {time}.}}"
+    },
+    "response": {
+      "stay": "Reste",
+      "cancel": "Annule",
+      "none": "Sans réponse"
+    },
+    "close_now": "Fermer la file maintenant",
+    "closing": {
+      "title": "{count, plural, one {# client attend encore} other {# clients attendent encore}}",
+      "body": "Décidez pour chaque client. Sans décision de votre part, ils seront annulés avec excuses à {time}.",
+      "serve_hint": "Servir : le client reste dans la file. S'il n'est pas pris avant la fin de la journée, il est annulé avec excuses.",
+      "serve": "Servir",
+      "cancel": "Annuler avec excuses",
+      "all": "Tous",
+      "cancel_all_confirm": "{count, plural, one {Annuler avec excuses le client restant ? Il recevra un message d'excuse et des salons proches.} other {Annuler avec excuses les # clients restants ? Ils recevront un message d'excuse et des salons proches.}}"
+    }
+  },
+  "appointments": {
+    "title": "Rendez-vous du jour",
+    "new": "+ Rendez-vous",
+    "shortcut": "Raccourci clavier : R",
+    "form": {
+      "title_new": "Nouveau rendez-vous",
+      "title_edit": "Modifier le rendez-vous",
+      "first_name": "Prénom",
+      "time": "Heure",
+      "time_hint": "Par pas de 5 min, pendant les horaires d'ouverture.",
+      "stylist": "Coiffeur",
+      "service": "Prestation (facultative)",
+      "phone": "Téléphone (facultatif)",
+      "phone_hint": "Avec un numéro, le client reçoit son lien de suivi par SMS. Le numéro est masqué dès l'enregistrement.",
+      "submit": "Ajouter le rendez-vous",
+      "submit_edit": "Enregistrer les modifications"
+    },
+    "edit": "Modifier",
+    "cancel": "Annuler le rendez-vous",
+    "cancel_dialog": {
+      "title": "Annuler ce rendez-vous ?",
+      "summary": "{first_name}, {time}, avec {stylist_name}",
+      "reason": "Motif",
+      "client_notice": "S'il a laissé un numéro, le client sera prévenu avec ce motif.",
+      "keep": "Garder le rendez-vous",
+      "submit": "Annuler le rendez-vous"
+    },
+    "status": {
+      "upcoming": "À venir",
+      "late": "En retard de {minutes} min",
+      "arrived": "Arrivé",
+      "pending_confirmation": "À confirmer"
+    },
+    "empty": "Aucun rendez-vous aujourd'hui. Ajoutez-en un avec « + Rendez-vous ».",
+    "pending": {
+      "title": "À confirmer",
+      "announced_time": "Rendez-vous annoncé à {time}",
+      "unknown_stylist": "Coiffeur non précisé par le client",
+      "merge_suggestion": "Rapprocher du rendez-vous déjà saisi : {first_name}, {time}, avec {stylist_name}",
+      "reminder": "Signalé il y a plus de 10 min : confirmez ou refusez."
+    }
+  },
+  "summary": {
+    "title": "Récapitulatif du jour",
+    "served": "{count, plural, =0 {Aucun client servi} one {# client servi} other {# clients servis}}",
+    "announced_wait": "Attente annoncée : ~{minutes} min",
+    "actual_wait": "Attente réelle : ~{minutes} min",
+    "no_shows": "{count, plural, =0 {Aucune absence} one {# absence} other {# absences}}",
+    "cancellations": "{count, plural, =0 {Aucune annulation} one {# annulation} other {# annulations}}",
+    "empty": "Aucun client servi aujourd'hui pour l'instant."
+  },
+  "audit": {
+    "title": "Journal du salon",
+    "columns": {
+      "actor": "Qui",
+      "date": "Quand",
+      "action": "Quoi",
+      "reason": "Motif"
+    },
+    "filters": {
+      "date": "Période",
+      "from": "Du",
+      "to": "Au",
+      "stylist": "Coiffeur",
+      "all_stylists": "Tous les coiffeurs",
+      "type": "Type d'action",
+      "all_types": "Tous les types"
+    },
+    "event_type": {
+      "created": "Ticket créé",
+      "assigned": "Coiffeur attribué",
+      "reassigned": "Changement de coiffeur",
+      "estimate_changed": "Heure de passage recalculée",
+      "eta_responded": "Réponse à « Votre tour approche »",
+      "postponed": "Client reculé dans la file",
+      "stylist_change_requested": "Choix de coiffeur demandé au client",
+      "stylist_change_resolved": "Choix de coiffeur fait",
+      "arrival_confirmed": "Arrivée confirmée par le code",
+      "called": "Client appelé",
+      "service_started": "Prestation commencée",
+      "duration_adjusted": "Durée de prestation ajustée",
+      "completed": "Prestation terminée",
+      "cancelled": "Ticket annulé",
+      "no_show": "Client absent, place libérée",
+      "end_of_day_warned": "Alerte de fin de journée envoyée",
+      "end_of_day_responded": "Réponse à l'alerte de fin de journée",
+      "appointment_checked_in": "Rendez-vous signalé par le client",
+      "appointment_confirmed": "Rendez-vous confirmé",
+      "appointment_rejected": "Rendez-vous refusé",
+      "appointment_updated": "Rendez-vous modifié",
+      "appointment_delay_warned": "Retard annoncé au client du rendez-vous",
+      "reassignment_requested": "Changement de coiffeur proposé au client",
+      "reassignment_resolved": "Réponse au changement de coiffeur",
+      "submitted": "Dossier envoyé",
+      "approved": "Dossier validé",
+      "rejected": "Dossier refusé",
+      "published": "Salon publié",
+      "suspended": "Salon suspendu",
+      "queue_opened": "File ouverte",
+      "queue_paused": "File mise en pause",
+      "queue_closed": "File fermée",
+      "closing_resolved": "Décision pour un client restant à la fermeture",
+      "presence_changed": "Statut d'un coiffeur modifié",
+      "hairdressing_toggled": "« Je coiffe » activé ou coupé",
+      "member_invited": "Coiffeur invité",
+      "member_activated": "Compte coiffeur activé",
+      "member_deactivated": "Coiffeur désactivé",
+      "member_sessions_revoked": "Appareils d'un coiffeur déconnectés",
+      "qr_regenerated": "QR code régénéré",
+      "settings_updated": "Réglages du salon modifiés",
+      "admin_viewed_client_data": "Données client consultées par l'équipe Zelaté"
+    },
+    "actor_type": {
+      "client": "Client",
+      "stylist": "Coiffeur",
+      "manager": "Gérant",
+      "system": "Zelaté (automatique)",
+      "admin": "Équipe Zelaté"
+    },
+    "reason": {
+      "client_cancelled": "Annulé par le client",
+      "removed_by_salon": "Retiré par le salon",
+      "stylist_unavailable": "Coiffeur indisponible",
+      "end_of_day": "Fin de journée",
+      "appointment_rejected": "Rendez-vous refusé par le salon",
+      "take_next": "Retard déclaré : le coiffeur a pris le suivant"
+    },
+    "postponed_places": "{count, plural, one {Reculé de # place} other {Reculé de # places}}",
+    "load_more": "Afficher plus",
+    "empty": "Aucune action pour ces filtres. Élargissez la période ou retirez un filtre."
+  },
+  "admin": {
+    "salons": {
+      "title": "Dossiers des salons",
+      "filters": {
+        "to_review": "À traiter",
+        "all": "Tous les dossiers"
+      },
+      "columns": {
+        "name": "Salon",
+        "city": "Ville",
+        "submitted_at": "Envoyé le",
+        "siret": "SIRET"
+      },
+      "siret": {
+        "valid": "SIRET vérifié",
+        "to_check": "SIRET à vérifier",
+        "invalid": "SIRET non valide"
+      },
+      "empty": "Aucun dossier à traiter."
+    },
+    "salon": {
+      "sections": {
+        "submitted_data": "Données saisies",
+        "company_check": "Recherche d'entreprises",
+        "map": "Position du salon"
+      },
+      "siret_result": {
+        "valid": "Établissement actif, code NAF de coiffure (96.02A ou 96.02B)",
+        "naf_mismatch": "Établissement actif, code NAF hors coiffure",
+        "inactive": "Établissement inactif",
+        "not_found": "SIRET introuvable",
+        "error": "Vérification impossible : service indisponible"
+      },
+      "approve": "Valider",
+      "reject": "Refuser",
+      "reject_reason": {
+        "label": "Motif du refus",
+        "hint": "Le gérant reçoit ce motif par e-mail."
+      },
+      "reject_submit": "Envoyer le refus"
+    },
+    "audit": {
+      "title": "Journal global",
+      "columns": {
+        "salon": "Salon",
+        "actor": "Qui",
+        "date": "Quand",
+        "action": "Quoi",
+        "reason": "Motif"
+      },
+      "filters": {
+        "salon": "Salon",
+        "all_salons": "Tous les salons",
+        "period": "Période",
+        "type": "Type d'action",
+        "actor": "Acteur",
+        "all_actors": "Tous les acteurs"
+      },
+      "empty": "Aucun événement pour ces filtres. Élargissez la période ou retirez un filtre."
+    }
+  }
+}

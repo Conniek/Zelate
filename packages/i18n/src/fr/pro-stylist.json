@@ -1,0 +1,133 @@
+{
+  "invite": {
+    "activate_button": "Activer mon compte",
+    "check_email": "Ouvrez sur votre téléphone le lien reçu par e-mail",
+    "link_invalid": "Ce lien n'est plus valable. Demandez une nouvelle invitation à votre gérant."
+  },
+  "install": {
+    "prompt": "Installez Zelaté Pro pour ouvrir votre file d'un geste.",
+    "install": "Installer",
+    "later": "Plus tard",
+    "ios_steps": "Touchez « Partager », puis « Sur l'écran d'accueil », puis « Ouvrir »."
+  },
+  "signin": {
+    "email_label": "E-mail",
+    "request_link": "Recevoir mon lien",
+    "link_sent": "Lien envoyé. Ouvrez-le sur ce téléphone.",
+    "access_revoked": "Votre accès a été retiré. Contactez votre gérant.",
+    "sessions_revoked": "Votre session a été fermée. Reconnectez-vous avec votre e-mail."
+  },
+  "presence": {
+    "ready": "Je suis disponible",
+    "break": "Pause",
+    "break_sheet_title": "Prendre une pause",
+    "break_type_label": "Type",
+    "break_duration_label": "Durée",
+    "break_start": "Partir en pause",
+    "break_countdown": "Pause · encore {minutes} min",
+    "resume": "Reprendre",
+    "end_of_day": "Fin de journée",
+    "end_of_day_time_label": "Heure de fin",
+    "end_of_day_now": "Maintenant",
+    "end_of_day_later": "Plus tard",
+    "end_of_day_confirm": "{count, plural, =0 {Aucun client n'attend chez vous.} one {{first_names} passera chez un collègue ou choisira de vous attendre.} other {{first_names} passeront chez vos collègues ou choisiront de vous attendre.}}",
+    "end_of_day_appointments": "{count, plural, one {Rendez-vous restant : {first_names}. Le gérant le réaffectera.} other {Rendez-vous restants : {first_names}. Le gérant les réaffectera.}}",
+    "end_of_day_submit": "Terminer ma journée"
+  },
+  "connection": {
+    "lost": "Connexion perdue. Reconnexion en cours…",
+    "restored": "Connexion rétablie"
+  },
+  "queue": {
+    "title": "Ma file",
+    "pending_appointment_banner": "Rendez-vous à confirmer",
+    "pending_appointment": {
+      "title": "Rendez-vous à confirmer",
+      "banner": "{first_name} dit avoir rendez-vous à {time}",
+      "confirm": "Confirmer",
+      "reject": "Refuser"
+    },
+    "next_client": "Prochain client",
+    "requested_you": "Vous demande",
+    "up_next": "Ensuite",
+    "empty": "Aucun client pour l'instant. Les prochains s'afficheront ici.",
+    "my_appointments": "Mes rendez-vous",
+    "call": "Appeler"
+  },
+  "call": {
+    "title": "Appel en cours",
+    "countdown": "{minutes, plural, =0 {Place libérée dans moins d'1 min} other {Place libérée dans # min}}",
+    "reminder_sent": "Rappel envoyé",
+    "declared_delay": "Retard annoncé : {minutes} min",
+    "released_banner": "Place de {first_name} libérée faute d'arrivée. Appelez le suivant."
+  },
+  "arrival": {
+    "enter_code": "Saisir le code",
+    "code_hint": "Demandez son code au client",
+    "code_pad_label": "Code du ticket, 5 caractères",
+    "submit": "Valider",
+    "arrived": "Arrivé"
+  },
+  "take_next": {
+    "button": "Prendre le suivant",
+    "confirm": "{first_name} passera après {count, plural, one {# client} other {# clients}}."
+  },
+  "start": {
+    "open": "Commencer",
+    "sheet_title": "Commencer la prestation",
+    "service_label": "Prestation",
+    "duration_label": "Durée",
+    "duration_decrease": "Retirer 5 min",
+    "duration_increase": "Ajouter 5 min",
+    "confirm": "Commencer"
+  },
+  "service": {
+    "in_progress": "En cours",
+    "elapsed_planned": "{elapsed_minutes} min sur {planned_minutes} min",
+    "estimated_end": "Fin vers {time}",
+    "adjust_5": "+5",
+    "adjust_15": "+15",
+    "adjust_30": "+30",
+    "adjust_45": "+45",
+    "adjust_label": "Ajouter {minutes} min à la prestation",
+    "complete": "Terminer",
+    "complete_hint": "Maintenez pour terminer",
+    "complete_confirm": "Terminer la prestation de {first_name} ?"
+  },
+  "appointments": {
+    "title": "Mes rendez-vous",
+    "back_to_queue": "Retour à ma file",
+    "new": "Ajouter un rendez-vous",
+    "empty": "Aucun rendez-vous aujourd'hui. Ajoutez ici ceux de vos clients.",
+    "status": {
+      "upcoming": "À venir",
+      "late": "En retard de {minutes} min"
+    },
+    "form": {
+      "title_new": "Nouveau rendez-vous",
+      "title_edit": "Modifier le rendez-vous",
+      "first_name": "Prénom",
+      "time": "Heure",
+      "service": "Prestation (facultatif)",
+      "phone": "Téléphone (facultatif)",
+      "phone_hint": "Pour prévenir le client par SMS. Le numéro ne sera plus affiché.",
+      "submit": "Ajouter",
+      "save": "Enregistrer"
+    },
+    "edit": "Modifier",
+    "cancel": "Annuler",
+    "cancel_confirm": "Annuler le rendez-vous de {first_name} à {time} ? Le client sera prévenu s'il a laissé son numéro.",
+    "cancel_submit": "Annuler le rendez-vous",
+    "cancel_keep": "Garder",
+    "merge_suggestion": "Vous aviez déjà saisi {first_name} à {time}. En confirmant, les deux rendez-vous n'en feront qu'un.",
+    "merge_confirm": "Regrouper et confirmer"
+  },
+  "summary": {
+    "title": "Mon bilan du jour",
+    "clients_served": "Clients servis",
+    "avg_duration_by_service": "Durée moyenne par prestation",
+    "planned_vs_actual": "Écart prévu / réel",
+    "empty": "Aucun client servi aujourd'hui. Votre bilan se remplira à la première prestation terminée.",
+    "back_to_queue": "Retour à ma file"
+  }
+}
