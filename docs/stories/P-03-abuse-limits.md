@@ -54,18 +54,30 @@
 - **Étant donné** que j'ai été appelé et que mon arrivée n'est pas validée
 - **Quand** 10 min se sont écoulées depuis l'appel
 - **Alors** mon ticket passe au statut « Absent »
-- **Et** mon compteur d'absences augmente de 1
+- **Et** une ligne est ajoutée dans `private.no_show_records` avec l'empreinte de mon numéro, le ticket et l'heure
 
-### 9. Une annulation ne compte pas comme absence
-- **Étant donné** que mon ticket est « En attente »
+### 9. Une annulation ne compte pas comme absence, même une fois appelé (E3)
+- **Étant donné** que mon ticket est « En attente » ou « Appelé »
 - **Quand** je l'annule
-- **Alors** mon compteur d'absences ne change pas
+- **Alors** aucune ligne n'est ajoutée dans `private.no_show_records`
 
-### 10. Avertissement à la 5e absence en 30 jours
+### 10. Avertissement à la 5e absence en 30 jours (E10)
 - **Étant donné** que j'ai 4 absences dans les 30 derniers jours
 - **Quand** une 5e absence est enregistrée
-- **Alors** un avertissement est émis (destinataire et canal à préciser, voir questions ouvertes)
+- **Alors** je reçois la notification `no_show_warning` par push, ou par SMS si je n'ai pas de push actif
 - **Et** je peux toujours rejoindre une file : aucun blocage n'est appliqué
+- **Et** ni le gérant ni l'admin ne reçoivent d'avertissement
+
+### 10 bis. Absences comptées tous salons confondus (E10, K8)
+- **Étant donné** que j'ai 2 absences au salon A et 2 au salon B dans les 30 derniers jours
+- **Quand** une 5e absence est enregistrée au salon C
+- **Alors** je reçois la notification `no_show_warning`
+
+### 10 ter. Absences d'un client inscrit à l'accueil (K8)
+- **Étant donné** qu'un numéro a 4 absences en 30 jours, dont certaines sur des tickets inscrits à l'accueil (walk-in) dont le contact a été effacé 24 h après la clôture
+- **Quand** une 5e absence est enregistrée pour ce numéro, depuis l'app ou à l'accueil
+- **Alors** les 5 absences sont comptées, l'empreinte du numéro étant calculée avec le même secret pour un client connecté et pour un walk-in
+- **Et** la notification `no_show_warning` part vers ce numéro
 
 ### 11. Pas d'avertissement en dessous du seuil
 - **Étant donné** que j'ai 3 absences dans les 30 derniers jours
@@ -77,6 +89,7 @@
 - **Quand** l'avertissement est évalué
 - **Alors** seules 4 absences comptent dans les 30 derniers jours
 - **Et** aucun avertissement n'est émis
+- **Et** la ligne de plus de 30 jours est supprimée de `private.no_show_records` par la tâche de nuit
 
 ### 13. Confidentialité de l'avertissement
 - **Étant donné** qu'un client a atteint 5 absences en 30 jours
@@ -88,16 +101,23 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `errors.queue.already_has_active_ticket` | _À rédiger (absent des docs)_ | Partagé avec U-04 ; ne révèle ni numéro ni autre salon |
-| `errors.queue.rate_limited` | _À rédiger (absent des docs)_ | Partagé avec U-03, U-04 |
+| `errors.queue.rate_limited` | _À rédiger (absent des docs)_ | Plafond de création de tickets ; partagé avec U-04 |
+| `errors.auth.otp_rate_limited` | _À rédiger (absent des docs)_ | Plafond de codes SMS ; partagé avec U-03 |
 | `errors.auth.phone_not_supported` | _À rédiger (absent des docs)_ | Partagé avec U-03 |
-| `client.abuse.no_show_warning` | _À rédiger (absent des docs)_ | Destinataire et canal à préciser ; SMS : 160 caractères GSM-7 au plus si c'est un SMS |
+| `notifications.no_show_warning.push` | _À rédiger (absent des docs)_ | Avertissement seul, sans blocage (E10) |
+| `notifications.no_show_warning.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus, accents translittérés (K5) ; si pas de push |
 
 ## Questions ouvertes
-- **PRD §5.1 / PRD §11 décision 17** : « avertissement seul après 5 absences en 30 jours ». Qui reçoit l'avertissement (le client, le gérant, l'admin) ? Par quel canal, à quel moment, avec quel texte ? Les absences se comptent-elles par salon ou tous salons confondus ?
-- **BACKEND_SCHEMA** : aucune colonne ni table ne stocke le compteur d'absences ou l'avertissement. Faut-il les calculer à partir de `tickets.no_show_at` ? APP_FLOW §7 affiche un « compteur d'absences » sur le dashboard : que voit exactement le gérant ?
-- **BACKEND_SCHEMA §5** : un client inscrit à l'accueil n'a pas de `client_id`, et `private.ticket_contacts` (seul lien avec son numéro) est supprimé 24 h après la clôture du ticket. Ses absences ne peuvent donc pas être comptées sur 30 jours. Faut-il les compter, et comment ?
-- **PRD P-03 / TRD §7** : le PRD ne chiffre pas les plafonds de codes SMS. TRD §7 indique 5 par heure et par numéro, 20 par heure et par IP. Faut-il reporter ces valeurs dans le PRD et les utiliser pour les tests ? La « fenêtre » d'une heure est-elle glissante ou fixe ?
-- **BACKEND_SCHEMA §5** : `private.rate_limits` prévoit aussi un plafond de « création de tickets », absent du PRD. Quelle valeur ? Est-ce bien `queue.rate_limited` qui est renvoyé ?
-- **TRD §6.1** : quel code d'erreur `auth-send-sms` renvoie-t-il quand un plafond est atteint (voir U-03) ?
+- **Résolu le 18/10** (E10) — Avertissement : envoyé au client, par notification, à la 5e absence en 30 jours, tous salons confondus ; voir scénarios 10 et 10 bis. Reste à rédiger le texte.
+- **Résolu le 18/10** (K8) — Stockage des absences : `private.no_show_records`, une ligne par absence et par empreinte du numéro, 30 jours glissants, purge chaque nuit ; voir scénarios 8 et 12.
+- **APP_FLOW §7 / BACKEND_SCHEMA §5** : la ligne « Libération » d'APP_FLOW §7 affiche un « compteur d'absences » sur le dashboard, alors que `private.no_show_records` n'est jamais lisible par un salon. Que voit exactement le gérant : le nombre d'absences du jour de son salon (`tickets.no_show_at`), ou autre chose ? Il ne doit voir aucune absence venue d'un autre salon (scénario 13).
+- **Résolu le 18/10** (K8) — Absences des walk-ins : comptées grâce à l'empreinte du numéro, calculée avec le même secret pour tous ; voir scénario 10 ter.
+- **Résolu le 18/10** (PRD v1.1 P-03) — Valeurs des plafonds de codes SMS : 5 par heure et par numéro, 20 par heure et par IP ; voir scénarios 5 et 6.
+- **PRD P-03 / BACKEND_SCHEMA §5** : la fenêtre d'une heure est-elle glissante ou fixe (`private.rate_limits.window_start` laisse penser à une fenêtre fixe) ?
+- **BACKEND_SCHEMA §5** : `private.rate_limits` prévoit aussi un plafond de « création de tickets », absent du PRD. Quelle valeur, sur quelle clé ? Le code renvoyé est le code commun `queue.rate_limited` (TRD §6.2).
+- **Résolu le 18/10** (K1) — Code d'erreur de `auth-send-sms` : `auth.otp_rate_limited` (TRD §6.2).
+- **PRD §5.4** : le SMS « Avertissement d'absences » part « si pas de push », sans la mention « dans la limite du plafond » des autres lignes. Compte-t-il dans le plafond de 3 SMS du ticket (déjà clos) ou part-il hors plafond ?
+- **PRD §5.4 / BACKEND_SCHEMA §4.16** : `no_show_warning` n'est pas un message indispensable (seuls `ticket_created` et `your_turn` partent sans consentement, K11). Un client qui n'a pas coché « Me prévenir » ne serait donc jamais averti. Est-ce voulu ?
+- **BACKEND_SCHEMA §4.16 / §5** : vers quoi part `no_show_warning` pour un walk-in dont le contact (`private.ticket_contacts`) a été effacé ? Le numéro de la 5e absence est disponible, mais à quel ticket la notification est-elle rattachée (`notifications.ticket_id`) ?
 - **PRD §5.1 « isolation par salon »** : pour un walk-in déjà inscrit ailleurs, le message `already_has_active_ticket` affiché au gérant peut-il dire que le numéro a une place dans un autre salon ? Le scénario 2 suppose qu'il ne doit pas le dire.
-- **PRD §5.3** : P-03 est classée « S », alors que la règle « un seul ticket actif » est validée (PRD §5.1), garantie par un index du schéma et exigée par U-04 (I). Seuls les plafonds et l'avertissement seraient-ils « S » ?
+- **Résolu le 18/10** (PRD v1.1 §5.3) — Priorité : P-03 passe en I.
