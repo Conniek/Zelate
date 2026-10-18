@@ -135,11 +135,11 @@
 | `client.account.title` | « Compte » (libellé indicatif APP_FLOW §2.1) | — |
 | `client.account.first_name.label` | « Prénom » (libellé indicatif APP_FLOW F-C11) | 1 à 30 caractères |
 | `client.account.first_name.save` | _À rédiger (absent des docs)_ | — |
-| `errors.validation.first_name_length` | _À rédiger (absent des docs)_ | 1 à 30 caractères |
+| `errors.validation.first_name` | _À rédiger (absent des docs)_ | 1 à 30 caractères |
 | `legal.consent.tracking_notifications.switch` | « Notifications de suivi » | Désactivé par défaut |
 | `legal.consent.tracking_notifications.given_at` | _À rédiger (absent des docs)_ | Variable `date`, format fr-FR |
 | `client.account.export` | « Télécharger mes données » | — |
-| `client.account.delete` | « Supprimer mon compte » | — |
+| `client.account.delete.label` | « Supprimer mon compte » | — |
 | `client.account.delete.confirm_first` | _À rédiger (absent des docs)_ | Première confirmation |
 | `client.account.delete.confirm_second` | _À rédiger (absent des docs)_ | Seconde confirmation, bouton destructif à droite (`ConfirmDialog`) |
 | `client.account.delete.done` | _À rédiger (absent des docs)_ | — |

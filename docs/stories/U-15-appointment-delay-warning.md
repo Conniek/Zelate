@@ -113,7 +113,7 @@
 | `notifications.appointment_delay.push` | « Le salon a du retard, venez vers {time} » (indicatif, APP_FLOW F-C13) | Variable `time` |
 | `notifications.appointment_delay.sms` | « Le salon a du retard, venez vers {time} » (indicatif, APP_FLOW F-C13) | SMS : 160 caractères GSM-7 au plus, nom de salon tronqué à 40, accents translittérés ; dans le plafond de 3 SMS |
 | `client.ticket.appointment.summary` | « Rendez-vous à {scheduledTime} · passage prévu vers {startTime} » | Exemple APP_FLOW F-C5 ; partagé avec U-14 |
-| `common.badges.appointment_late` | « RDV {time} · +{minutes} min » | Exemple DESIGN_SYSTEM §2.4 « RDV 14h30 · +20 min » |
+| `common.appointment.badge_late` | « RDV {time} · +{minutes} min » | Exemple DESIGN_SYSTEM §2.4 « RDV 14h30 · +20 min » |
 | `errors.queue.invalid_phone` | _À rédiger (absent des docs)_ | Côté salon ; partagé avec S-10 |
 | `errors.queue.already_has_active_ticket` | _À rédiger (absent des docs)_ | Côté salon : ne nomme pas l'autre salon |
 

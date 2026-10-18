@@ -103,8 +103,8 @@
 | `notifications.estimate_changed.push.title` / `.body` | À rédiger (REQ-3) | Push seulement ; raison : prestation précédente terminée plus tôt |
 | `errors.queue.invalid_transition` | À rédiger (REQ-3) | Voir C-04 |
 | `errors.queue.not_assigned_to_you` | À rédiger (REQ-3) | Voir C-06 |
-| `pro-manager.board.ticket.complete_service` | « Terminer la prestation » | APP_FLOW F-M6, panneau ticket (E15) |
-| `pro-manager.board.ticket.complete_service_confirm` | À rédiger (REQ-3) | Confirmation avant `complete_service` au nom du gérant |
+| `pro-manager.ticket_panel.complete` | « Terminer la prestation » | APP_FLOW F-M6, panneau ticket (E15) |
+| `pro-manager.ticket_panel.complete_confirm` | À rédiger (REQ-3) | Confirmation avant `complete_service` au nom du gérant |
 
 ## Questions ouvertes
 - [APP_FLOW / DESIGN_SYSTEM] APP_FLOW F-S7 : « appui long 600 ms, ou appui + confirmation » ; DESIGN_SYSTEM : la confirmation est l'alternative clavier (Entrée puis confirmation). Un appui bref au doigt ouvre-t-il une confirmation, ou ne fait-il rien ?

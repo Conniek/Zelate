@@ -217,8 +217,8 @@
 | `pro-manager.appointments.status.late` | « En retard de {minutes} min » | APP_FLOW F-M13 ; ICU |
 | `pro-manager.appointments.status.arrived` | « Arrivé » | APP_FLOW F-M13 |
 | `pro-manager.appointments.status.pending_confirmation` | « À confirmer » | APP_FLOW F-M13, DESIGN_SYSTEM §2.4 |
-| `common.appointment_badge` | « RDV {time} » | DESIGN_SYSTEM §2.4 (`AppointmentBadge`) |
-| `common.appointment_badge_late` | « RDV {time} · +{minutes} min » | DESIGN_SYSTEM §2.4 |
+| `common.appointment.badge` | « RDV {time} » | DESIGN_SYSTEM §2.4 (`AppointmentBadge`) |
+| `common.appointment.badge_late` | « RDV {time} · +{minutes} min » | DESIGN_SYSTEM §2.4 |
 | `pro-manager.appointments.empty` | _À rédiger_ | État vide (APP_FLOW §8) |
 | `notifications.ticket_created.sms` | _À rédiger_ | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues (TRD §9) ; variante rendez-vous : heure du rendez-vous, heure de passage, code, lien `zelate.fr/t/xxxxxxxx` (APP_FLOW §7) ; partagée avec S-10 |
 | `notifications.appointment_delay.push.title` / `.body` | _À rédiger_ | Exemple indicatif APP_FLOW F-C13 : « Le salon a du retard, venez vers 14h20 » |

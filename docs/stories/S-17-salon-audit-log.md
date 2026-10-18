@@ -126,7 +126,7 @@
 | `pro-manager.audit.filters.date` | _À rédiger_ | Filtre par date (APP_FLOW F-M11) |
 | `pro-manager.audit.filters.stylist` | _À rédiger_ | Filtre par coiffeur (APP_FLOW F-M11) |
 | `pro-manager.audit.filters.type` | _À rédiger_ | Filtre par type (APP_FLOW F-M11) |
-| `pro-manager.audit.event_type.<type>` | _À rédiger_ | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; à partager avec P-02 (`pro-manager.admin.audit.event_type.<type>`) ? |
+| `pro-manager.audit.event_type.<type>` | _À rédiger_ | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; à partager avec P-02 (`pro-manager.audit.event_type.<type>`) ? |
 | `pro-manager.audit.actor_type.<type>` | _À rédiger_ | Une clé par valeur de `actor_type` ; le client sans prénom |
 | `pro-manager.audit.reason.<reason_code>` | _À rédiger_ | Reprend `pro-manager.remove.reason.<removal_reason>` (S-12) pour les retraits |
 | `pro-manager.audit.load_more` | _À rédiger_ | Pagination |

@@ -123,7 +123,7 @@
 | `pro-manager.board.header.average_wait` | — (à rédiger) | Durée en minutes |
 | `pro-manager.board.header.synced` | « synchronisé » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | APP_FLOW §7 ; partagée avec S-13 |
-| `pro-manager.board.appointments_to_confirm` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-M6) |
+| `pro-manager.board.pending_appointments.banner` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.appointments` | « Rendez-vous » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.ticket.appointment_time` | — (à rédiger) | Heure du rendez-vous, format fr-FR |
 | `pro-manager.board.ticket.appointment_delay` | — (à rédiger) | Retard en minutes |

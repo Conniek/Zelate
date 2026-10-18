@@ -210,8 +210,8 @@
 | `client.join.guard.already_has_ticket` | « Vous avez déjà une place » | Partagé avec U-04 |
 | `pro-stylist.queue.pending_appointment.banner` | « Rendez-vous à confirmer » | Prénom et heure annoncée |
 | `pro-manager.board.pending_appointments.banner` | « Rendez-vous à confirmer » | — |
-| `pro-manager.appointments.to_confirm.title` | « À confirmer » | APP_FLOW F-M13 |
-| `common.status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 |
+| `pro-manager.appointments.pending.title` | « À confirmer » | APP_FLOW F-M13 |
+| `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 |
 | `common.actions.confirm` | « Confirmer » | — |
 | `common.actions.reject` | « Refuser » | — |
 | `notifications.appointment_confirmed.push` | _À rédiger (absent des docs)_ | Avec l'heure de passage |

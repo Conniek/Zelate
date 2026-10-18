@@ -1,0 +1,214 @@
+{
+  "ticket_created": {
+    "push": {
+      "title": "Vous êtes dans la file",
+      "body": "{salon_name} : {count, plural, =0 {personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Votre code : {code}."
+    },
+    "sms": "{salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link}",
+    "appointment": {
+      "push": {
+        "title": "Rendez-vous enregistré",
+        "body": "{salon_name} : rendez-vous à {appointment_time}, passage prévu vers {time}. Votre code : {code}."
+      },
+      "sms": "{salon_name} : rendez-vous de {appointment_time} enregistré, passage prévu vers {time}. Code {code}. Suivi : {link}"
+    }
+  },
+  "turn_approaching": {
+    "push": {
+      "title": "Votre tour approche",
+      "body": "{salon_name} : passage prévu vers {time}. Serez-vous à l'heure ?"
+    },
+    "actions": {
+      "on_time": "Je serai à l'heure",
+      "late": "En retard de…",
+      "cancel": "J'annule"
+    }
+  },
+  "get_ready": {
+    "push": {
+      "title": "Préparez-vous : passage vers {time}",
+      "body": "{salon_name}, {address}. Touchez pour voir l'itinéraire."
+    },
+    "sms": "{salon_name} : préparez-vous, passage vers {time}. Adresse : {address}. Itinéraire : {link}",
+    "actions": {
+      "directions": "Itinéraire"
+    }
+  },
+  "your_turn": {
+    "push": {
+      "title": "C'est votre tour !",
+      "body": "{stylist_first_name} vous attend, {address}. Code {code}. Vous avez 10 min pour arriver."
+    },
+    "sms": "Zelaté : c'est votre tour ! {stylist_first_name} vous attend, {address}. Code {code}. Venez sous 10 min : {link}"
+  },
+  "arrival_reminder": {
+    "push": {
+      "title": "Le salon vous attend",
+      "body": "Votre place sera libérée dans 5 min. Donnez le code {code} à {stylist_first_name} en arrivant."
+    }
+  },
+  "released_no_show": {
+    "push": {
+      "title": "Votre place a été libérée",
+      "body": "Le délai pour arriver chez {salon_name} est dépassé. Vous pouvez vous réinscrire."
+    },
+    "actions": {
+      "rejoin": "Me réinscrire"
+    }
+  },
+  "estimate_changed": {
+    "push": {
+      "title": "Votre heure de passage change",
+      "body": "Passage prévu vers {time} chez {salon_name}. {reason}"
+    },
+    "reason": {
+      "service_longer": "Une prestation est plus longue que prévu.",
+      "service_shorter": "Une prestation a été plus courte que prévu.",
+      "client_cancelled": "Un client avant vous a annulé.",
+      "client_postponed": "Un client en retard passe après vous.",
+      "stylist_break": "Un coiffeur fait une pause.",
+      "stylist_unavailable": "Un coiffeur n'est plus disponible.",
+      "stylist_available": "Un coiffeur est de nouveau disponible.",
+      "hairdressing_toggled": "Le nombre de coiffeurs disponibles a changé.",
+      "reassigned": "Le salon vous a confié à un autre coiffeur.",
+      "appointment_updated": "Le planning des rendez-vous a changé."
+    }
+  },
+  "postponed": {
+    "push": {
+      "title": "Votre place a reculé",
+      "body": "Vous aviez annoncé un retard, le coiffeur a pris le client suivant. Il reste {count, plural, one {# client} other {# clients}} avant vous."
+    }
+  },
+  "stylist_change_required": {
+    "push": {
+      "title": "Votre coiffeur n'est plus disponible",
+      "body": "Attendre {stylist_first_name} ou prendre le premier coiffeur disponible ? Sans réponse, rien ne change."
+    },
+    "sms": "{salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link}",
+    "no_wait": {
+      "push": {
+        "title": "Votre coiffeur n'est plus disponible",
+        "body": "{stylist_first_name} ne coiffe plus aujourd'hui. Sans réponse en 10 min, ce sera le premier disponible."
+      },
+      "sms": "{salon_name} : {stylist_first_name} ne coiffe plus aujourd'hui. Premier disponible ou annuler : {link}"
+    },
+    "actions": {
+      "wait": "Attendre",
+      "first_available": "Premier disponible",
+      "cancel": "Annuler ma place"
+    }
+  },
+  "reassignment_request": {
+    "push": {
+      "title": "Le salon propose un autre coiffeur",
+      "body": "Passer avec {stylist_first_name} vers {time}, plus tard que prévu ? Sans réponse en 10 min, rien ne change."
+    },
+    "actions": {
+      "accept": "Accepter",
+      "refuse": "Refuser"
+    }
+  },
+  "end_of_day_risk": {
+    "push": {
+      "title": "Le salon ferme bientôt",
+      "body": "{salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ?"
+    },
+    "sms": "{salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link}",
+    "actions": {
+      "stay": "Je reste",
+      "cancel": "J'annule"
+    }
+  },
+  "appointment_confirmed": {
+    "push": {
+      "title": "Rendez-vous confirmé",
+      "body": "{salon_name} confirme votre rendez-vous. Passage prévu vers {time}."
+    }
+  },
+  "appointment_rejected": {
+    "push": {
+      "title": "Rendez-vous non confirmé",
+      "body": "{salon_name} n'a pas pu confirmer votre rendez-vous. Vous pouvez rejoindre la file."
+    },
+    "actions": {
+      "join_queue": "Rejoindre la file"
+    }
+  },
+  "appointment_delay": {
+    "push": {
+      "title": "Le salon a du retard",
+      "body": "{salon_name} a du retard sur votre rendez-vous de {appointment_time}. Venez vers {time}."
+    },
+    "sms": "{salon_name} a du retard sur votre rendez-vous de {appointment_time} : venez vers {time}. Suivi : {link}"
+  },
+  "cancelled_by_salon": {
+    "push": {
+      "title": "Place annulée, toutes nos excuses",
+      "body": "{salon_name} a annulé votre place : {reason}. Voyez les salons proches."
+    },
+    "sms": "{salon_name} a annulé votre place : {reason}. Toutes nos excuses. Salons proches : {link}",
+    "reason": {
+      "emergency": "urgence au salon",
+      "client_request": "à votre demande",
+      "duplicate": "inscription en double",
+      "inappropriate_behaviour": "décision du salon",
+      "other": "imprévu au salon",
+      "stylist_unavailable": "aucun coiffeur disponible"
+    },
+    "end_of_day": {
+      "push": {
+        "title": "Place annulée, toutes nos excuses",
+        "body": "{salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Voyez les salons proches."
+      },
+      "sms": "{salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. Salons proches : {link}"
+    },
+    "actions": {
+      "nearby_salons": "Salons proches"
+    }
+  },
+  "no_show_warning": {
+    "push": {
+      "title": "Pensez à annuler si vous ne venez pas",
+      "body": "Vous comptez {count, plural, one {# absence} other {# absences}} en 30 jours. Si vous ne pouvez pas venir, annulez : la place revient à un autre client."
+    },
+    "sms": "Zelaté : vous comptez {count, plural, one {# absence} other {# absences}} en 30 jours. Si vous ne pouvez pas venir, annulez votre place : elle profitera à un autre client."
+  },
+  "auth": {
+    "otp_code": {
+      "sms": "Zelaté : votre code de connexion est {code}. Il est valable 5 min. Ne le donnez à personne.\n\n@zelate.fr #{code}"
+    }
+  },
+  "member_invitation": {
+    "email": {
+      "subject": "Votre invitation sur Zelaté Pro",
+      "body": "Bonjour {first_name},\n\n{salon_name} vous invite à rejoindre son équipe sur Zelaté Pro. Depuis votre téléphone, vous verrez votre file, appellerez vos clients et suivrez vos prestations.\n\nActivez votre compte avec ce lien :\n{link}\n\nCe lien ne sert qu'une fois et reste valable 72 h. S'il a expiré, demandez une nouvelle invitation à votre salon.\n\nVous ne connaissez pas ce salon ? Ignorez simplement ce message.\n\nL'équipe Zelaté"
+    }
+  },
+  "signup_resume": {
+    "email": {
+      "subject": "Reprenez l'inscription de votre salon",
+      "body": "Bonjour {first_name},\n\nL'inscription de votre salon sur Zelaté Pro est enregistrée en brouillon. Reprenez-la là où vous l'avez laissée :\n{link}\n\nVotre brouillon est conservé 7 jours. Passé ce délai, il faudra recommencer l'inscription.\n\nL'équipe Zelaté"
+    }
+  },
+  "salon_decision": {
+    "approved": {
+      "email": {
+        "subject": "Votre salon est validé sur Zelaté",
+        "body": "Bonjour {first_name},\n\nBonne nouvelle : votre salon {salon_name} est validé.\n\nIl reste trois étapes avant d'accueillir vos premiers clients : configurer le salon (coiffeurs, prestations, horaires), tester votre file, puis publier le salon. Les clients ne le verront qu'une fois publié.\n\nContinuer la configuration :\n{link}\n\nL'équipe Zelaté"
+      }
+    },
+    "rejected": {
+      "email": {
+        "subject": "Votre inscription sur Zelaté n'est pas validée",
+        "body": "Bonjour {first_name},\n\nNous n'avons pas pu valider l'inscription de {salon_name} sur Zelaté, pour la raison suivante :\n\n{reason}\n\nPour toute question, répondez à cet e-mail.\n\nL'équipe Zelaté"
+      }
+    }
+  },
+  "daily_summary": {
+    "email": {
+      "subject": "Récapitulatif de votre journée du {date}",
+      "body": "Bonjour {first_name},\n\nVoici la journée du {date} chez {salon_name}.\n\nClients servis : {served_count}\nAttente annoncée : {announced_wait_minutes} min en moyenne\nAttente réelle : {actual_wait_minutes} min en moyenne\nAbsences : {no_show_count}\nAnnulations : {cancellation_count}\n\nLe détail est sur votre tableau de bord :\n{link}\n\nL'équipe Zelaté"
+    }
+  }
+}

@@ -127,13 +127,13 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.board.pending_appointments_banner` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-M6) |
+| `pro-manager.board.pending_appointments.banner` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.appointments.pending.title` | « À confirmer » | Libellé indicatif (APP_FLOW F-M13) |
 | `pro-manager.appointments.pending.announced_time` | _À rédiger_ | Heure annoncée par le client |
 | `pro-manager.appointments.pending.merge_suggestion` | _À rédiger_ | Rapprochement avec un rendez-vous saisi (DESIGN_SYSTEM `PendingConfirmationCard`) |
 | `pro-manager.appointments.pending.unknown_stylist` | _À rédiger_ | Client qui a choisi « Je ne sais plus » |
-| `common.appointment.confirm` | « Confirmer » | APP_FLOW F-M13, F-S4 ; partagée avec C-11 |
-| `common.appointment.reject` | « Refuser » | APP_FLOW F-M13, F-S4 ; partagée avec C-11 |
+| `common.actions.confirm` | « Confirmer » | APP_FLOW F-M13, F-S4 ; partagée avec C-11 |
+| `common.actions.reject` | « Refuser » | APP_FLOW F-M13, F-S4 ; partagée avec C-11 |
 | `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 |
 | `notifications.appointment_confirmed.push.title` / `.body` | _À rédiger_ | Push ; heure de passage (APP_FLOW §7) |
 | `notifications.appointment_rejected.push.title` / `.body` | _À rédiger_ | Push seulement, pas de SMS (PRD §5.4) ; avec l'action « Rejoindre la file » |
