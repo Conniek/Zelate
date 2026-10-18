@@ -3,7 +3,7 @@
 **En tant qu'**administrateur de la plateforme, **je veux** valider ou refuser à la main chaque dossier de salon en voyant le résultat de la vérification SIRET, **afin que** seuls des salons légitimes soient publiés.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : décision n° 20 « validation à la main au pilote, automatique en V1 » (PRD §11) ; SIRET vérifié en ligne, code NAF 96.02A ou B, sinon dossier « à vérifier » (PRD §5.3 S-01) ; persona « Admin plateforme » : valider les salons légitimes (PRD §3)
+- Règles appliquées : décision n° 20 « validation à la main au pilote, automatique en V1 » (PRD §11) ; SIRET vérifié en ligne, code NAF 96.02A ou B, sinon dossier « à vérifier » (PRD §5.3 S-01) ; un SIRET introuvable ou inactif n'empêche pas l'envoi du dossier : il part « à vérifier » et l'équipe Zelaté décide (E14, PRD §5.1) ; persona « Admin plateforme » : valider les salons légitimes (PRD §3)
 - Parcours : F-A1 (`/admin/salons`, `/admin/salons/:id`) (APP_FLOW §6) ; accès `/admin` par e-mail, mot de passe et MFA (APP_FLOW §1) ; garde « sans droit admin » (APP_FLOW §2.3) ; côté gérant `/signup/pending` puis `/dashboard/setup` (APP_FLOW §2.3)
 - Commandes et données : Edge Functions `admin-decide-salon` (`approved` | `rejected`, motif), `verify-siret` · tables `salon_verifications` (`siret_check_result`, `siret_check_payload`, `decision`, `decision_reason`, `decided_by`, `decided_at`), `salons` (`status`), `salon_events` (`approved`, `rejected`), `notifications` (`salon_decision`, canal `email`), `platform_admins`
 

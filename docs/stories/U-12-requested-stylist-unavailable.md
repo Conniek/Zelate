@@ -128,7 +128,13 @@
 - **Quand** le choix de coiffeur m'est demandé
 - **Alors** aucun SMS n'est envoyé (marqué `skipped`, motif `sms_cap_reached`)
 - **Et** le bandeau de choix s'affiche à l'ouverture de ma page de suivi
-- **Et** quand un coiffeur m'appellera, le SMS « votre tour » partira quand même (E1)
+
+### 13 bis. Sans la case « Me prévenir » (K11)
+- **Étant donné** que je n'ai pas coché « Me prévenir » et que mon ticket demande Léa
+- **Quand** Léa est déclarée en retard
+- **Alors** la notification « Choix de coiffeur » ne part ni par push ni par SMS (`skipped`, motif `no_consent`)
+- **Et** le bandeau de choix s'affiche à l'ouverture de ma page de suivi
+- **Et** sans réponse en 10 min, la règle des scénarios 4 et 5 s'applique
 
 ### 14. Confidentialité côté salon
 - **Étant donné** que mon ticket est marqué « en attente de réponse »
@@ -148,14 +154,26 @@
 | `client.ticket.stylist_change.banner` | « Votre coiffeur n'est plus disponible » | — |
 | `client.ticket.stylist_change.wait` | « Attendre {firstName} » | Nouvelle heure affichée à côté |
 | `client.ticket.stylist_change.first_available` | « Premier disponible » | Heure affichée à côté |
+| `client.ticket.actions.cancel` | « Annuler ma place » | Seconde option quand « attendre » n'est pas proposé (E7, E8) ; partagé avec U-06, U-08 |
+| `client.ticket.reassignment.banner` | « Le salon propose un autre coiffeur » | Nouvelle heure affichée ; partagé avec U-17 |
+| `client.ticket.reassignment.accept` | « Accepter » | Partagé avec U-17 |
+| `client.ticket.reassignment.refuse` | « Refuser » | Partagé avec U-17 |
+| `notifications.reassignment_request.push` | _À rédiger (absent des docs)_ | Push seulement, avec « accepter / refuser » ; partagé avec U-17 |
+| `errors.queue.already_resolved` | _À rédiger (absent des docs)_ | Partagé avec U-08, U-11 |
+| `errors.queue.invalid_transition` | _À rédiger (absent des docs)_ | Partagé avec U-07, U-08, U-11 |
 | `notifications.stylist_change_required.push` | _À rédiger (absent des docs)_ | Choix « attendre » ou « premier disponible » |
-| `notifications.stylist_change_required.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus ; dans le plafond de 3 SMS |
+| `notifications.stylist_change_required.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus, lien court `zelate.fr/t/xxxxxxxx`, nom du salon tronqué à 40, accents translittérés (K5) ; dans le plafond de 3 SMS |
 | `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | Dashboard |
 
 ## Questions ouvertes
-- **PRD §5.2 transition 8 / APP_FLOW F-C5** : « Attendre *Prénom* » est-il proposé quand le coiffeur est absent toute la journée ou désactivé, alors qu'il ne viendra pas ? Si oui, que devient le ticket d'un client qui a choisi d'attendre ?
-- **PRD §11 décision 15 / APP_FLOW F-M4** : un coiffeur désactivé compte-t-il comme « absent toute la journée » pour la règle des 10 min ?
-- **BACKEND_SCHEMA §4.13 / PRD §11** : le schéma appelle la règle des 10 min sans réponse « règle proposée, à valider en PLN-1 », alors que le PRD l'a validée (décision n° 15). Il faut mettre le schéma à jour.
+- **Résolu le 18/10** (E7) — « Attendre » pour un coiffeur absent toute la journée ou désactivé : non proposé ; seulement « Premier disponible » ou annuler ; voir scénarios 3 bis et 8.
+- **Résolu le 18/10** (E7, PRD §5.2 transition 8) — Coiffeur désactivé et règle des 10 min : même règle qu'un coiffeur absent toute la journée, « premier disponible » sans réponse ; voir scénario 8.
+- **Résolu le 18/10** (E8) — Gérant qui coupe « Je coiffe » : même règle qu'un coiffeur absent ; voir scénario 8 bis.
+- **Résolu le 18/10** (BACKEND_SCHEMA v0.3) — Statut de la règle des 10 min : `stylist_change_pending_since` la décrit désormais comme décidée.
+- **APP_FLOW F-C5 / PRD §5.2 transition 8 et statuts du coiffeur / APP_FLOW §7** : F-C5 déclenche le bandeau « Votre coiffeur n'est plus disponible » quand le coiffeur demandé est « en retard, en pause ou partant plus tôt ». Le PRD (transition 8) et APP_FLOW §7 (« Choix demandé ») disent « absent, en retard ou partant plus tôt », et la pause n'entraîne qu'une notification de changement d'heure (scénario 9). La pause déclenche-t-elle le choix ?
+- **TRD §6.2** : quel code renvoie `resolve_stylist_change` avec `wait` quand « attendre » n'est pas proposé (coiffeur absent toute la journée, désactivé, gérant qui ne coiffe plus) : `invalid_payload`, `invalid_transition` ou un code propre ? Voir scénario 6 bis.
+- **PRD §5.2 règle 6 / APP_FLOW F-S3, F-M4 et F-M8** : un client avec **rendez-vous** dont le coiffeur est déclaré absent, désactivé ou en fin de journée reçoit-il ce bandeau de choix, ou attend-il que le gérant réaffecte son rendez-vous (« rendez-vous restants à réaffecter ») ? Que voit-il en attendant, et sans action du gérant ?
+- **PRD §5.1 / APP_FLOW F-C5** : un client qui a déjà une demande de choix en cours peut-il recevoir en même temps une demande de réaffectation (U-17) ? Lequel des deux bandeaux s'affiche ?
 - **PRD §5.2** : si je choisis « Premier disponible » et qu'aucun autre coiffeur présent ne maîtrise ma prestation, que se passe-t-il (file complète pour moi, retour au choix) ?
 - **PRD §5.2** : si j'ai choisi « Attendre » un coiffeur en retard et qu'il est ensuite déclaré absent pour la journée, un nouveau choix m'est-il demandé ?
 - **PRD §5.2 / APP_FLOW F-C5** : faut-il afficher sur le bandeau le temps restant avant l'échéance des 10 min ?
