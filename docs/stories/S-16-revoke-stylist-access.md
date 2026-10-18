@@ -105,16 +105,22 @@
 | `pro-manager.team.revoke_sessions.confirm` | — (à rédiger) | Rappelle que le coiffeur pourra se reconnecter par lien magique |
 | `pro-manager.team.deactivate.confirm` | — (à rédiger) | Rappelle que l'accès est retiré et que les clients qui le demandaient devront choisir |
 | `pro-manager.team.status.deactivated` | — (à rédiger) | Valeur `deactivated` |
-| `pro-stylist.signin.access_revoked` | « Votre accès a été retiré » / « Votre accès a été retiré, contactez votre gérant » | APP_FLOW §2.3 et F-S2 ; texte unique à choisir ; espace `pro-stylist` (story C-01 / F-S2) |
-| `notifications.stylist_change_required.push` | — (à rédiger) | Partagée avec S-11 |
+| `pro-stylist.signin.sessions_revoked` | « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » | APP_FLOW §2.3 et F-S2 ; sessions coupées, coiffeur toujours actif |
+| `pro-stylist.signin.access_revoked` | « Votre accès a été retiré, contactez votre gérant » | APP_FLOW §2.3 et F-S2 ; coiffeur désactivé |
+| `notifications.stylist_change_required.push` | — (à rédiger) | Partagée avec S-11 ; sans « attendre » pour un coiffeur désactivé (E7) |
+| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) : commande d'un membre révoqué |
 | `errors.team.last_manager` | — (à rédiger) | Au moins un gérant par salon |
 
 ## Questions ouvertes
-- **APP_FLOW (contradiction)** : le message du coiffeur coupé n'est pas le même partout. APP_FLOW §2.3 dit « Votre accès a été retiré », F-S2 dit « Votre accès a été retiré, contactez votre gérant ». Après une simple déconnexion (téléphone perdu), le coiffeur reste actif et peut se reconnecter : « contactez votre gérant » l'induit en erreur. Faut-il deux messages, un pour la déconnexion et un pour la désactivation ?
-- **TRD** : le TRD (§6.1) ne prévoit une fonction que pour la déconnexion (`revoke-member-sessions`). Aucune commande ni fonction n'est prévue pour la désactivation, et BACKEND_SCHEMA §7.2 réserve le changement de statut au serveur. Qui fait passer le statut à `deactivated` ?
-- **TRD** : couper les sessions Supabase ne rend pas invalides les jetons d'accès déjà émis, qui restent valables jusqu'à leur expiration. Combien de temps, au plus, un téléphone coupé garde-t-il l'accès ? Faut-il un délai cible écrit dans le PRD ou le TRD (« immédiatement », TRD §7) ?
-- **PRD** : que devient le client qu'un coiffeur a appelé ou qu'il coiffe au moment où il est désactivé ou déconnecté ? Le gérant peut-il terminer la prestation à sa place depuis le dashboard (PRD §9, parade « le gérant peut agir à sa place ») ?
-- **PRD** : la règle des 10 min sans réponse (transition 8) distingue « absent toute la journée » et les autres cas. Dans quel cas range-t-on un coiffeur désactivé ?
+- **Résolu le 18/10** (correction APP_FLOW §2.3 et F-S2) : deux messages distincts, « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » après une déconnexion, « Votre accès a été retiré, contactez votre gérant » après une désactivation.
+- **Résolu le 18/10** (K3, TRD §6.1) : la désactivation passe par l'Edge Function `deactivate-member`, qui révoque les sessions, applique la règle « coiffeur indisponible » à ses clients et journalise `member_deactivated`.
+- **Résolu le 18/10** (K4, TRD ADR-019 et §7) : jetons d'accès de 15 min, et refus côté serveur de toute commande ou lecture RPC dès la révocation ; l'écran de connexion apparaît au plus tard au rafraîchissement du jeton.
+- **Résolu le 18/10** (E6, PRD §5.1) : le client en prestation est terminé par le gérant ; le client appelé passe en tête et est pris par le premier coiffeur libre.
+- **Résolu le 18/10** (E7, PRD §5.1 et §5.2 transition 8) : un coiffeur désactivé est traité comme un coiffeur absent toute la journée ; seulement « premier disponible » ou annuler ; sans réponse en 10 min, premier disponible.
+- **TRD / APP_FLOW** : TRD §7 dit « un coiffeur désactivé perd l'accès immédiatement », APP_FLOW F-M4 « Accès retiré en 15 min au plus ». Que voit le téléphone pendant ces 15 min au plus : la dernière file affichée (prénoms, prestations), un message d'erreur, une file vide ? Les données déjà affichées restent-elles visibles jusqu'au rafraîchissement du jeton (même question dans C-01) ?
+- **TRD** : le canal temps réel `salon:{salon_id}` est autorisé par `staff_salon_id()` (membre actif). Après une simple déconnexion, le coiffeur reste actif : un abonnement déjà ouvert continue-t-il de recevoir les messages jusqu'à l'expiration du jeton ?
+- **PRD / APP_FLOW / TRD (rendez-vous)** : F-M4 dit que les rendez-vous restants d'un coiffeur désactivé « sont à réaffecter ». Par quelle commande (`update_appointment` ou `reassign_ticket`) ? Que deviennent-ils tant que le gérant ne l'a pas fait ? Le client est-il prévenu (même question dans S-11) ?
+- **PRD** : une simple déconnexion (sessions coupées, coiffeur toujours actif) a-t-elle un effet sur ses clients en attente ou sur son client appelé ? Rien ne le dit ; on suppose que non.
 - **APP_FLOW** : peut-on réactiver un coiffeur désactivé ? Un coiffeur désactivé compte-t-il dans la limite de 20 (S-04) ?
-- **TRD** : les codes d'erreur de `revoke-member-sessions` et de la désactivation ne sont pas listés.
+- **TRD** : les codes d'erreur de `revoke-member-sessions` et de `deactivate-member` ne sont pas listés (TRD §6.2 ne couvre que `queue-command`), dont le refus « dernier gérant du salon ».
 - **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
