@@ -3,9 +3,9 @@
 **En tant que** coiffeur, **je veux** voir mon bilan du jour, **afin de** savoir combien de clients j'ai servis et si mes durées réelles collent aux durées prévues.
 
 - Priorité : S (PRD §5.3)
-- Règles appliquées : PRD §5.1 isolation par salon et « Aucune donnée client n'est stockée sur le téléphone du coiffeur » ; BACKEND_SCHEMA §4.13 (`is_test` exclu des statistiques)
+- Règles appliquées : PRD §5.1 isolation par salon et « Aucune donnée client n'est stockée sur le téléphone du coiffeur » ; BACKEND_SCHEMA §4.13 (`is_test` exclu des statistiques) ; TRD ADR-019 (les lectures RPC vérifient que le membre est actif et non révoqué, K4)
 - Parcours : F-S9 (APP_FLOW §4) ; ouverture automatique après « Fin de journée » (F-S3, C-02)
-- Commandes et données : RPC `get_day_summary` (`salon_id`, `service_date`, `member_id`) · tables `tickets` (`assigned_member_id`, `status`, `service_id`, `planned_duration_minutes`, `actual_duration_minutes`, `is_test`), `services`
+- Commandes et données : RPC `get_day_summary` (`salon_id`, `service_date`, `member_id?` ; gérant, ou coiffeur connecté pour lui-même, BACKEND_SCHEMA §8.1) · tables `tickets` (`assigned_member_id`, `status`, `kind`, `service_id`, `planned_duration_minutes`, `actual_duration_minutes`, `is_test`), `ticket_events` (`completed`, `actor_type`), `services`
 
 ## Scénarios
 
@@ -50,6 +50,12 @@
 - **Alors** la demande est refusée
 - **Et** aucun chiffre du salon B n'est renvoyé
 
+### 7 bis. Accès révoqué (K4)
+- **Étant donné** Inès dont le gérant vient de couper les sessions ou qui vient d'être désactivée, avec un jeton d'accès encore valide
+- **Quand** une demande `get_day_summary` est envoyée avec son compte
+- **Alors** la demande est refusée
+- **Et** aucun chiffre n'est renvoyé
+
 ### 8. Rien conservé sur le téléphone
 - **Étant donné** Inès qui a consulté son bilan
 - **Quand** elle ferme Zelaté Pro, coupe le réseau et la rouvre
@@ -73,4 +79,5 @@
 - [APP_FLOW] Accès au bilan en dehors de l'ouverture automatique : y a-t-il une entrée de menu, et le bilan est-il consultable en cours de journée ?
 - [APP_FLOW] Fin de journée déclarée « plus tard » : le bilan s'ouvre-t-il à la confirmation ou à l'heure de fin (voir aussi C-02) ?
 - [APP_FLOW] Le bilan liste-t-il les clients par prénom, ou seulement des chiffres agrégés ?
-- [PRD] « Clients servis » : compte-t-on une prestation commencée par Inès mais terminée par le gérant à sa place, ou l'inverse ?
+- [PRD] « Clients servis » : le gérant peut maintenant clore une prestation oubliée (E15, transition 5, `ticket_events.actor_type` = `manager`). Une prestation commencée par Inès et terminée par le gérant compte-t-elle dans les clients servis d'Inès ? Sa durée réelle, faussée par l'oubli, entre-t-elle dans les moyennes et l'écart prévu / réel ?
+- [APP_FLOW / PRD] Rendez-vous (H10) : le bilan distingue-t-il les rendez-vous (`kind` = `appointment`) des clients de dernière minute, et compte-t-il les rendez-vous refusés ou annulés ?

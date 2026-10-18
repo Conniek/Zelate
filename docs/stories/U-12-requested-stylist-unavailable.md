@@ -3,9 +3,9 @@
 **En tant que** client qui a demandé un coiffeur, **je veux** choisir « attendre » ou « premier disponible » quand ce coiffeur devient indisponible, **afin de** garder la main sur mon heure de passage.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H1 (coiffeur demandé en option) (PRD §5.1) ; changer le coiffeur d'un client ne le fait jamais reculer, sauf accord du client (PRD §5.1 « Autres règles ») ; transition 8 et statuts du coiffeur « En retard », « Absent », « Fin de journée » (PRD §5.2) ; décision n° 15 : sans réponse en 10 min, premier disponible si le coiffeur est absent toute la journée, sinon le client attend (PRD §11) ; notification « Choix de coiffeur » (push, SMS si pas de push dans la limite du plafond) (PRD §5.4)
-- Parcours : F-C5 (bandeau « Votre coiffeur n'est plus disponible ») et F-C10 (APP_FLOW §3) ; déclenché par F-S3 (« Fin de journée »), F-M4 (« Désactiver ») et F-M8 (absence, retard, départ anticipé) ; événement « Choix demandé » (APP_FLOW §7)
-- Commandes et données : `resolve_stylist_change` (`ticket_id`, `choice` = `wait` | `first_available`) · déclencheurs `set_presence` (`absent`, `late`, `off_duty`) et désactivation du membre · `queue-tick` (délai de 10 min) · tables `tickets` (`requested_member_id`, `stylist_change_pending_since`, `estimated_start_at`, `queue_rank`), `stylist_presence` (`status`, `expected_back_at`, `shift_end_at`), `ticket_events` (`stylist_change_requested`, `stylist_change_resolved`), `notifications` (`stylist_change_required`)
+- Règles appliquées : H1 (coiffeur demandé en option) (PRD §5.1) ; changer le coiffeur d'un client ne le fait jamais reculer, sauf accord du client (demande « accepter / refuser », E9) ; coiffeur demandé absent toute la journée ou désactivé : plus de choix « attendre », seulement « premier disponible » ou annuler (E7) ; même règle quand le gérant coupe « Je coiffe » (E8) ; le SMS « votre tour » part toujours, même plafond atteint (E1) (PRD §5.1 « Autres règles ») ; transition 8 et statuts du coiffeur « En retard », « Absent », « Fin de journée » (PRD §5.2) ; décision n° 15 (PRD §11) ; notifications « Choix de coiffeur » (push, SMS si pas de push dans la limite du plafond) et « Demande de réaffectation » (PRD §5.4)
+- Parcours : F-C5 (bandeaux « Votre coiffeur n'est plus disponible » et « Le salon propose un autre coiffeur ») et F-C10 (APP_FLOW §3) ; déclenché par F-S3 (« Fin de journée »), F-M4 (« Désactiver »), F-M6 (« Je coiffe ») et F-M8 (absence, retard, départ anticipé) ; réaffectation F-M10 (U-17) ; événements « Choix demandé » et « Demande de réaffectation » (APP_FLOW §7)
+- Commandes et données : `resolve_stylist_change` (`ticket_id`, `choice` = `wait` | `first_available` ; code `queue.already_resolved` et codes communs, TRD §6.2) · `cancel_ticket` (U-08) · `respond_reassignment` (U-17) · déclencheurs `set_presence` (`absent`, `late`, `off_duty`), `set_hairdressing` et Edge Function `deactivate-member` · `queue-tick` (délai de 10 min) · tables `tickets` (`requested_member_id`, `stylist_change_pending_since`, `estimated_start_at`, `queue_rank`), `stylist_presence` (`status`, `expected_back_at`, `shift_end_at`), `ticket_events` (`stylist_change_requested`, `stylist_change_resolved`), `notifications` (`stylist_change_required`)
 
 ## Scénarios
 
@@ -34,6 +34,15 @@
 - **Et** mon heure de passage est calculée à partir de son heure d'arrivée prévue
 - **Et** un événement `stylist_change_resolved` est ajouté au journal
 
+### 3 bis. Coiffeur absent toute la journée : pas de choix « attendre » (E7)
+- **Étant donné** que mon ticket demande Léa
+- **Quand** le gérant déclare Léa absente pour la journée
+- **Alors** je reçois la notification « Choix de coiffeur »
+- **Et** ma page de suivi affiche le bandeau « Votre coiffeur n'est plus disponible » avec seulement « Premier disponible » (et son heure) et « Annuler ma place »
+- **Et** le bouton « Attendre Léa » n'est pas proposé
+- **Quand** je touche « Annuler ma place »
+- **Alors** la confirmation d'annulation de U-08 s'ouvre
+
 ### 4. Sans réponse en 10 min, coiffeur absent toute la journée
 - **Étant donné** que Léa est déclarée absente pour la journée et que je n'ai pas répondu au choix
 - **Quand** 10 min se sont écoulées depuis la demande de choix
@@ -48,9 +57,14 @@
 
 ### 6. Réponse juste avant l'échéance
 - **Étant donné** que la demande de choix date de 9 min et que Léa est absente pour la journée
-- **Quand** je touche « Attendre Léa »
-- **Alors** mon choix est enregistré
+- **Quand** je touche « Annuler ma place » puis « Oui, annuler »
+- **Alors** mon ticket passe au statut « Annulé » avec le motif `client_cancelled`
 - **Et** le passage automatique en « Premier disponible » ne s'applique pas à mon ticket
+
+### 6 bis. « Attendre » refusé quand il n'est pas proposé
+- **Étant donné** que Léa est absente pour la journée et que la demande de choix est en cours
+- **Quand** une commande `resolve_stylist_change` arrive avec `choice` = `wait` (page restée ouverte, appel direct)
+- **Alors** la commande est refusée et mon ticket n'est pas modifié (code : voir questions ouvertes)
 
 ### 7. Coiffeur qui part plus tôt
 - **Étant donné** que Léa déclare sa fin de journée à 17h00 et que plusieurs tickets la demandent
@@ -58,10 +72,19 @@
 - **Alors** seuls les tickets qui la demandent et dépasseraient 17h00 reçoivent le choix
 - **Et** les tickets qui la demandent et seraient servis avant 17h00 ne reçoivent pas de choix
 
-### 8. Coiffeur désactivé
+### 8. Coiffeur désactivé (E7)
 - **Étant donné** que mon ticket demande Léa
-- **Quand** le gérant désactive le compte de Léa (départ du salon)
-- **Alors** je reçois la demande de choix « attendre » ou « premier disponible »
+- **Quand** le gérant désactive le compte de Léa (départ du salon, `deactivate-member`)
+- **Alors** je reçois la notification « Choix de coiffeur »
+- **Et** le bandeau ne propose que « Premier disponible » et « Annuler ma place »
+- **Et** sans réponse en 10 min, mon ticket passe automatiquement en « Premier disponible », sans changer de rang
+
+### 8 bis. Gérant qui coupe « Je coiffe » (E8)
+- **Étant donné** que mon ticket demande le gérant, qui coiffe
+- **Quand** le gérant coupe l'interrupteur « Je coiffe » (`set_hairdressing`)
+- **Alors** je reçois la notification « Choix de coiffeur »
+- **Et** le bandeau ne propose que « Premier disponible » et « Annuler ma place »
+- **Et** sans réponse en 10 min, mon ticket passe automatiquement en « Premier disponible », sans changer de rang
 
 ### 9. Pause : pas de choix demandé
 - **Étant donné** que mon ticket demande Léa
@@ -80,8 +103,22 @@
 - **Quand** je touche « Premier disponible » dans le bandeau
 - **Alors** mon choix est enregistré comme depuis l'app
 
-### 12. Erreur `queue.invalid_transition`
-- **Étant donné** qu'aucun choix n'est en attente pour mon ticket (déjà répondu, échéance passée) ou que mon ticket est clos
+### 11 bis. Bandeau de réaffectation (renvoi vers U-17)
+- **Étant donné** que le gérant veut réaffecter mon ticket à un coiffeur chez qui mon heure de passage reculerait
+- **Quand** il confirme la réaffectation (`reassign_ticket`)
+- **Alors** mon ticket ne change ni de coiffeur ni d'heure tant que je n'ai pas accepté
+- **Et** je reçois la notification push « Demande de réaffectation », sans SMS
+- **Et** ma page de suivi affiche le bandeau « Le salon propose un autre coiffeur » avec la nouvelle heure, « Accepter » et « Refuser » (`respond_reassignment`)
+- **Et** sans réponse en 10 min, rien ne change
+
+### 12. Erreur `queue.already_resolved`
+- **Étant donné** que le choix de mon ticket a déjà été résolu (j'ai déjà répondu, ou l'échéance des 10 min est passée)
+- **Quand** une commande `resolve_stylist_change` est envoyée
+- **Alors** elle est refusée et le ticket n'est pas modifié
+- **Et** le message d'erreur `queue.already_resolved` s'affiche
+
+### 12 bis. Erreur `queue.invalid_transition`
+- **Étant donné** que mon ticket est clos (« Terminé », « Annulé » ou « Absent »)
 - **Quand** une commande `resolve_stylist_change` est envoyée
 - **Alors** elle est refusée et le ticket n'est pas modifié
 - **Et** le message d'erreur `queue.invalid_transition` s'affiche
@@ -91,6 +128,7 @@
 - **Quand** le choix de coiffeur m'est demandé
 - **Alors** aucun SMS n'est envoyé (marqué `skipped`, motif `sms_cap_reached`)
 - **Et** le bandeau de choix s'affiche à l'ouverture de ma page de suivi
+- **Et** quand un coiffeur m'appellera, le SMS « votre tour » partira quand même (E1)
 
 ### 14. Confidentialité côté salon
 - **Étant donné** que mon ticket est marqué « en attente de réponse »
@@ -100,8 +138,9 @@
 
 ### 15. Le SMS de choix tient en un seul SMS
 - **Étant donné** le modèle de SMS « Choix de coiffeur »
-- **Quand** il est rempli avec un prénom de coiffeur et un lien de suivi de longueur maximale
-- **Alors** le texte fait 160 caractères GSM-7 au plus
+- **Quand** il est rempli avec un prénom de coiffeur de 30 caractères, un nom de salon de 80 caractères et le lien court `zelate.fr/t/xxxxxxxx`
+- **Alors** le nom du salon est tronqué à 40 caractères et les accents sont translittérés
+- **Et** le texte fait 160 caractères GSM-7 au plus
 
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |

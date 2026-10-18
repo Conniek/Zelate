@@ -3,7 +3,7 @@
 **En tant que** client, **je veux** installer l'app Zelaté et activer les notifications, avec un guide pour iPhone, sans que mon refus ait de conséquence, **afin d'**être prévenu sans dépendre des SMS.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H3 (3 SMS maximum par ticket) (PRD §5.1) ; push par défaut, SMS seulement sans push actif, sauf « votre tour » envoyé par les deux canaux (PRD §5.4) ; risque « notifications web limitées sur iPhone, PWA installée requise, iOS 16.4+ » (PRD §9)
+- Règles appliquées : H3 (3 SMS maximum par ticket) (PRD §5.1) ; le SMS « votre tour » part toujours, même plafond atteint (E1) ; sans la case « Me prévenir », seuls l'inscription et « votre tour » partent (K11) (PRD §5.1 « Autres règles ») ; push par défaut, SMS seulement sans push actif, sauf « votre tour » envoyé par les deux canaux (PRD §5.4) ; risque « notifications web limitées sur iPhone, PWA installée requise, iOS 16.4+ » (PRD §9)
 - Parcours : F-C9 (`/install`), proposé après le premier ticket depuis F-C3 ; activation du push depuis F-C10 (APP_FLOW §3)
 - Commandes et données : Edge Function `push-subscribe` · tables `push_subscriptions` (`profile_id` ou `ticket_id`, `endpoint`, `expired_at`), `notifications` (`status` = `skipped`, `skip_reason` = `push_active`)
 
@@ -38,7 +38,8 @@
 - **Étant donné** que l'app est installée et que j'ai un ticket actif
 - **Quand** je touche « Activer les notifications » puis que je refuse la demande système
 - **Alors** mon ticket garde son rang et son heure de passage
-- **Et** je continue à recevoir les SMS de secours prévus, dans la limite de 3 SMS par ticket
+- **Et** je continue à recevoir les SMS de secours prévus, dans la limite de 3 SMS par ticket et selon ma case « Me prévenir »
+- **Et** le SMS « votre tour » part toujours, même si le plafond de 3 SMS est atteint
 
 ### 6. « Plus tard »
 - **Étant donné** que la carte d'installation est affichée
@@ -77,5 +78,6 @@
 - **PRD §6 / APP_FLOW F-C9** : qu'affiche-t-on sur un iPhone sous iOS antérieur à 16.4, où le push web n'existe pas ?
 - **PRD §5.4 / BACKEND_SCHEMA §4.17** : si un abonnement push est expiré (réponse 404 ou 410 du service de push), le client n'a plus de push actif. Le SMS de secours part-il pour la notification qui a échoué, ou seulement pour les suivantes ?
 - **APP_FLOW F-C9** : après un refus de la demande système, le navigateur ne la reproposera pas. Que montre ensuite l'app (explication pour réactiver dans les réglages, rien) ? Que se passe-t-il si le client a installé l'app mais refusé les notifications ?
-- **PRD §5.3 / APP_FLOW F-C11** : l'écran Compte (interrupteur « Notifications de suivi » avec la date du consentement, export des données, suppression du compte) n'a pas d'identifiant d'exigence dans le PRD. Il n'est couvert par aucune story.
+- **Résolu le 18/10** (K12) — Écran Compte sans exigence : U-13 ajoutée au PRD (prénom, consentements, export, suppression) ; voir la story U-13.
+- **PRD §5.4 / APP_FLOW F-C9** : activer le push et cocher « Me prévenir » sont deux gestes distincts. Un client qui active le push sans avoir coché la case ne reçoit en push que l'inscription et « votre tour » (K11). F-C9 doit-il le lui dire, ou lui proposer de cocher la case ?
 - **Textes** : les alternatives textuelles des 3 images du guide ne figurent dans aucun document.

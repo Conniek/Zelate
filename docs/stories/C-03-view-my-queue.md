@@ -27,7 +27,7 @@
 - **Et** le ticket 2 n'apparaît nulle part dans l'espace d'Inès
 - **Et** sur le dashboard, les tickets 1 et 2 gardent leur rang dans la file du salon
 
-### 2 bis. « Je ne sais pas encore » et prestation sans spécialité éligibles pour tous (E12)
+### 2 bis. « Je ne sais pas encore » éligible pour tous les coiffeurs (E12)
 - **Étant donné** Inès « Disponible », qui maîtrise `men_cut` seulement
 - **Et** le premier ticket de la file est sans préférence, inscrit avec « Je ne sais pas encore » (`service_id` vide)
 - **Quand** Inès ouvre « Ma file »

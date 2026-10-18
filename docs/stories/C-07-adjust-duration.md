@@ -88,6 +88,28 @@
 - **Alors** la commande est refusée avec `queue.not_assigned_to_you`
 - **Et** la durée prévue ne change pas
 
+### 10 bis. Ticket qui n'est pas en prestation
+- **Étant donné** Léa appelée par Inès, prestation pas encore commencée
+- **Quand** une commande `adjust_duration` est envoyée avec le compte d'Inès pour ce ticket
+- **Alors** la commande est refusée avec `queue.invalid_transition` (code commun, TRD §6.2)
+- **Et** la durée prévue ne change pas
+
+### 10 ter. Ajustement qui retarde un rendez-vous (« Prévenir avant de partir »)
+- **Étant donné** Marc, rendez-vous à 15h00 avec Inès, saisi par le salon avec son téléphone, sans push actif, à qui aucune alerte de retard n'a encore été envoyée (`appointment_delay_warned_steps` = 0) ; envoi sans case « Me prévenir » cochée : suspendu à PRD §9 n° 9 (voir questions)
+- **Quand** Inès touche « +15 » et l'heure de passage de Marc devient 15h10
+- **Alors** Marc reçoit un SMS l'invitant à venir vers 15h10 (APP_FLOW F-C13 : « Le salon a du retard, venez vers 14h20 »)
+- **Et** ce SMS compte dans le plafond de 3 SMS du ticket
+- **Et** `appointment_delay_warned_steps` vaut 1
+- **Et** le journal du ticket enregistre un événement `appointment_delay_warned`
+
+### 10 quater. Nouvel écart de 10 min sur le même rendez-vous
+- **Étant donné** Marc, rendez-vous à 15h00, déjà prévenu d'une heure de passage à 15h10 (`appointment_delay_warned_steps` = 1)
+- **Quand** un nouvel ajustement d'Inès porte son heure de passage à 15h15
+- **Alors** Marc ne reçoit pas de nouvelle alerte de retard
+- **Quand** un autre ajustement la porte à 15h20
+- **Alors** Marc reçoit une nouvelle alerte de retard, dans la limite du plafond de 3 SMS
+- **Et** `appointment_delay_warned_steps` vaut 2
+
 ### 11. Connexion perdue
 - **Étant donné** Inès en prestation, dont l'écran affiche « Connexion perdue »
 - **Quand** elle veut toucher « +15 »
@@ -110,10 +132,17 @@
 | `notifications.end_of_day_risk.push.body` | « Vous risquez de ne pas être pris avant la fermeture » | PRD §5.2 ; boutons « Je reste » / « J'annule » ; partagé avec U-11 |
 | `notifications.end_of_day_risk.sms` | À rédiger (REQ-3) | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale ; seulement sans push actif, dans le plafond de 3 SMS ; partagé avec U-11 |
 | `errors.queue.not_assigned_to_you` | À rédiger (REQ-3) | Voir C-06 |
+| `errors.queue.invalid_transition` | À rédiger (REQ-3) | Code commun ; voir C-04 |
+| `errors.queue.invalid_payload` | À rédiger (REQ-3) | Code commun : validation du contrat (TRD §6.2) |
+| `notifications.appointment_delay.push.title` / `.body` | À rédiger (REQ-3) | APP_FLOW F-C13 donne l'exemple « Le salon a du retard, venez vers 14h20 » ; partagé avec U-15 |
+| `notifications.appointment_delay.sms` | À rédiger (REQ-3) | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5) ; seulement sans push actif, dans le plafond de 3 SMS ; partagé avec U-15 |
 
 ## Questions ouvertes
-- [PRD / APP_FLOW / TRD] Seuil de notification : PRD §5.1 « 10 min ou plus », APP_FLOW F-S7 « au-delà de 10 min d'écart », TRD §6.2 « ±10 min ». Un client dont l'heure bouge d'exactement 10 min est-il notifié ?
-- [PRD / BACKEND_SCHEMA] La variation de 10 min se mesure par rapport à quoi : la dernière heure notifiée au client, ou l'estimation précédente ? Avec trois « +5 » successifs, le client a reculé de 15 min sans qu'un seul ajustement atteigne 10 min.
-- [PRD / BACKEND_SCHEMA] Plafond de la durée cumulée : `planned_duration_minutes` est limité à 240 min. Que se passe-t-il quand un « +45 » dépasserait 240 : refus (quel code ?), ou plafonnement ?
+- **Résolu le 18/10** en partie : PRD §5.1, APP_FLOW F-C5 et §7 disent « 10 min ou plus » (≥ 10 min). Reste : APP_FLOW F-S7 écrit encore « au-delà de 10 min d'écart » et TRD §6.2 (`adjust_duration`) « ±10 min ». Aligner ces deux formulations sur « 10 min ou plus ». Question d'origine : un client dont l'heure bouge d'exactement 10 min est-il notifié ?
+- **Résolu le 18/10 (E11)** : l'écart se mesure par rapport à la dernière heure annoncée au client (`last_notified_start_at`) et les petits écarts s'additionnent (PRD §5.1, BACKEND_SCHEMA §4.13). Question d'origine : par rapport à quoi se mesure la variation de 10 min ?
+- [PRD / BACKEND_SCHEMA] Plafond de la durée cumulée : `planned_duration_minutes` est limité à 240 min. Que se passe-t-il quand un « +45 » dépasserait 240 : refus (`invalid_payload`, `invalid_transition` ?), ou plafonnement ?
 - [PRD] Annuler un ajustement fait par erreur (« +45 » au lieu de « +5 ») : aucun moyen prévu. Est-ce voulu ?
-- [TRD §6.2] Code d'erreur pour `adjust_duration` sur un ticket qui n'est pas en prestation (`invalid_transition` ?), et clé `errors` d'une erreur de validation de contrat.
+- **Résolu le 18/10 (K1)** : `adjust_duration` sur un ticket qui n'est pas en prestation relève du code commun `queue.invalid_transition`, une erreur de validation de contrat de `queue.invalid_payload` (TRD §6.2). Question d'origine : codes de ces deux cas.
+- [BACKEND_SCHEMA] Sans notification (client sans « Me prévenir »), `last_notified_start_at` est-il mis à jour quand l'heure affichée sur son ticket change ? Sinon, le bandeau de F-C5 et le seuil cumulé ne partent pas de la même référence.
+- [PRD §9 n° 9] Alerte de retard sur un rendez-vous saisi par le salon avec le téléphone du client, qui n'a coché aucune case « Me prévenir » : message indispensable ou accord à recueillir ? Le scénario 10 ter en dépend (déjà ouvert au PRD, à trancher par Ely avec un avis RGPD).
+- [PRD §5.4] Un rendez-vous dont l'heure de passage recule de 10 min reçoit-il à la fois « Changement d'heure » (push) et « Retard sur un rendez-vous » (push ou SMS), ou seulement la seconde ?

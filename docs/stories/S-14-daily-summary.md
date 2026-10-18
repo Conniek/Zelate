@@ -51,7 +51,8 @@
 | `notifications.daily_summary.email.body` | — (à rédiger) | Mêmes indicateurs que la page |
 
 ## Questions ouvertes
-- **TRD / BACKEND_SCHEMA** : quand la journée est-elle « terminée » ? TRD §6.1 dit « à la fermeture », BACKEND_SCHEMA §10 dit « salons fermés depuis le dernier passage » (passage toutes les 15 min). Est-ce à l'heure de fermeture des horaires, au passage de la file à `closed`, après l'annulation automatique 15 min après la fermeture, ou quand le dernier client servi a terminé ? Des clients « servis » après la fermeture (S-15) peuvent encore être en prestation.
+- **TRD / BACKEND_SCHEMA** : quand la journée est-elle « terminée » ? TRD §6.1 dit « à la fermeture », BACKEND_SCHEMA §10 dit « salons fermés depuis le dernier passage » (passage toutes les 15 min). Est-ce à l'heure de la dernière fermeture des horaires (E5), au passage de la file à `closed`, après l'annulation automatique 15 min après la fermeture, ou quand le dernier client servi a terminé ? Des clients « servis » après la fermeture (S-15) peuvent encore être en prestation, et ceux qui ne sont pas pris sont annulés seulement à la fin de la journée (E5).
+- **PRD / APP_FLOW (rendez-vous)** : le récapitulatif distingue-t-il les rendez-vous des clients de dernière minute (clients servis, retard moyen sur l'heure du rendez-vous) ? Les rendez-vous refusés (`appointment_rejected`) et les rendez-vous annulés par le salon comptent-ils dans les annulations ?
 - **PRD** : comment calcule-t-on « attente annoncée et réelle » ? Moyenne par ticket, ou écart ? Annoncée à l'inscription ou à T-30 ? Le récapitulatif doit-il montrer l'indicateur principal du pilote (80 % des tickets à ±10 min de l'heure annoncée à T-30) ?
 - **PRD** : les annulations sont-elles détaillées par motif (client, salon, fin de journée) ?
 - **PRD** : faut-il envoyer un e-mail les jours sans aucun ticket, ou les jours où la file n'a pas ouvert ?

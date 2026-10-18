@@ -3,7 +3,7 @@
 **En tant que** gérant, **je veux** voir, à partir de 2 h avant la fermeture, les clients qui risquent de ne pas être pris, puis décider à la fermeture de « Servir » ou d'« Annuler avec excuses » les clients restants, **afin de** finir la journée à l'heure sans laisser de client sans réponse.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H9 ; PRD §5.2 Fin de journée (alerte unique, « Je reste » ou « J'annule », décision du gérant, annulation automatique 15 min après la fermeture, aucun ticket ne passe d'un jour à l'autre) ; PRD §11 n° 19 ; PRD §5.4 (« Risque de fin de journée » : SMS dans la limite du plafond ; « Annulation par le salon » : push et SMS hors plafond) ; H6
+- Règles appliquées : H9 ; PRD §5.2 Fin de journée (fenêtre à partir de 2 h avant la dernière fermeture de la journée, valeur par défaut réglable par salon après le pilote ; alerte unique, « Je reste » ou « J'annule » ; à la fermeture, le gérant voit tous les clients restants ; annulation automatique 15 min après la fermeture ; un client « servi » qui n'est pas pris avant la fin de la journée est annulé avec excuses ; aucun ticket ne passe d'un jour à l'autre) ; PRD §11 n° 19 et E5 ; nouveaux horaires du jour pris en compte (E16) ; PRD §5.4 (« Risque de fin de journée » : SMS dans la limite du plafond ; « Annulation par le salon » : push et SMS hors plafond ; sans « Me prévenir », seuls l'inscription et « votre tour » partent, K11) ; H6
 - Parcours : F-M12 ; F-M5 (« Fermer ») ; côté client F-C5 bandeau « Risque de fin de journée » (story U-11)
 - Commandes et données : `resolve_closing` (`ticket_ids`, `decision`) · `set_queue_status` (`closed`) · `respond_end_of_day` (réponse du client) · `queue-tick` · tables `salons` (`end_of_day_warning_minutes`, `closing_grace_minutes`), `tickets` (`end_of_day_warned_at`, `end_of_day_choice`, `closing_decision`, `cancel_reason` = `end_of_day`), `ticket_events` (`end_of_day_warned`, `end_of_day_responded`, `cancelled`), `salon_events` (`closing_resolved`), `notifications` (`end_of_day_risk`, `cancelled_by_salon`)
 
@@ -20,6 +20,13 @@
 - **Quand** il est 16:59
 - **Alors** le bandeau « Fin de journée » n'est pas affiché
 
+### 2 bis. Journée en plusieurs plages : seule la dernière compte
+- **Étant donné** un salon ouvert de 09:00 à 12:00 puis de 14:00 à 19:00, avec la fenêtre d'alerte par défaut de 120 min
+- **Quand** il est 10:00
+- **Alors** le bandeau « Fin de journée » n'est pas affiché, et aucune alerte n'est envoyée (H9 : « dernière fermeture de la journée », E5)
+- **Quand** il est 17:00
+- **Alors** le bandeau « Fin de journée » s'affiche
+
 ### 3. Une seule alerte par client à risque
 - **Étant donné** un client dont la fin estimée dépasse la fermeture pendant la fenêtre d'alerte
 - **Quand** le moteur recalcule la file
@@ -29,10 +36,17 @@
 - **Alors** aucune deuxième alerte ne lui est envoyée
 
 ### 4. Canal de l'alerte et plafond SMS
-- **Étant donné** un client à risque sans push actif
+- **Étant donné** un client à risque sans push actif, qui a coché « Me prévenir »
 - **Quand** l'alerte de fin de journée part
 - **Alors** elle part par SMS si le ticket a reçu moins de 3 SMS
-- **Alors** aucun SMS ne part si le ticket a déjà reçu 3 SMS (la notification est marquée `skipped`)
+- **Alors** aucun SMS ne part si le ticket a déjà reçu 3 SMS (la notification est marquée `skipped`, `sms_cap_reached`)
+
+### 4 bis. Client à risque sans consentement
+- **Étant donné** un client à risque qui n'a pas coché « Me prévenir »
+- **Quand** la fenêtre de fin de journée le détecte
+- **Alors** aucune alerte ne lui est envoyée (notification `skipped`, `no_consent` ; BACKEND_SCHEMA §4.16, K11)
+- **Alors** le bandeau « Risque de fin de journée » s'affiche sur sa page de suivi (F-C5)
+- **Alors** le dashboard le montre « sans réponse » dans le bandeau « Fin de journée »
 
 ### 5. Réponse du client visible par le gérant
 - **Étant donné** un client à risque affiché « sans réponse » dans le bandeau
@@ -47,12 +61,18 @@
 - **Quand** le gérant clique sur « Fermer la file maintenant »
 - **Alors** la commande `set_queue_status` (`closed`) est envoyée
 - **Alors** aucun nouveau client ne peut rejoindre la file
-- **Alors** les clients déjà inscrits restent dans la file (APP_FLOW F-M12 ; contradiction signalée dans S-08)
+- **Alors** les clients déjà inscrits restent dans la file, aucun n'est annulé (APP_FLOW F-M12 ; PRD §5.2)
 
-### 7. Boîte de décision à l'heure de fermeture
-- **Étant donné** 3 clients encore en attente à 19:00, heure de fermeture
+### 6 bis. Fermeture du jour changée dans la journée
+- **Étant donné** un salon qui devait fermer à 19:00, et dont le gérant avance la fermeture du jour à 18:00
+- **Quand** il est 16:00
+- **Alors** le bandeau « Fin de journée » s'affiche, calculé sur 18:00 (PRD §5.1, E16)
+
+### 7. Boîte de décision à l'heure de fermeture : tous les clients restants
+- **Étant donné** 3 clients encore en attente à 19:00, heure de fermeture : Léa a répondu « Je reste », Sam « sans réponse », et Inès n'a jamais été à risque
 - **Quand** l'heure de fermeture est atteinte
-- **Alors** la boîte « 3 clients attendent encore » s'ouvre sur le dashboard
+- **Alors** la boîte « 3 clients attendent encore » s'ouvre sur le dashboard, avec les 3 clients (PRD §5.2, E5)
+- **Alors** chaque client est affiché avec sa réponse éventuelle à l'alerte (F-M12)
 - **Alors** chaque client a les choix « Servir » et « Annuler avec excuses »
 - **Alors** un choix « Tous » applique la même décision à tous les clients restants
 
@@ -62,6 +82,13 @@
 - **Alors** la commande `resolve_closing` (`serve`) est envoyée pour son ticket
 - **Alors** le ticket de Léa reste dans la file, avec la décision `serve`
 - **Alors** il ne sera pas annulé automatiquement 15 min après la fermeture
+
+### 8 bis. Client « servi » qui n'est pas pris avant la fin de la journée
+- **Étant donné** Léa, que le gérant a choisi de « Servir », toujours en attente
+- **Quand** la journée se termine sans qu'un coiffeur l'ait appelée
+- **Alors** son ticket est annulé (PRD §5.2, E5 ; TRD §6.2 `resolve_closing`)
+- **Alors** Léa reçoit un message d'excuse
+- **Alors** son ticket n'est pas actif le lendemain
 
 ### 9. Annuler avec excuses
 - **Étant donné** la boîte de décision ouverte
@@ -86,7 +113,7 @@
 
 ### 12. Aucune décision du gérant : annulation 15 min après la fermeture
 - **Étant donné** un client resté sans décision du gérant après une fermeture à 19:00
-- **Quand** il est 19:15
+- **Quand** il est 19:15 (tolérance des tests ±60 s, TRD §10.1, K7)
 - **Alors** son ticket est annulé automatiquement avec le motif `end_of_day`
 - **Alors** l'annulation est inscrite au journal avec l'acteur `system`
 - **Alors** le client reçoit une notification push et un SMS, même au-delà du plafond, avec un message d'excuse et des salons proches
