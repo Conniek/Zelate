@@ -104,7 +104,7 @@ Ces contradictions venaient des documents eux-mêmes ; elles sont corrigées dan
 | K3 | Commandes absentes : régénérer le QR et produire le PDF, désactiver un coiffeur | `regenerate-qr` (Edge Function) et `deactivate-member` | S-06, S-16 |
 | K4 | Délai maximal entre la révocation et la perte d'accès | Jetons d'accès de 15 min + refus côté serveur dès la révocation | S-16 |
 | K5 | SMS en 160 caractères : longueurs maximales (prénom, nom du salon, adresse), caractères hors GSM-7, longueur du lien de suivi | Prénom ≤ 30, nom de salon ≤ 40 dans les SMS, translittération des accents, lien court `zelate.fr/t/xxxxxxxx` | C-04, U-04, U-06, S-10 |
-| K6 | Temps réel pour les visiteurs sans ticket (fiche salon) et pour `/t/:token` | Canal public `salon-public:{id}` sans donnée personnelle ; `/t/:token` abonné à son ticket via le jeton | U-02, U-06, S-08 |
+| K6 | Temps réel pour les visiteurs sans ticket (fiche salon) et pour `/t/:shortCode` | Canal public `salon-public:{id}` sans donnée personnelle ; `/t/:shortCode` abonné à son ticket via le jeton | U-02, U-06, S-08 |
 | K7 | Tolérance des tests sur les délais de `queue-tick` (exécuté chaque minute) | ±60 s | C-09 |
 | K8 | Compteur d'absences : où le stocker, et comment compter les walk-ins dont le contact est effacé à 24 h ? | Table `private.no_show_counts` par `phone_hash` sur 30 jours glissants | C-09, P-03 |
 | K9 | `get_salon_board` lisible par les coiffeurs : voulu ? | Non : réservé au gérant | S-09 |

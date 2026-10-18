@@ -23,7 +23,7 @@
 
 ### 3. Bandeau sur la page de suivi
 - **Étant donné** que l'alerte T-30 a été déclenchée pour mon ticket et que je n'ai pas encore répondu
-- **Quand** j'ouvre `/ticket` ou `/t/:trackingToken`
+- **Quand** j'ouvre `/ticket` ou `/t/:shortCode`
 - **Alors** un bandeau affiche les trois mêmes réponses
 
 ### 4. Client sans push : réponses sur la page seulement
@@ -82,7 +82,7 @@
 - **Et** le coiffeur voit « sans réponse » sur ma carte
 
 ### 12. Réponse depuis le lien SMS
-- **Étant donné** que je suis mon ticket par `/t/:trackingToken`, sans session
+- **Étant donné** que je suis mon ticket par `/t/:shortCode`, sans session
 - **Quand** je réponds « Je serai à l'heure » dans le bandeau
 - **Alors** ma réponse est enregistrée comme depuis l'app
 

@@ -1,6 +1,6 @@
 # APP FLOW — Zelaté
 
-> version 0.2 · 16/10/2026 · statut : mis à jour avec les décisions de l'atelier du 16/10 (PRD §11)
+> version 0.3 · 18/10/2026 · statut : mis à jour avec le PRD v1.1 (rendez-vous du salon, règles E1 à E16) et le TRD v0.3
 > Documents liés : [PRD](./PRD.md) · [TRD](./TRD.md) · [DESIGN_SYSTEM](./DESIGN_SYSTEM.md) · [BACKEND_SCHEMA](./BACKEND_SCHEMA.md) · [IMPLEMENTATION_PLAN](./IMPLEMENTATION_PLAN.md)
 
 Ce document décrit **chaque écran, chaque route et l'effet de chaque clic**, rôle par rôle. Un écran ou un bouton absent d'ici n'existe pas au MVP. Les commandes citées (`join_queue`, `call_ticket`…) sont celles de [TRD §6.2](./TRD.md#62-commandes-de-queue-command) ; les textes affichés viennent du dictionnaire, les libellés ci-dessous sont indicatifs.
@@ -31,10 +31,11 @@ Les chemins d'URL sont en anglais (ce sont des noms de code) ; les titres de pag
 | `/` | Accueil : recherche, liste + carte | Public | Ouverture de l'app |
 | `/salons/:slug` | Fiche salon (panneau sur mobile, page sur ordinateur) | Public | Carte ou liste, lien partagé |
 | `/salons/:slug/join` | Rejoindre la file (étapes) | Public, code SMS à l'étape 4 | Fiche salon, QR |
-| `/q/:qrToken` | Entrée par QR (redirection) | Public | Scan du QR du salon |
+| `/q/:qrToken` | Entrée par QR : « Rejoindre la file » ou « J'ai rendez-vous » | Public | Scan du QR du salon |
+| `/salons/:slug/check-in` | Se signaler pour un rendez-vous (étapes) | Public, code SMS | Entrée par QR |
 | `/signin` | Identification par code SMS | Public | Étape 4 de la file, menu |
 | `/ticket` | Mon ticket actif et suivi | Client connecté | Après création, notification, menu |
-| `/t/:trackingToken` | Suivi par lien SMS | Détenteur du lien | SMS |
+| `/t/:shortCode` | Suivi par lien SMS (lien court de 8 caractères) | Détenteur du lien | SMS |
 | `/install` | Guide d'installation et notifications | Public | Proposition après le premier ticket |
 | `/account` | Compte : prénom, consentements, export, suppression, déconnexion | Client connecté | Menu |
 | `/legal/:page` | CGU, confidentialité, mentions | Public | Pied de page |
@@ -48,6 +49,7 @@ Les chemins d'URL sont en anglais (ce sont des noms de code) ; les titres de pag
 | `/signup/pending` | Dossier en cours de validation | Gérant |
 | `/invite/:token` | Activation du compte d'un coiffeur | Détenteur du lien |
 | `/dashboard` | Vue temps réel de la file et de l'équipe | Gérant (salon validé) |
+| `/dashboard/appointments` | Rendez-vous du jour : saisie, modification, rendez-vous à confirmer | Gérant |
 | `/dashboard/setup` | Wizard de configuration (horaires, équipe, prestations, QR de l'affiche, test) | Gérant |
 | `/dashboard/team` | Équipe et invitations | Gérant |
 | `/dashboard/services` | Prestations | Gérant |
@@ -56,6 +58,7 @@ Les chemins d'URL sont en anglais (ce sont des noms de code) ; les titres de pag
 | `/dashboard/audit` | Journal du salon | Gérant |
 | `/dashboard/summary` | Récapitulatif du jour | Gérant |
 | `/stylist/queue` | Ma file, appel en cours et prestation en cours | Coiffeur connecté (et gérant qui coiffe) |
+| `/stylist/appointments` | Mes rendez-vous du jour : saisie et confirmation | Coiffeur connecté |
 | `/stylist/summary` | Mon bilan du jour | Coiffeur connecté |
 | `/admin/salons` | Dossiers de validation | Admin |
 | `/admin/salons/:id` | Détail d'un dossier | Admin |
@@ -66,7 +69,7 @@ Les chemins d'URL sont en anglais (ce sont des noms de code) ; les titres de pag
 | Situation | Redirection |
 | --- | --- |
 | Client non connecté sur `/ticket` | `/signin?next=/ticket` |
-| Client avec un ticket actif sur `/salons/:slug/join` | `/ticket` avec message « Vous avez déjà une place » |
+| Client avec un ticket actif sur `/salons/:slug/join` ou `/salons/:slug/check-in` | `/ticket` avec message « Vous avez déjà une place » |
 | Gérant dont le salon est en brouillon | `/signup` à l'étape enregistrée |
 | Gérant dont le salon attend la validation | `/signup/pending` (le wizard reste accessible) |
 | Gérant dont le salon est validé mais non publié | `/dashboard/setup` |
@@ -83,6 +86,8 @@ Les chemins d'URL sont en anglais (ce sont des noms de code) ; les titres de pag
 flowchart LR
   A[Accueil] --> B[Fiche salon]
   Q[Scan QR] --> J
+  Q -->|J'ai rendez-vous| CI[Se signaler : heure → coiffeur → code SMS]
+  CI -->|Le salon confirme| T
   B -->|Rejoindre la file| J[Rejoindre : prestation → coiffeur → heure → code SMS → récap]
   J -->|Confirmer| T[Mon ticket]
   T -->|T-30| R{Réponse}
@@ -105,6 +110,7 @@ flowchart LR
 | Filtre « Ouvert maintenant » (activé par défaut) | Masque les files fermées ou en pause | Liste filtrée |
 | Carte de salon (liste) ou repère (carte) | Ouvre la fiche | F-C2 |
 | Badge d'attente | Affiche « ~25 min » et « mis à jour il y a 2 min » ; « à vérifier » au-delà de 5 min | — |
+| Prochain créneau libre (U-16) | « Créneau libre à 15h20 » pour la prestation la plus courte qui tient ; absent si aucun trou | — |
 | Bouton « Me localiser » (carte) | Recentre la carte | — |
 | Aucun résultat | Message et bouton « Élargir à 10 km » | Nouvelle recherche |
 | Bandeau « Ma place » (si ticket actif) | Ouvre le ticket | F-C5 |
@@ -116,8 +122,9 @@ flowchart LR
 | Photos | Galerie défilante, plein écran au clic, fermeture par Échap ou « Fermer » | — |
 | Attente actuelle | Personnes avant vous, heure de passage estimée, fraîcheur | — |
 | Horaires | Déplie la semaine | — |
-| Prestations | Liste nom, durée, prix | — |
+| Prestations | Liste nom, durée, prix, et prochain créneau libre pour chaque prestation qui tient dans un trou (U-16) | — |
 | Coiffeurs | Prénom, photo, spécialités, « disponible » ou « en prestation » | — |
+| Mise à jour | Canal public `salon-public:{id}` : attente, statut et créneaux à jour sans compte | — |
 | Bouton « Itinéraire » | Ouvre l'app de cartes de l'appareil (lien `geo:` ou Apple Plans) | App externe |
 | Bouton « Rejoindre la file » | Ouvre l'étape 1 | F-C3 |
 | File fermée | Bouton désactivé « Fermé · ouvre demain à 9h00 » | — |
@@ -132,7 +139,7 @@ flowchart LR
 | Étape | Élément | Action | Ensuite |
 | --- | --- | --- | --- |
 | 1 · Prestation | Une prestation dans la liste | Sélectionne ; « Suivant » s'active | Étape 2 |
-| | « Je ne sais pas encore » | Sélectionne (durée de calcul : 30 min) | Étape 2 |
+| | « Je ne sais pas encore » | Sélectionne (durée de calcul : 30 min ; tous les coiffeurs sont éligibles) | Étape 2 |
 | 2 · Coiffeur | « Premier disponible » (présélectionné) | Sélectionne | Étape 3 |
 | | Un coiffeur | Sélectionne ; si absent ce jour-là : message et retour au « premier disponible » | Étape 3 |
 | | Chaque option | Affiche l'heure de passage estimée correspondante | — |
@@ -144,16 +151,18 @@ flowchart LR
 | | « Renvoyer le code » (après 30 s) | Renvoie ; au 3e échec : attendre 5 min | — |
 | | Champ prénom (si premier passage) | Obligatoire, 30 caractères max | — |
 | 5 · Récapitulatif | Résumé : salon, prestation, coiffeur, heure estimée, règle d'appel (« une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min ») | — | — |
-| | Case « Me prévenir quand mon tour approche » (cochée, explication) | Consentement aux notifications de suivi | — |
+| | Case « Me prévenir quand mon tour approche » (décochée, explication : sans elle, vous recevez seulement l'inscription et « votre tour ») | Consentement aux notifications de suivi (K11) | — |
 | | « Confirmer ma place » | `join_queue` | F-C5 + proposition d'installation (F-C9) |
 | Erreurs | `already_has_active_ticket` | Message + bouton « Voir ma place » | F-C5 |
-| | `queue_closed` ou `queue_full` | Message + « Salons proches » | F-C1 |
+| | `queue_closed`, `queue_paused` ou `queue_full` | Message + « Salons proches » | F-C1 |
 
 ### F-C4 · Entrée par QR (`/q/:qrToken`) — U-05
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| Scan du QR affiché au salon | Ouvre le navigateur ; résout le jeton vers le salon ; canal `qr` | F-C3 étape 1, en-tête « Vous êtes chez *Salon* » |
+| Scan du QR affiché au salon | Ouvre le navigateur ; résout le jeton vers le salon ; canal `qr` ; deux choix : « Rejoindre la file » et « J'ai rendez-vous » | — |
+| « Rejoindre la file » | — | F-C3 étape 1, en-tête « Vous êtes chez *Salon* » |
+| « J'ai rendez-vous » | — | F-C12 |
 | Jeton régénéré ou inconnu | Message « Ce QR code n'est plus valide, demandez à l'accueil » | — |
 
 Le parcours est identique à F-C3, dans le navigateur, sans installation. Le SMS de création contient le lien de suivi.
@@ -162,13 +171,17 @@ Le parcours est identique à F-C3, dans le navigateur, sans installation. Le SMS
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| Carte ticket | Code (#AF2K9) en grand, à donner au coiffeur ; position, heure de passage, coiffeur demandé ou « premier disponible », « mis à jour à 14h32 » | — |
+| Carte ticket | Code (#AF2K9) en grand, à donner au coiffeur ; position (nombre de clients avant vous chez votre coiffeur, E13), heure de passage, coiffeur demandé ou « premier disponible », « mis à jour à 14h32 » | — |
+| Carte ticket d'un rendez-vous | Heure du rendez-vous et heure de passage réelle (« Rendez-vous à 14h00 · passage prévu vers 14h20 ») ; pas de position | — |
+| Rendez-vous à confirmer | « Le salon confirme votre rendez-vous… » ; le ticket n'a pas encore d'heure de passage | F-C5 une fois confirmé, ou écran de fin si refusé |
 | Mise à jour | Temps réel page ouverte ; sinon toutes les 30 s et au retour sur l'app | — |
-| Message de changement | Si l'heure bouge de 10 min ou plus ou si la position recule : bandeau avec la raison | — |
+| Message de changement | Si l'heure bouge de 10 min ou plus par rapport à la dernière heure annoncée (écarts cumulés, E11) ou si la position recule : bandeau avec la raison | — |
 | « Itinéraire » | Ouvre l'app de cartes | App externe |
 | « Je serai en retard » | Ouvre le choix 5 à 30 min (même effet que F-C6 « En retard ») | F-C6 |
 | « Annuler ma place » | F-C8 | — |
-| Bandeau « Votre coiffeur n'est plus disponible » (coiffeur demandé absent ou en retard) | Deux boutons : « Attendre *Prénom* » (nouvelle heure affichée) ou « Premier disponible » (heure affichée) → `resolve_stylist_change` | F-C5 avec la nouvelle heure |
+| Bandeau « Votre coiffeur n'est plus disponible » (coiffeur demandé en retard, en pause ou partant plus tôt) | Deux boutons : « Attendre *Prénom* » (nouvelle heure affichée) ou « Premier disponible » (heure affichée) → `resolve_stylist_change` | F-C5 avec la nouvelle heure |
+| Même bandeau, coiffeur absent toute la journée, désactivé ou gérant qui ne coiffe plus (E7, E8) | Seulement « Premier disponible » ou « Annuler ma place » | F-C5 ou F-C8 |
+| Bandeau « Le salon propose un autre coiffeur » (E9, U-17) | Nouvelle heure affichée ; « Accepter » ou « Refuser » → `respond_reassignment` ; sans réponse en 10 min, rien ne change | F-C5 |
 | Bandeau « Risque de fin de journée » (U-11) | « Vous risquez de ne pas être pris avant la fermeture » ; « Je reste » ou « J'annule » → `respond_end_of_day` | F-C5, ou écran de fin |
 | Statut « Appelé » | Écran plein « C'est votre tour ! » avec prénom du coiffeur, adresse, code du ticket en grand et compteur de 10 min | F-C7 |
 | Statut « Terminé », « Annulé », « Absent » | Écran de fin avec la raison et « Rejoindre une autre file » | F-C1 |
@@ -181,7 +194,7 @@ Déclenché à T-30 min par notification push (trois actions) ou à l'ouverture 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
 | « Je serai à l'heure » | `respond_eta` (`on_time`) ; visible dans l'espace coiffeur | F-C5 |
-| « En retard de… » (5, 10, 15, 20, 30 min) | `respond_eta` (`late`, délai) ; recul de 2 places au plus si nécessaire, raison affichée | F-C5 avec nouvelle heure |
+| « En retard de… » (5, 10, 15, 20, 30 min) | `respond_eta` (`late`, délai) ; visible dans l'espace coiffeur ; pas de recul immédiat : le coiffeur choisira d'attendre ou de « Prendre le suivant » (E2) | F-C5 |
 | « J'annule » | Confirmation puis `respond_eta` (`cancel`) | Fin |
 | Sans réponse | Aucun effet ; le ticket reste en place | — |
 
@@ -191,13 +204,13 @@ Déclenché à T-30 min par notification push (trois actions) ou à l'ouverture 
 | --- | --- | --- |
 | Code du ticket (affiché en grand) | Le client le donne au coiffeur, qui le saisit | Arrivée horodatée, écran « Installez-vous » |
 | 5 min après l'appel sans arrivée | Notification « Le salon vous attend, place libérée dans 5 min » | — |
-| 10 min après l'appel sans arrivée | Place libérée ; proposition de se réinscrire | Écran de fin |
+| 10 min après l'appel sans arrivée (ou à l'heure d'arrivée annoncée si le client a déclaré un retard, E2) | Place libérée ; proposition de se réinscrire | Écran de fin |
 
-### F-C8 · Annuler (`/ticket` ou `/t/:token`) — U-08
+### F-C8 · Annuler (`/ticket` ou `/t/:shortCode`) — U-08
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| « Annuler ma place » | Boîte de confirmation « Votre place sera donnée au suivant » | — |
+| « Annuler ma place » (aussi une fois appelé, sans pénalité, E3) | Boîte de confirmation « Votre place sera donnée au suivant » | — |
 | « Oui, annuler » | `cancel_ticket` | Écran de fin, « Rejoindre une autre file » |
 | « Garder ma place » | Ferme la boîte | F-C5 |
 
@@ -211,11 +224,11 @@ Déclenché à T-30 min par notification push (trois actions) ou à l'ouverture 
 | « Activer les notifications » (app installée) | Demande système ; si accepté : `push-subscribe` | Push actif, le SMS n'est plus envoyé sauf « votre tour » |
 | « Plus tard » | Ferme ; reproposé au ticket suivant au plus tôt | — |
 
-### F-C10 · Suivi par lien SMS (`/t/:trackingToken`)
+### F-C10 · Suivi par lien SMS (`/t/:shortCode`)
 
-Même affichage que F-C5, sans session ; rafraîchissement toutes les 30 s. Actions possibles : répondre à T-30, signaler un retard, choisir « attendre » ou « premier disponible », répondre à l'alerte de fin de journée, annuler, activer le push (lié au ticket). Lien « Créer mon compte » qui ouvre `/signin` avec le numéro à confirmer. Jeton inconnu ou ticket de plus de 24 h : « Ce lien a expiré ».
+Même affichage que F-C5, sans session ; le lien court (8 caractères) est résolu par `ticket-public` ; temps réel par le canal `ticket-token`, sinon rafraîchissement toutes les 30 s. Actions possibles : répondre à T-30, signaler un retard, choisir « attendre » ou « premier disponible », accepter ou refuser une réaffectation, répondre à l'alerte de fin de journée, annuler, activer le push (lié au ticket). Lien « Créer mon compte » qui ouvre `/signin` avec le numéro à confirmer. Jeton inconnu ou ticket de plus de 24 h : « Ce lien a expiré ».
 
-### F-C11 · Compte (`/account`)
+### F-C11 · Compte (`/account`) — U-13
 
 | Élément | Action |
 | --- | --- |
@@ -224,6 +237,23 @@ Même affichage que F-C5, sans session ; rafraîchissement toutes les 30 s. Acti
 | « Télécharger mes données » | Fichier JSON des tickets et consentements |
 | « Supprimer mon compte » | Confirmation en deux temps ; compte supprimé, tickets anonymisés |
 | « Se déconnecter » | Fin de session, retour à l'accueil |
+
+### F-C12 · Se signaler pour un rendez-vous (`/salons/:slug/check-in`) — U-14
+
+Pour un client qui a pris rendez-vous ailleurs (Planity, carnet) et arrive au salon. Accessible seulement depuis le QR de l'affiche (F-C4).
+
+| Étape | Élément | Action | Ensuite |
+| --- | --- | --- | --- |
+| 1 · Heure | « Mon rendez-vous est à… » + sélecteur par pas de 5 min dans la journée d'ouverture | — | Étape 2 |
+| 2 · Coiffeur | Coiffeur du rendez-vous, ou « Je ne sais plus » | — | Étape 3 |
+| 3 · Identification (si non connecté) | Comme F-C3 étape 4 | — | Étape 4 |
+| 4 · Récapitulatif | Salon, heure, coiffeur, case « Me prévenir » (décochée) ; « Me signaler » | `check_in_appointment` | F-C5 « Le salon confirme votre rendez-vous… » |
+| Confirmation par le salon | Le gérant ou le coiffeur confirme d'un geste | Notification `appointment_confirmed` | F-C5 avec l'heure de passage |
+| Refus par le salon | Rendez-vous introuvable | Notification `appointment_rejected` avec « Rejoindre la file » | F-C3 |
+
+### F-C13 · Rendez-vous saisi par le salon — U-15
+
+Quand le salon saisit un rendez-vous avec le téléphone du client (F-M13), le client reçoit un SMS avec le lien de suivi (F-C10). Dès que son heure de passage dépasse de 10 min l'heure du rendez-vous, il est prévenu (« Le salon a du retard, venez vers 14h20 »), puis à chaque nouvel écart de 10 min, dans le plafond de 3 SMS. Sans téléphone saisi, le client peut se signaler à son arrivée (F-C12).
 
 ---
 
@@ -236,6 +266,8 @@ stateDiagram-v2
   [*] --> Connexion
   Connexion --> MaFile: lien magique
   MaFile --> Appel: Appeler
+  MaFile --> MesRdv: Mes rendez-vous
+  MesRdv --> MaFile: retour
   Appel --> Prestation: code du ticket + Commencer
   Appel --> MaFile: Prendre le suivant / place libérée à 10 min
   Prestation --> MaFile: Terminer
@@ -269,14 +301,16 @@ Barre de statut toujours visible en haut de `/stylist/queue`.
 | « Je suis prêt » | `set_presence` (`available`) | Reçoit des clients |
 | « Pause » | Choix : repas, courte, imprévu + durée (5, 10, 15, 30, 45, 60 min) → `set_presence` (`on_break`) | Compte à rebours ; clients notifiés si leur heure bouge de 10 min ou plus |
 | « Reprendre » (en pause) | `set_presence` (`available`) | — |
-| « Fin de journée » | Heure de fin (maintenant ou plus tard) → confirmation listant les clients concernés | Clients sans préférence redistribués ; ceux qui le demandaient choisissent (U-12) |
+| « Fin de journée » | Heure de fin (maintenant ou plus tard) → confirmation listant les clients concernés, dont ses rendez-vous restants | Clients sans préférence redistribués ; ceux qui le demandaient choisissent (U-12) ; les rendez-vous restants sont à réaffecter par le gérant |
 
 ### F-S4 · Ma file (`/stylist/queue`) — C-03
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| Carte « Prochain client » (en haut) | Premier ticket éligible pour moi (il me demande, ou il est sans préférence et je maîtrise la prestation) : prénom, prestation, durée, statut d'approche (confirmé à T-30, en retard de X min, sans réponse, arrivé), réponse T-30, mention « vous a demandé » | — |
-| « Appeler » (barre du bas, actif si je suis disponible et qu'un ticket est éligible) | `call_ticket` : le serveur appelle le premier ticket éligible ; refuse un second appel en cours | F-S5 |
+| Carte « Prochain client » (en haut) | Premier ticket éligible pour moi (mon rendez-vous à son heure, un client qui me demande, ou un client sans préférence dont je maîtrise la prestation et qui finit avant mon prochain rendez-vous) : prénom, prestation, durée, statut d'approche (confirmé à T-30, en retard de X min, sans réponse, arrivé), réponse T-30, mention « vous a demandé » ou badge « RDV 14h30 » | — |
+| Bandeau « Rendez-vous à confirmer » | Un client se signale pour moi (F-C12) : prénom et heure annoncée ; « Confirmer » ou « Refuser » → `confirm_appointment` | Le rendez-vous entre dans ma file |
+| « Appeler » (barre du bas, actif si je suis disponible et qu'un ticket est éligible, aussi file en pause, E4) | `call_ticket` : le serveur appelle le premier ticket éligible ; refuse un second appel en cours (`call_already_in_progress`) | F-S5 |
+| « Mes rendez-vous » | — | F-S10 |
 | Liste « Ensuite » | Mes prochains clients estimés, lecture seule (pas de glisser-déposer) | — |
 | Bandeau rouge « Connexion perdue » | Toutes les actions désactivées, reconnexion automatique | — |
 | Aucun ticket | « Aucun client pour l'instant » | — |
@@ -285,7 +319,7 @@ Barre de statut toujours visible en haut de `/stylist/queue`.
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| Carte « Appel en cours » | Prénom, compteur de 10 min (« rappel envoyé » à 5 min), retard déclaré éventuel | — |
+| Carte « Appel en cours » | Prénom, compteur jusqu'à la libération (10 min, ou heure d'arrivée annoncée si retard déclaré, E2 ; « rappel envoyé » à 5 min), retard déclaré éventuel | — |
 | « Saisir le code » | Pavé de 5 caractères pour le code que le client donne → `confirm_arrival` | « Arrivé » |
 | Code inconnu, d'un autre salon ou d'un ticket clos | Message clair, aucun changement | — |
 | « Commencer » (actif quand le client est arrivé) | F-S6 | — |
@@ -314,11 +348,21 @@ Une prestation plus courte que prévu se termine simplement par « Terminer ».
 | Compteur à 5 min | Rappel envoyé au client (notification) | — |
 | « Prendre le suivant » (si le client a déclaré un retard) | Confirmation « *Prénom* passera après *n* clients (2 maximum) » → `take_next` | Le suivant est appelé |
 | Attendre | Aucune action ; le compteur continue | — |
-| Compteur à 10 min sans arrivée | Place libérée automatiquement, bandeau d'information | F-S4 |
+| Compteur à zéro sans arrivée | Place libérée automatiquement, bandeau d'information | F-S4 |
 
 ### F-S9 · Mon bilan du jour (`/stylist/summary`) — C-10
 
 Clients servis, durée moyenne par prestation, écart prévu / réel. Bouton « Retour à ma file ». Ouvert automatiquement après « Fin de journée ».
+
+### F-S10 · Mes rendez-vous (`/stylist/appointments`) — C-11
+
+| Élément | Action | Ensuite |
+| --- | --- | --- |
+| Liste du jour | Mes rendez-vous par heure : prénom, prestation, statut (à venir, en retard de X min, à confirmer) | — |
+| « + Rendez-vous » | Prénom, heure (pas de 5 min), prestation (facultative), téléphone (facultatif, jamais réaffiché) → `create_appointment` pour moi | Ajouté à ma file |
+| Rendez-vous qui chevauche un autre | Message `appointment_overlap` | — |
+| Rendez-vous : « Modifier » ou « Annuler » | `update_appointment` ou `cancel_appointment` (tant qu'il n'est pas appelé) | Client prévenu s'il est joignable |
+| Rendez-vous à confirmer | « Confirmer » (avec fusion si je l'avais déjà saisi) ou « Refuser » → `confirm_appointment` | — |
 
 ### Gérant qui coiffe
 
@@ -350,7 +394,7 @@ Accessible dès l'envoi du dossier. Liste de contrôle avec progression.
 | Horaires | Plages par jour, « Ajouter une plage », « Copier sur la semaine », fermetures exceptionnelles (du, au, motif) | Enregistre ; refuse ouverture après fermeture ; au moins un jour ouvert |
 | Équipe | « Ajouter un coiffeur » : prénom, nom, e-mail, spécialités → `invite-member` | Invitation envoyée ; statut « invité » puis « actif » ; 20 maximum |
 | Prestations | Suggestions pré-remplies (cocher, ajuster), « Ajouter » : nom, durée (15-180), prix, spécialité | Au moins une active |
-| QR code | « Télécharger le PDF A4 », « Régénérer » (confirmation : l'ancien QR cesse de fonctionner) | PDF téléchargé |
+| QR code | « Télécharger le PDF A4 », « Régénérer » (confirmation : l'ancien QR cesse de fonctionner) → `regenerate-qr` | PDF téléchargé |
 | Téléphones de l'équipe | Rappel : chaque coiffeur active son compte depuis son invitation et installe Zelaté Pro sur son téléphone | — |
 | Test | F-M3 | — |
 
@@ -367,7 +411,7 @@ Accessible dès l'envoi du dossier. Liste de contrôle avec progression.
 | Élément | Action | Ensuite |
 | --- | --- | --- |
 | Menu du coiffeur : « Déconnecter ses appareils » (téléphone perdu ou changé) | Confirmation → `revoke-member-sessions` | Toutes ses sessions coupées ; il se reconnecte par lien magique |
-| Menu du coiffeur : « Désactiver » (départ du salon) | Confirmation → statut `deactivated` et sessions coupées | Accès retiré ; les clients qui le demandaient choisissent (U-12) |
+| Menu du coiffeur : « Désactiver » (départ du salon) | Confirmation → `deactivate-member` : statut `deactivated` et sessions coupées | Accès retiré en 15 min au plus ; les clients qui le demandaient choisissent « premier disponible » ou annulent (E7) ; ses rendez-vous restants sont à réaffecter |
 
 Tablettes partagées : au lot 2 (appairage par code et PIN, annexe A du TRD).
 
@@ -378,7 +422,7 @@ Commutateur à trois états en haut du dashboard.
 | Élément | Action | Ensuite |
 | --- | --- | --- |
 | « Ouvrir » | `set_queue_status` (`open`) | Visible côté client en < 2 s |
-| « Pause » | `set_queue_status` (`paused`) | Aucun nouveau ticket ; les inscrits restent |
+| « Pause » | `set_queue_status` (`paused`) | Aucun nouveau ticket ; les inscrits restent et continuent d'être appelés (E4) |
 | « Fermer » | Confirmation « Les *n* clients en attente seront servis jusqu'à la fin de journée » → `set_queue_status` (`closed`) | Aucun nouveau ticket |
 
 ### F-M6 · Vue temps réel (`/dashboard`) — S-09
@@ -387,9 +431,12 @@ Commutateur à trois états en haut du dashboard.
 | --- | --- | --- |
 | En-tête | État de la file, nombre en attente, attente moyenne, indicateur « synchronisé » | — |
 | Colonnes coiffeurs | Statut, client en cours, fin estimée, tickets assignés (prénom, prestation, heure) | Clic sur un coiffeur : F-M8 |
-| Liste globale | Tous les tickets actifs, ordre, coiffeur, statut d'approche | Clic sur un ticket : panneau détail (F-M9, F-M10) |
+| Liste globale | Tous les tickets actifs, ordre, coiffeur, statut d'approche ; rendez-vous avec leur heure et leur retard | Clic sur un ticket : panneau détail (F-M9, F-M10, « Terminer la prestation ») |
+| Bandeau « Rendez-vous à confirmer » | Clients qui se sont signalés (F-C12) | F-M13 |
+| Panneau ticket : « Terminer la prestation » (client en prestation, E15) | Confirmation → `complete_service` au nom du gérant ; journalisé | Coiffeur disponible |
 | « + Client à l'accueil » (bouton principal, raccourci clavier `N`) | F-M7 | — |
-| Interrupteur « Je coiffe » (en-tête) | `set_hairdressing` | Le gérant reçoit des clients, ou n'en reçoit plus |
+| Interrupteur « Je coiffe » (en-tête) | `set_hairdressing` | Le gérant reçoit des clients, ou n'en reçoit plus ; coupé : ceux qui le demandaient choisissent « premier disponible » ou annulent (E8) |
+| « Rendez-vous » | — | F-M13 |
 | « Je prends le prochain » (si « Je coiffe » est coupé) | `call_ticket` au nom du gérant | Appel en cours, comme F-S5 |
 
 Jamais de numéro de téléphone affiché.
@@ -398,7 +445,7 @@ Jamais de numéro de téléphone affiché.
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| Boîte « Client à l'accueil » | Prénom (focus auto), téléphone, prestation (facultatif), coiffeur (facultatif, « premier disponible » par défaut) | — |
+| Boîte « Client à l'accueil » | Prénom (focus auto), téléphone, prestation (facultative, 30 min par défaut), coiffeur (facultatif, « premier disponible » par défaut) | — |
 | « Inscrire » (Entrée) | `register_walk_in` | Ticket ajouté ; SMS au client avec lien de suivi ; numéro masqué dès l'enregistrement |
 | Numéro avec ticket actif | Message `already_has_active_ticket` | — |
 
@@ -407,7 +454,7 @@ Jamais de numéro de téléphone affiché.
 | Élément | Action | Ensuite |
 | --- | --- | --- |
 | Menu du coiffeur : « Absent », « En retard », « Part plus tôt », « Pause » | Formulaire (heure prévue, heure de fin, motif) | — |
-| Aperçu de l'impact | Liste des tickets touchés : réassignés automatiquement (sans préférence) ou à confirmer par le client (avec préférence) | — |
+| Aperçu de l'impact | `preview_presence_change` : tickets touchés avec leur nouvelle heure, réassignés automatiquement (sans préférence), à confirmer par le client (avec préférence), rendez-vous à réaffecter ; client appelé repris en tête, client en prestation à terminer par le gérant (E6) | — |
 | « Confirmer » | `set_presence` | Clients notifiés ; ceux avec préférence choisissent « attendre » ou « premier disponible » |
 
 ### F-M9 · Retirer un ticket — S-12
@@ -423,20 +470,32 @@ Jamais de numéro de téléphone affiché.
 | --- | --- | --- |
 | Panneau ticket : « Changer de coiffeur » | Liste des coiffeurs avec la nouvelle heure estimée | — |
 | Choix sans recul | `reassign_ticket` | Client notifié si ±10 min |
-| Choix avec recul | Message « L'heure du client reculerait de X min : demandez-lui son accord » + case « Le client est d'accord » | `reassign_ticket` avec `client_agreed` |
+| Choix avec recul | Message « L'heure du client reculerait de X min : il recevra une demande » → `reassign_ticket` | Demande envoyée au client (F-C5) ; ticket marqué « en attente de réponse » ; sans réponse en 10 min, rien ne change (E9) |
 
 ### F-M11 · Pages de configuration et journal
 
-`/dashboard/team`, `/dashboard/services`, `/dashboard/hours`, `/dashboard/salon` reprennent les formulaires du wizard. `/dashboard/salon` affiche les délais (rappel à 5 min, libération à 10 min, alerte de fin de journée 2 h avant la fermeture), réglables après le pilote, et le message d'accueil. `/dashboard/audit` liste les actions (qui, quand, quoi, motif) avec filtres par date, coiffeur et type. `/dashboard/summary` (S-14) : clients servis, attente annoncée et réelle, absences, annulations.
+`/dashboard/team`, `/dashboard/services`, `/dashboard/hours`, `/dashboard/salon` reprennent les formulaires du wizard. `/dashboard/salon` affiche les délais (rappel à 5 min, libération à 10 min, alerte de fin de journée 2 h avant la fermeture), réglables après le pilote, et le message d'accueil. `/dashboard/audit` (S-17) liste les actions (qui, quand, quoi, motif) avec filtres par date, coiffeur et type ; ni prénom de client ni texte libre (K10). `/dashboard/summary` (S-14) : clients servis, attente annoncée et réelle, absences, annulations.
 
 ### F-M12 · Fin de journée — S-15
 
 | Élément | Action | Ensuite |
 | --- | --- | --- |
-| Bandeau « Fin de journée » (à partir de 2 h avant la fermeture) | Liste des clients à risque et de leur réponse (reste, annule, sans réponse) | — |
+| Bandeau « Fin de journée » (à partir de 2 h avant la dernière fermeture de la journée) | Liste des clients à risque et de leur réponse (reste, annule, sans réponse) | — |
 | « Fermer la file maintenant » | `set_queue_status` (`closed`) | Plus de nouveaux clients ; les inscrits restent |
-| À l'heure de fermeture : boîte « *n* clients attendent encore » | Pour chacun, ou « Tous » : « Servir » ou « Annuler avec excuses » → `resolve_closing` | Servis : restent dans la file ; annulés : message d'excuse et salons proches |
+| À l'heure de fermeture : boîte « *n* clients attendent encore » (tous les restants, avec leur réponse éventuelle) | Pour chacun, ou « Tous » : « Servir » ou « Annuler avec excuses » → `resolve_closing` | Servis : restent dans la file ; non pris avant la fin de la journée : annulés avec excuses (E5) ; annulés : message d'excuse et salons proches |
 | Sans action du gérant | Annulation automatique 15 min après la fermeture | Clients prévenus avec excuses |
+
+### F-M13 · Rendez-vous du jour (`/dashboard/appointments`) — S-18, S-19
+
+| Élément | Action | Ensuite |
+| --- | --- | --- |
+| Liste du jour | Rendez-vous par heure et par coiffeur : prénom, prestation, statut (à venir, en retard de X min, arrivé, à confirmer) | — |
+| « + Rendez-vous » (raccourci clavier `R`) | Prénom (focus auto), heure (pas de 5 min), coiffeur, prestation (facultative), téléphone (facultatif, masqué dès l'enregistrement) → `create_appointment` | Ajouté à la file du coiffeur ; SMS avec lien de suivi si téléphone |
+| Chevauchement avec un autre rendez-vous du coiffeur | Message `appointment_overlap` | — |
+| « Modifier », « Annuler » | `update_appointment`, `cancel_appointment` (tant que le client n'est pas appelé) | Client prévenu s'il est joignable |
+| Section « À confirmer » | Clients qui se sont signalés : prénom, heure annoncée, coiffeur ; rapprochement proposé avec un rendez-vous déjà saisi | — |
+| « Confirmer » | `confirm_appointment` (`confirm`, fusion avec le rendez-vous saisi s'il existe) | Le client voit son heure de passage |
+| « Refuser » | `confirm_appointment` (`reject`) | Client prévenu, invité à rejoindre la file |
 
 ---
 
@@ -463,15 +522,19 @@ Ce que le système fait sans clic, et ce que chaque écran voit.
 
 | Événement | Déclencheur | Client | Espace coiffeur | Dashboard |
 | --- | --- | --- | --- | --- |
-| Ticket créé | `join_queue`, `register_walk_in` | Push, ou SMS 1 si pas de push : rang, heure, code, lien | Apparaît dans « Ensuite » du coiffeur demandé ou pressenti | Ticket ajouté |
+| Ticket créé | `join_queue`, `register_walk_in`, `create_appointment` (avec téléphone) | Push, ou SMS 1 si pas de push : rang ou heure du rendez-vous, heure de passage, code, lien | Apparaît dans « Ensuite » du coiffeur demandé ou pressenti | Ticket ajouté |
 | Votre tour approche | Heure de passage ≤ 30 min, une seule fois | Push avec 3 réponses ; pas de SMS (la page porte les réponses) | Réponse affichée sur la carte | — |
 | Préparez-vous | Heure de passage ≤ 10 min | Push, ou SMS 2 si pas de push : heure, adresse, itinéraire | — | — |
-| Votre tour | `call_ticket` | Push haute priorité **et** SMS 3 : prénom du coiffeur, adresse, code ; compteur de 10 min | Carte « Appel en cours » | Statut « appelé » |
+| Votre tour | `call_ticket` | Push haute priorité **et** SMS, toujours, même plafond atteint (E1) : prénom du coiffeur, adresse, code ; compteur de 10 min | Carte « Appel en cours » | Statut « appelé » |
 | Rappel | 5 min après l'appel sans arrivée | Push « place libérée dans 5 min » | « Rappel envoyé » | — |
-| Libération | 10 min sans arrivée | Push avec proposition de se réinscrire | Ticket retiré | Compteur d'absences |
-| Changement d'heure | Variation ≥ 10 min | Push avec nouvelle heure et raison | — | — |
+| Libération | 10 min sans arrivée, ou heure d'arrivée annoncée dépassée (E2) | Push avec proposition de se réinscrire ; à la 5e absence en 30 jours, avertissement (E10) | Ticket retiré | Compteur d'absences |
+| Changement d'heure | Variation ≥ 10 min par rapport à la dernière heure annoncée (E11) | Push avec nouvelle heure et raison | — | — |
+| Retard sur un rendez-vous | Heure de passage ≥ heure du rendez-vous + 10 min, puis tous les 10 min de plus | Push, ou SMS si pas de push, dans le plafond : « venez vers 14h20 » | — | Retard affiché sur le rendez-vous |
+| Rendez-vous signalé | `check_in_appointment` | « Le salon confirme… » | Bandeau « À confirmer » chez le coiffeur choisi | Bandeau « Rendez-vous à confirmer » |
+| Rendez-vous confirmé ou refusé | `confirm_appointment` | Push : heure de passage, ou refus avec « Rejoindre la file » | Entre dans la file, ou disparaît | — |
+| Demande de réaffectation | `reassign_ticket` avec recul | Push « accepter / refuser » | — | Ticket « en attente de réponse » ; sans réponse en 10 min, rien ne change |
 | Choix demandé | Coiffeur demandé déclaré absent, en retard ou partant plus tôt | Push (ou SMS si pas de push, dans le plafond) : « attendre » ou « premier disponible » | — | Ticket marqué « en attente de réponse » |
-| Recul | `take_next`, retard déclaré | Push avec nouvelle position et raison | — | Journal |
+| Recul | `take_next` (seule cause de recul d'un client en retard, E2) | Push avec nouvelle position et raison | — | Journal |
 | Risque de fin de journée | Fin estimée après la fermeture, à partir de 2 h avant, une seule fois | Push (ou SMS si pas de push, dans le plafond) : « Je reste » ou « J'annule » | — | Liste des clients à risque et leurs réponses |
 | Clients restants à la fermeture | Heure de fermeture atteinte | Servis, ou annulés avec excuses selon le gérant | Les clients servis restent dans la file | Boîte « Servir / Annuler avec excuses » ; annulation automatique 15 min après sans action |
 | Annulation par le salon | `remove_ticket`, `resolve_closing` (annuler), absence sans alternative | Push **et** SMS (hors plafond) : motif, excuses, salons proches | Ticket retiré | Journal |

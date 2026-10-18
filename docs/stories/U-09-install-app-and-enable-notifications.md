@@ -48,7 +48,7 @@
 - **Et** elle peut être proposée de nouveau au ticket suivant, au plus tôt
 
 ### 7. Activer le push depuis le lien de suivi
-- **Étant donné** que je suis mon ticket par `/t/:trackingToken`, sans session
+- **Étant donné** que je suis mon ticket par `/t/:shortCode`, sans session
 - **Quand** j'active les notifications et que j'accepte la demande système
 - **Alors** l'abonnement push est enregistré pour ce ticket (`push_subscriptions.ticket_id`)
 - **Et** les notifications suivantes de ce ticket arrivent par push
@@ -73,7 +73,7 @@
 | `client.install.actions.later` | « Plus tard » | — |
 
 ## Questions ouvertes
-- **APP_FLOW F-C9** : « Activer les notifications » n'est proposé qu'une fois l'app installée. Sur Android et sur ordinateur, le push web marche aussi dans le navigateur sans installation. Le propose-t-on sans installation, notamment aux clients venus par QR (U-05) et sur la page `/t/:trackingToken` ?
+- **APP_FLOW F-C9** : « Activer les notifications » n'est proposé qu'une fois l'app installée. Sur Android et sur ordinateur, le push web marche aussi dans le navigateur sans installation. Le propose-t-on sans installation, notamment aux clients venus par QR (U-05) et sur la page `/t/:shortCode` ?
 - **PRD §6 / APP_FLOW F-C9** : qu'affiche-t-on sur un iPhone sous iOS antérieur à 16.4, où le push web n'existe pas ?
 - **PRD §5.4 / BACKEND_SCHEMA §4.17** : si un abonnement push est expiré (réponse 404 ou 410 du service de push), le client n'a plus de push actif. Le SMS de secours part-il pour la notification qui a échoué, ou seulement pour les suivantes ?
 - **APP_FLOW F-C9** : après un refus de la demande système, le navigateur ne la reproposera pas. Que montre ensuite l'app (explication pour réactiver dans les réglages, rien) ? Que se passe-t-il si le client a installé l'app mais refusé les notifications ?

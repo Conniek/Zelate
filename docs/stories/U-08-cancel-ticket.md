@@ -4,7 +4,7 @@
 
 - Priorité : I (PRD §5.3)
 - Règles appliquées : annulation sans pénalité avant d'être appelé (PRD §5.1 « Autres règles », décision n° 10, PRD §11) ; transition 6 « En attente ou Appelé → Annulé » (PRD §5.2) ; un seul ticket actif (PRD §5.1)
-- Parcours : F-C8, depuis F-C5 (`/ticket`) ou F-C10 (`/t/:trackingToken`) (APP_FLOW §3)
+- Parcours : F-C8, depuis F-C5 (`/ticket`) ou F-C10 (`/t/:shortCode`) (APP_FLOW §3)
 - Commandes et données : `cancel_ticket` (`ticket_id`) · tables `tickets` (`status`, `cancelled_at`, `cancel_reason` = `client_cancelled`), `ticket_events` (`cancelled`), `private.ticket_contacts` (`is_active`, `closed_at`)
 
 ## Scénarios
@@ -38,7 +38,7 @@
 - **Et** je peux tout de suite rejoindre une autre file sans recevoir l'erreur `queue.already_has_active_ticket`
 
 ### 5. Annuler depuis le lien SMS
-- **Étant donné** que je suis mon ticket par `/t/:trackingToken`, sans session
+- **Étant donné** que je suis mon ticket par `/t/:shortCode`, sans session
 - **Quand** je touche « Annuler ma place » puis « Oui, annuler »
 - **Alors** mon ticket passe au statut « Annulé » avec le motif `client_cancelled`
 - **Et** l'écran de fin s'affiche

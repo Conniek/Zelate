@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : H2 (heure simulée), H3 (T-10 et « votre tour » ; 3 SMS maximum par ticket), H4 (compteur de 10 min, rappel à 5 min sans SMS, place libérée à 10 min), H7 (arrivée validée par le code du ticket de 5 caractères) (PRD §5.1) ; transitions 2, 4 et 7, calcul de l'attente affichée (PRD §5.2) ; notifications « Préparez-vous », « Votre tour », « Rappel », « Place libérée » (PRD §5.4) ; mise à jour en moins de 2 s page ouverte, sinon toutes les 30 s (PRD §5.3 U-06, PRD §6) ; « votre tour » envoyé en moins de 5 s (PRD §5.3 C-04)
 - Parcours : F-C5, F-C7, F-C10 (APP_FLOW §3) ; garde `/ticket` (APP_FLOW §2.3) ; événements « Préparez-vous », « Votre tour », « Rappel », « Libération » (APP_FLOW §7) ; états « Hors ligne » (APP_FLOW §8)
-- Commandes et données : RPC `my_active_ticket()` · Edge Function `ticket-public` (page `/t/:trackingToken`) · canal `ticket:{ticket_id}` (`ticket_updated`) · `queue-tick` (T-10, rappel, libération) · tables `tickets` (`short_code`, `queue_rank`, `estimated_start_at`, `declared_arrival_at`, `status`, `called_at`, `reminder_sent_at`, `get_ready_sent_at`, `arrived_at`, `no_show_at`), `notifications` (`get_ready`, `your_turn`, `arrival_reminder`, `released_no_show`)
+- Commandes et données : RPC `my_active_ticket()` · Edge Function `ticket-public` (page `/t/:shortCode`) · canal `ticket:{ticket_id}` (`ticket_updated`) · `queue-tick` (T-10, rappel, libération) · tables `tickets` (`short_code`, `queue_rank`, `estimated_start_at`, `declared_arrival_at`, `status`, `called_at`, `reminder_sent_at`, `get_ready_sent_at`, `arrived_at`, `no_show_at`), `notifications` (`get_ready`, `your_turn`, `arrival_reminder`, `released_no_show`)
 
 ## Scénarios
 
@@ -101,7 +101,7 @@
 - **Alors** je suis redirigé vers `/signin?next=/ticket`
 
 ### 15. Suivi par lien SMS
-- **Étant donné** que j'ai reçu un SMS avec le lien `/t/:trackingToken` d'un ticket de moins de 24 h
+- **Étant donné** que j'ai reçu un SMS avec le lien `/t/:shortCode` d'un ticket de moins de 24 h
 - **Quand** j'ouvre ce lien sans session
 - **Alors** je vois le même affichage que sur `/ticket`
 - **Et** les informations sont relues toutes les 30 s
@@ -109,7 +109,7 @@
 - **Et** un lien « Créer mon compte » est proposé
 
 ### 16. Lien de suivi expiré
-- **Étant donné** un lien `/t/:trackingToken` dont le jeton est inconnu ou dont le ticket date de plus de 24 h
+- **Étant donné** un lien `/t/:shortCode` dont le jeton est inconnu ou dont le ticket date de plus de 24 h
 - **Quand** je l'ouvre
 - **Alors** le message « Ce lien a expiré » s'affiche
 - **Et** aucune information de ticket n'est affichée
@@ -148,7 +148,7 @@
 
 ## Questions ouvertes
 - **PRD U-06 / APP_FLOW F-C5** : que mesure la « position » ? Le rang parmi tous les tickets en attente du salon, ou le rang parmi les tickets éligibles pour mon coiffeur (demandé ou pressenti) ?
-- **PRD U-06 / APP_FLOW F-C10 / TRD §6.4** : le PRD exige une mise à jour en moins de 2 s page ouverte. Or la page `/t/:trackingToken` n'a pas de session, ne peut pas s'abonner au canal `ticket:{ticket_id}` et se rafraîchit toutes les 30 s. Accepte-t-on cette exception pour les clients inscrits à l'accueil ?
+- **PRD U-06 / APP_FLOW F-C10 / TRD §6.4** : le PRD exige une mise à jour en moins de 2 s page ouverte. Or la page `/t/:shortCode` n'a pas de session, ne peut pas s'abonner au canal `ticket:{ticket_id}` et se rafraîchit toutes les 30 s. Accepte-t-on cette exception pour les clients inscrits à l'accueil ?
 - **PRD §5.4 / BACKEND_SCHEMA §4.16** : « Votre tour » part « toujours » par SMS (SMS 3), mais les SMS « Choix de coiffeur » et « Risque de fin de journée » comptent aussi dans le plafond de 3. Si un client sans push en a déjà reçu 3, le SMS « votre tour » part-il quand même (au-delà du plafond) ou est-il marqué `skipped` (`sms_cap_reached`), comme le prévoit le schéma ?
 - **BACKEND_SCHEMA §4.3 / TRD §9** : `salons.address_line` n'a pas de longueur maximale et `salons.name` peut faire 80 caractères. Les SMS 2 et 3 (nom, adresse, prénom du coiffeur, code) ne peuvent donc pas tenir à coup sûr en 160 caractères. Il faut aussi décider comment traiter les caractères hors GSM-7 (ê, ô, ç…) dans les noms et les prénoms : translittération, troncature ?
 - **PRD §5.4** : « Préparez-vous » part-il une seule fois, comme « Votre tour approche » ? Que se passe-t-il si l'heure de passage remonte au-dessus de 10 min puis redescend ?

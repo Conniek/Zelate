@@ -76,7 +76,7 @@
 - **Et** aucun choix n'est demandé à ce client
 
 ### 11. Choix depuis le lien SMS
-- **Étant donné** que je suis mon ticket par `/t/:trackingToken`, sans session
+- **Étant donné** que je suis mon ticket par `/t/:shortCode`, sans session
 - **Quand** je touche « Premier disponible » dans le bandeau
 - **Alors** mon choix est enregistré comme depuis l'app
 

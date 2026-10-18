@@ -24,7 +24,7 @@
 ### 3. SMS d'inscription avec le lien de suivi
 - **Étant donné** que je viens de rejoindre la file par le QR et que je n'ai pas de push actif
 - **Quand** le ticket est créé
-- **Alors** je reçois le SMS d'inscription (SMS 1) avec le lien de suivi `/t/:trackingToken`
+- **Alors** je reçois le SMS d'inscription (SMS 1) avec le lien de suivi `/t/:shortCode`
 - **Quand** j'ouvre ce lien
 - **Alors** le suivi de mon ticket s'affiche sans session (F-C10)
 

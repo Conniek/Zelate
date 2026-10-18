@@ -62,7 +62,7 @@
 - **Alors** je ne reçois pas de seconde notification pour ce même changement
 
 ### 9. Lien SMS
-- **Étant donné** que je suis mon ticket par `/t/:trackingToken`
+- **Étant donné** que je suis mon ticket par `/t/:shortCode`
 - **Quand** mon heure de passage change de 10 min ou plus
 - **Alors** le bandeau avec la raison s'affiche à la relecture suivante de la page (au plus tard 30 s)
 

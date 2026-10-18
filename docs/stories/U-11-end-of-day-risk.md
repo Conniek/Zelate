@@ -92,7 +92,7 @@
 - **Et** le bandeau d'alerte s'affiche à l'ouverture de ma page de suivi
 
 ### 14. Réponse depuis le lien SMS
-- **Étant donné** que je suis mon ticket par `/t/:trackingToken`, sans session
+- **Étant donné** que je suis mon ticket par `/t/:shortCode`, sans session
 - **Quand** je touche « Je reste »
 - **Alors** mon choix est enregistré comme depuis l'app
 

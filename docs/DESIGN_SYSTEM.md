@@ -1,6 +1,7 @@
 # DESIGN SYSTEM — Zelaté
 
-> version 0.2 · 16/10/2026 · statut : première version à reprendre dans Figma
+> version 0.3 · 18/10/2026 · statut : première version à reprendre dans Figma
+> v0.3 : rendez-vous du salon (PRD v1.1) — statuts « rendez-vous » et « à confirmer », badge de créneau libre, `AppointmentBadge`, `PendingConfirmationCard`, `ReassignmentPrompt`, `TimePicker` réutilisé pour l'heure du rendez-vous ; case de consentement décochée par défaut.
 > v0.2 : espace coiffeur conçu pour le téléphone du coiffeur (lot 1) ; code du ticket à la place du QR d'arrivée ; compteur de 10 min ; boutons de durée +5 / +15 / +30 / +45 ; `PinPad` reporté au lot 2.
 > Base : jetons du prototype Figma Make (polices DM Sans et Manrope ; encre `#1c1831`, violet `#7146e8`, crème `#f8f7f3`, vert `#13795b`). Les autres valeurs sont **proposées** et marquées 🟡 ; elles se valident ou se corrigent dans Figma, puis ce fichier est mis à jour.
 > Documents liés : [PRD](./PRD.md) · [TRD](./TRD.md) · [APP_FLOW](./APP_FLOW.md) · [BACKEND_SCHEMA](./BACKEND_SCHEMA.md) · [IMPLEMENTATION_PLAN](./IMPLEMENTATION_PLAN.md)
@@ -93,7 +94,10 @@
 
 | Statut | Fond | Texte / icône | Icône | Libellé |
 | --- | --- | --- | --- | --- |
+| Ticket `pending_confirmation` | `warning-subtle` | `warning-text` | `hourglass` | À confirmer |
 | Ticket `waiting` | `surface-muted` | `text` | `clock` | En attente |
+| Rendez-vous (type `appointment`) | `primary-subtle` | `link` | `calendar-clock` | RDV 14h30 |
+| Rendez-vous en retard | `warning-subtle` | `warning-text` | `calendar-clock` | RDV 14h30 · +20 min |
 | Ticket `called` | `success-subtle` | `success-text` | `bell-ring` | C'est votre tour |
 | Ticket `in_service` | `primary-subtle` | `link` | `scissors` | En prestation |
 | Ticket `completed` | `surface-muted` | `text-muted` | `check` | Terminé |
@@ -106,6 +110,7 @@
 | File `open` | `success-subtle` | `success-text` | `door-open` | Ouverte |
 | File `paused` | `warning-subtle` | `warning-text` | `pause` | En pause |
 | File `closed` | `surface-muted` | `text-muted` | `door-closed` | Fermée |
+| Créneau libre | `success-subtle` | `success-text` | `calendar-plus` | Créneau libre à 15h20 |
 
 **Thème sombre** : hors MVP. Les jetons sémantiques permettent de l'ajouter sans toucher aux composants.
 
@@ -284,6 +289,10 @@ Polices déclarées dans `packages/ui/src/fonts.css` (`@font-face` vers `/fonts/
 | Prestation, coiffeur | `scissors` |
 | Arrivé, validé | `check`, `circle-check` |
 | Retard | `timer` |
+| Rendez-vous | `calendar-clock` |
+| À confirmer | `hourglass` |
+| Créneau libre | `calendar-plus` |
+| Changement de coiffeur | `repeat` |
 | Pause | `coffee` (coiffeur), `pause` (file) |
 | Absent | `user-x` (client), `circle-off` (coiffeur) |
 | Code du ticket | `ticket` |
@@ -331,8 +340,8 @@ Chaque composant vit dans `packages/ui/src/components/<Name>/` avec son fichier,
 | `PinPad` (lot 2) | Pavé 3 × 4, touches de 72 px, points de saisie sans afficher les chiffres |
 | `Select`, `Combobox` | Liste accessible (Radix), recherche dans la liste au-delà de 7 options |
 | `AddressField` | Combobox avec autocomplétion Géoplateforme, annonce du nombre de suggestions |
-| `TimePicker` | Pas de 5 min, limité aux horaires d'ouverture |
-| `Checkbox`, `Radio`, `Switch` | 24 px, zone tactile 44 px, libellé cliquable |
+| `TimePicker` | Pas de 5 min, limité aux horaires d'ouverture ; sert aussi à l'heure d'un rendez-vous (saisie par le salon ou annoncée par le client) |
+| `Checkbox`, `Radio`, `Switch` | 24 px, zone tactile 44 px, libellé cliquable ; une case de consentement n'est jamais cochée par défaut |
 | `ChoiceCard` | Carte sélectionnable (prestation, coiffeur) : rôle `radio`, état sélectionné par contour 2 px `primary` + icône `check` |
 
 ### 7.3 Affichage
@@ -341,13 +350,17 @@ Chaque composant vit dans `packages/ui/src/components/<Name>/` avec son fichier,
 | --- | --- | --- |
 | `SalonCard` | Photo, nom, distance, `WaitBadge`, état de la file | Toute la carte est un lien (`<a>`), pas un `article` cliquable |
 | `WaitBadge` | « ~25 min » + « il y a 2 min » ; variante `stale` (« à vérifier ») au-delà de 5 min | Chiffres tabulaires |
+| `FreeSlotBadge` | « Créneau libre à 15h20 » (§2.4), sur `SalonCard`, `SalonMarker` et la liste des prestations | Absent quand aucun trou ne tient la prestation |
+| `AppointmentBadge` | « RDV 14h30 », et le retard (« +20 min ») quand il dépasse 10 min | Sur `QueueItem`, `StylistColumn`, `TicketCard` |
 | `StatusBadge` | Pastille icône + libellé selon §2.4 | Jamais la couleur seule |
-| `TicketCard` | Code du ticket en grand (`display`, chiffres tabulaires, espacé), position, heure de passage, coiffeur, mise à jour | Écran plein en état `called`, avec `CountdownBadge` |
-| `CountdownBadge` | Compteur des 10 min après l'appel (mm:ss) ; passe en `warning` à 5 min | `aria-live="polite"` à 5 min et à 1 min seulement |
+| `TicketCard` | Code du ticket en grand (`display`, chiffres tabulaires, espacé), position, heure de passage, coiffeur, mise à jour ; pour un rendez-vous : heure du rendez-vous et heure de passage réelle, sans position | Écran plein en état `called`, avec `CountdownBadge` |
+| `CountdownBadge` | Compteur jusqu'à la libération (10 min après l'appel, ou heure d'arrivée annoncée) (mm:ss) ; passe en `warning` à 5 min | `aria-live="polite"` à 5 min et à 1 min seulement |
 | `QueueItem` (espace coiffeur) | Prénom (`h3`), prestation, durée, statut d'approche, réponse T-30 | Hauteur ≥ 72 px |
 | `NextClientCard` (espace coiffeur) | Version épinglée de `QueueItem` + bouton `xl` « Appeler » | `shadow-md` |
 | `ServiceTimer` (espace coiffeur) | Temps écoulé / prévu, barre de progression, boutons +5 / +15 / +30 / +45 | `aria-live="polite"` toutes les minutes seulement |
-| `StylistColumn` (dashboard) | Avatar, statut, client en cours, fin estimée, tickets assignés | — |
+| `StylistColumn` (dashboard) | Avatar, statut, client en cours, fin estimée, tickets assignés, rendez-vous à leur heure | — |
+| `PendingConfirmationCard` (espace coiffeur, dashboard) | Prénom, heure annoncée, coiffeur ; boutons « Confirmer » et « Refuser » ; rapprochement proposé avec un rendez-vous saisi | Annoncée par `aria-live="polite"` à l'arrivée |
+| `ReassignmentPrompt` (client) | Nouveau coiffeur, nouvelle heure, « Accepter » et « Refuser », temps restant pour répondre | Même gabarit que le bandeau « coiffeur indisponible » |
 | `Avatar` | Photo ou initiales sur `primary-subtle` | 32, 40, 56 px |
 | `Stepper` | Étapes du parcours (« 2 sur 5 ») | Texte lisible par les lecteurs d'écran |
 | `QrCode` | QR de l'affiche du salon (dashboard et PDF) : noir sur blanc, marge de 4 modules, taille ≥ 200 px | Lien texte affiché dessous |

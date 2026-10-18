@@ -83,7 +83,7 @@
 - **Alors** j'arrive sur `/ticket`
 
 ### 13. Créer son compte depuis le lien de suivi
-- **Étant donné** que je suis mon ticket par le lien SMS `/t/:trackingToken`, sans session
+- **Étant donné** que je suis mon ticket par le lien SMS `/t/:shortCode`, sans session
 - **Quand** je touche « Créer mon compte »
 - **Alors** l'écran `/signin` s'ouvre avec le numéro du ticket à confirmer
 

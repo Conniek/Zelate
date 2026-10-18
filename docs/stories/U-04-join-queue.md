@@ -167,7 +167,7 @@
 | `errors.queue.queue_full` | _À rédiger (absent des docs)_ | — |
 | `errors.queue.rate_limited` | _À rédiger (absent des docs)_ | Partagé avec U-03, P-03 |
 | `notifications.ticket_created.push` | _À rédiger (absent des docs)_ | Variables : rang, heure, code |
-| `notifications.ticket_created.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus, avec rang, heure, code et lien `/t/:trackingToken` |
+| `notifications.ticket_created.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus, avec rang, heure, code et lien `/t/:shortCode` |
 
 ## Questions ouvertes
 - **PRD §5.4 / TRD §8 / legal** : la case de consentement est **cochée par défaut** (APP_FLOW F-C3). Une case pré-cochée vaut-elle consentement au sens du RGPD, alors que TRD §8 parle d'un traitement « nécessaire au service » ? Si le client décoche la case, quelles notifications partent encore ? `notification_status` = `skipped` avec `no_consent` laisse penser qu'aucune ne part, pas même le SMS « votre tour ».
