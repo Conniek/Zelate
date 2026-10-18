@@ -48,14 +48,14 @@
 ### 6. Code d'un ticket clos
 - **Étant donné** Léa, dont la place a été libérée 10 min après l'appel (statut « Absent »), qui arrive au salon
 - **Quand** Inès saisit le code de Léa
-- **Alors** la commande est refusée (code d'erreur à confirmer, voir questions)
+- **Alors** la commande est refusée (TRD §6.2 : « refuse […] un ticket clos », code non nommé ; voir questions)
 - **Et** un message clair du dictionnaire `errors` s'affiche
 - **Et** le ticket de Léa reste « Absent »
 
 ### 7. Code déjà utilisé
 - **Étant donné** Léa dont l'arrivée a déjà été validée par son code
 - **Quand** un coiffeur saisit à nouveau ce code
-- **Alors** la commande est refusée (code d'erreur à confirmer, voir questions)
+- **Alors** la commande est refusée (code non nommé dans TRD §6.2 ; voir questions)
 - **Et** l'horodatage d'arrivée de Léa ne change pas
 
 ### 8. Confidentialité
