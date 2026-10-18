@@ -3,9 +3,9 @@
 **En tant que** client, **je veux** consulter la fiche d'un salon (photos, horaires, prestations et prix, coiffeurs, attente), **afin de** décider si je rejoins sa file.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : états de la file du salon (PRD §5.2 : Fermée, Ouverte, En pause, Complète) ; H1 (une file unique par salon) ; fiche salon chargée en moins de 2 s (PRD §6)
+- Règles appliquées : états de la file du salon (PRD §5.2 : Fermée, Ouverte, En pause, Complète) ; H1 (une file unique par salon) ; « Prochain créneau libre » (PRD §5.2, détail dans U-16) ; changement d'état de la file visible côté client en moins de 2 s (PRD §5.3 S-08) ; fiche salon chargée en moins de 2 s (PRD §6) ; repli à 30 s côté client (PRD §6)
 - Parcours : F-C2 (APP_FLOW §3) ; depuis F-C1 ou un lien partagé ; vers F-C3 (rejoindre) et F-C1 (salons proches, fermeture du panneau)
-- Commandes et données : RPC `get_salon_public(slug)` · vues `public_salons`, `public_stylists` · tables `services`, `opening_hours`, `salon_closures`, `specialties`, `member_specialties` · Storage `salon-photos`, `member-photos`
+- Commandes et données : RPC `get_salon_public(slug)` · vues `public_salons` (dont `next_free_slots`), `public_stylists` · tables `services`, `opening_hours`, `salon_closures`, `specialties`, `member_specialties` · canal public `salon-public:{salon_id}` (`salon_updated { version }`, TRD ADR-018, §6.4) · Storage `salon-photos`, `member-photos`
 
 ## Scénarios
 
@@ -66,6 +66,26 @@
 - **Quand** je touche « Salons proches »
 - **Alors** l'accueil des salons s'ouvre (F-C1)
 
+### 9 bis. Prochain créneau libre par prestation (renvoi vers U-16)
+- **Étant donné** un salon dont deux prestations tiennent dans un trou de la journée d'un coiffeur qui les maîtrise, et une troisième qui ne tient dans aucun trou
+- **Quand** j'ouvre sa fiche
+- **Alors** chacune des deux premières prestations affiche son prochain créneau libre (exemple PRD §5.2 : « prochain créneau libre à 15h20 »)
+- **Et** la troisième prestation n'affiche aucun créneau libre
+- **Et** aucun prénom de coiffeur n'est associé au créneau
+
+### 9 ter. Fiche à jour sans compte ni ticket
+- **Étant donné** que la fiche d'un salon ouvert est affichée sur l'appareil d'un visiteur sans compte et sans ticket
+- **Quand** le gérant met la file en pause
+- **Alors** en moins de 2 s, le bouton devient « File en pause, réessayez dans quelques minutes » sans rechargement de la page
+- **Et** l'attente, le statut de la file et les créneaux libres affichés sont relus après chaque message du canal public `salon-public:{salon_id}`
+- **Et** ce message ne contient aucune donnée personnelle (seulement `{ version }`)
+
+### 9 quater. Repli sans temps réel
+- **Étant donné** que le canal temps réel n'est pas disponible sur l'appareil
+- **Quand** la fiche reste ouverte
+- **Alors** l'attente, le statut de la file et les créneaux libres sont relus toutes les 30 s
+- **Et** ils sont relus aussi au retour de l'app au premier plan
+
 ### 10. Fermer le panneau sur mobile
 - **Étant donné** que la fiche est ouverte en panneau sur mobile
 - **Quand** je glisse le panneau vers le bas ou que je touche « Fermer »
@@ -83,6 +103,7 @@
 | `client.salon.wait.estimated_time` | _À rédiger (absent des docs)_ | Variable `time` |
 | `client.salon.hours.title` | « Horaires » | — |
 | `client.salon.services.title` | « Prestations » | — |
+| `client.salon.services.next_free_slot` | _À rédiger_ (PRD §5.2, indicatif : « prochain créneau libre à 15h20 ») | Variable `time` ; partagé avec U-16 |
 | `client.salon.stylists.title` | « Coiffeurs » | — |
 | `client.salon.stylist.status.available` | « disponible » | — |
 | `client.salon.stylist.status.busy` | « en prestation » | — |
@@ -97,8 +118,9 @@
 
 ## Questions ouvertes
 - **APP_FLOW F-C2 / BACKEND_SCHEMA §6** : la vue `public_stylists` a trois statuts simplifiés (`available`, `busy`, `away`), alors que la fiche n'affiche que « disponible » ou « en prestation ». Qu'affiche-t-on pour `away` (pause, en retard) ? Le coiffeur est-il masqué ?
-- **PRD S-08 / TRD §6.4** : S-08 exige qu'un changement d'état de la file soit visible côté client en moins de 2 s. Or le canal `salon:{salon_id}` est réservé à l'équipe du salon et le canal `ticket:{ticket_id}` au propriétaire du ticket. Comment une fiche ouverte (sans ticket) se met-elle à jour : en temps réel, toutes les 30 s, ou seulement au rechargement ?
+- **Résolu le 18/10** (K6) — Mise à jour d'une fiche ouverte sans ticket : canal public `salon-public:{salon_id}` sans donnée personnelle (TRD ADR-018), repli à 30 s ; voir scénarios 9 ter et 9 quater.
 - **APP_FLOW F-C2** : qu'affiche `/salons/:slug` pour un slug inconnu ou pour un salon qui n'est pas (ou plus) publié ?
 - **APP_FLOW F-C2 / BACKEND_SCHEMA §4.8** : un jour de fermeture exceptionnelle, la fiche affiche-t-elle le motif (`salon_closures.reason`) en plus de la prochaine ouverture ?
-- **APP_FLOW F-C2** : « Personnes avant vous » et l'heure de passage portent-elles sur un nouveau client « premier disponible » (`current_wait_minutes`) ? L'heure est-elle arrondie aux 5 min supérieures ?
-- **Textes** : l'heure de passage estimée et le libellé du statut `away` ne figurent dans aucun document.
+- **APP_FLOW F-C2** : « Personnes avant vous » et l'heure de passage portent-elles sur un nouveau client « premier disponible » (`current_wait_minutes`) ? L'heure est-elle arrondie aux 5 min supérieures ? La décision E13 (position = clients avant lui chez son coiffeur) vise le ticket (U-06), pas la fiche : quel nombre afficher sur la fiche, pour qui n'a pas encore de coiffeur ?
+- **PRD §5.2 / BACKEND_SCHEMA §4.3** : `next_free_slots` est recalculé à chaque commande et à chaque `queue-tick`. Un créneau libre déjà passé (heure dépassée entre deux recalculs) est-il masqué par la fiche ?
+- **Textes** : l'heure de passage estimée, le libellé du statut `away` et le libellé du créneau libre ne figurent dans aucun document.

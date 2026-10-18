@@ -52,7 +52,13 @@
 ### 7. Test demandé après la publication
 - **Étant donné** un salon publié
 - **Quand** une commande `create_test_ticket` est envoyée pour ce salon
-- **Alors** la commande est refusée (contexte autorisé : « salon non publié », TRD §6.2)
+- **Alors** la commande est refusée avec l'erreur `queue.salon_already_published` (TRD §6.2)
+- **Alors** aucun ticket n'est créé
+
+### 7 bis. Seul le gérant lance un test
+- **Étant donné** un coiffeur connecté d'un salon non publié
+- **Quand** une commande `create_test_ticket` est envoyée depuis son compte
+- **Alors** la commande est refusée avec l'erreur `queue.forbidden` (TRD §6.2, codes communs)
 - **Alors** aucun ticket n'est créé
 
 ### 8. Double clic sur « Publier mon salon » ou « Lancer un test »
@@ -68,14 +74,15 @@
 | `pro-manager.setup.test.ticket_name` | « Test » | Prénom du client fictif (APP_FLOW F-M3) |
 | `pro-manager.setup.publish` | « Publier mon salon » | Libellé indicatif (APP_FLOW F-M3) |
 | `pro-manager.setup.checklist.<item>` | — (à rédiger) | Un libellé par condition : dossier validé, test réussi, horaires, 1 coiffeur actif, 1 prestation |
-| `errors.queue.<code>` | — (à rédiger) | Refus de `create_test_ticket` sur un salon publié (code à définir) |
+| `errors.queue.salon_already_published` | — (à rédiger) | Refus de `create_test_ticket` sur un salon publié (TRD §6.2) |
+| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
 
 ## Questions ouvertes
 - **APP_FLOW** : d'après F-M3, le ticket de test « apparaît sur le dashboard ». Mais les gardes de §2.3 renvoient un salon validé et non publié vers `/dashboard/setup`, et `/dashboard` demande un salon validé. Où le gérant voit-il et traite-t-il le ticket de test ? Peut-il tester avant que la plateforme ait validé le dossier ?
-- **PRD / TRD** : pour être créé, un ticket demande une « file ouverte et non complète » (transition 1), et un appel demande un coiffeur disponible. Pendant le test, faut-il que la file soit ouverte et le coiffeur « disponible » ? Peut-on ouvrir la file d'un salon non publié ?
+- **PRD / TRD** : pour être créé, un ticket demande une « file ouverte et non complète » (transition 1), et un appel demande un coiffeur disponible. Or `set_queue_status` refuse d'ouvrir la file d'un salon non publié (`salon_not_published`, TRD §6.2). Le ticket de test échappe-t-il à la condition « file ouverte » ? Le coiffeur doit-il être « disponible » pour l'appeler ?
 - **PRD** : le test envoie-t-il des notifications (push, SMS) ? À qui ?
 - **APP_FLOW** : que se passe-t-il si un test est abandonné en route ? Peut-on annuler un ticket de test ou en lancer plusieurs ?
 - **APP_FLOW** : pour la condition « 1 coiffeur actif », le gérant qui a activé « Je coiffe » compte-t-il ?
-- **TRD** : quel code d'erreur renvoie `create_test_ticket` sur un salon déjà publié ? TRD §6.2 ne dit pas quels codes chaque commande peut renvoyer.
+- **Résolu le 18/10** (K1, TRD §6.2) : `create_test_ticket` sur un salon publié renvoie `queue.salon_already_published`.
 - **BACKEND_SCHEMA** : la condition « horaires » (F-M3) veut-elle dire « au moins un jour ouvert » (BACKEND_SCHEMA §4.7) ?
 - **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.

@@ -45,7 +45,7 @@
 - **Étant donné** Léa appelée, dont l'arrivée n'a pas été validée par son code
 - **Quand** Inès regarde la carte « Appel en cours »
 - **Alors** le bouton « Commencer » est inactif
-- **Et** une commande `start_service` envoyée malgré tout est refusée (code attendu `queue.invalid_transition`, à confirmer)
+- **Et** une commande `start_service` envoyée malgré tout est refusée avec `queue.invalid_transition` (code commun, TRD §6.2 : condition de la transition 4 non remplie)
 - **Et** le ticket reste « Appelé »
 
 ### 6. Ticket d'un autre coiffeur
@@ -91,4 +91,5 @@
 - [APP_FLOW] Quand le coiffeur change de prestation, la durée est-elle remplacée par la durée prédéfinie de la nouvelle prestation, même s'il l'avait déjà modifiée ?
 - [PRD / APP_FLOW] Client déjà arrivé et en tête : « l'appel et le début s'enchaînent ». Faut-il deux gestes (« Appeler » puis « Commencer ») ou un seul ? La transition 4 ne part que de « Appelé ».
 - [APP_FLOW] Que voit le client quand la prestation commence ? Aucune ligne de F-C5 ou F-C7 ne le décrit.
-- [TRD §6.2] Les codes d'erreur ne sont pas rattachés aux commandes : le code d'une arrivée non validée est déduit (`invalid_transition`), à confirmer.
+- **Résolu le 18/10 (K1)** : TRD §6.2 rattache les codes aux commandes ; `start_service` a pour code propre `not_assigned_to_you`, et une arrivée non validée relève du code commun `invalid_transition`. Question d'origine : les codes d'erreur n'étaient pas rattachés aux commandes.
+- [PRD / TRD] Rendez-vous : un rendez-vous ne commence jamais avant son heure, sauf si le coiffeur est libre et que cela ne retarde personne (PRD §5.2). `start_service` sur un rendez-vous appelé avant son heure est-il toujours accepté, ou le moteur peut-il le refuser ?

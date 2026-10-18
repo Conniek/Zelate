@@ -3,9 +3,9 @@
 **En tant que** gérant, **je veux** indiquer si je coiffe et changer ce choix à tout moment depuis le dashboard, **afin de** recevoir des clients comme un coiffeur quand je travaille au fauteuil, ou de ne plus en recevoir automatiquement quand je gère le salon, tout en pouvant prendre le prochain client si besoin.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H1 ; PRD §5.2 Distribution, règle 5 ; PRD §3 « Rôles combinés » ; PRD §11 n° 12 ; toute variation d'heure de 10 min ou plus est expliquée (PRD §5.1) ; H4 (compteur de 10 min après l'appel)
-- Parcours : F-M1 étape 3, F-M6 (interrupteur et « Je prends le prochain »), « Gérant qui coiffe » (APP_FLOW §4), F-S5
-- Commandes et données : `set_hairdressing` · `call_ticket` · tables `salon_members` (`is_hairdressing`), `tickets` (`estimated_member_id`, `assigned_member_id`, `estimated_start_at`, `called_at`), `salon_events` (`hairdressing_toggled`), `notifications` (`estimate_changed`, `your_turn`)
+- Règles appliquées : H1 ; PRD §5.2 Distribution, règle 5 ; PRD §3 « Rôles combinés » ; PRD §11 n° 12 ; « Je coiffe » coupé : même règle qu'un coiffeur absent pour les clients qui le demandaient (PRD §5.1, §5.2 transition 8, §11 E8) ; toute variation d'heure de 10 min ou plus par rapport à la dernière heure annoncée, écarts cumulés, est expliquée (PRD §5.1, E11) ; H4 (compteur de 10 min après l'appel) ; file en pause : les inscrits continuent d'être appelés (PRD §5.1, E4)
+- Parcours : F-M1 étape 3, F-M6 (interrupteur et « Je prends le prochain »), « Gérant qui coiffe » (APP_FLOW §4), F-S5 ; côté client F-C5 bandeau « Votre coiffeur n'est plus disponible » (story U-12)
+- Commandes et données : `set_hairdressing` · `call_ticket` · `resolve_stylist_change` (réponse du client) · tables `salon_members` (`is_hairdressing`), `tickets` (`requested_member_id`, `estimated_member_id`, `assigned_member_id`, `estimated_start_at`, `last_notified_start_at`, `stylist_change_pending_since`, `called_at`), `salon_events` (`hairdressing_toggled`), `ticket_events` (`stylist_change_requested`), `notifications` (`estimate_changed`, `stylist_change_required`, `your_turn`)
 
 ## Scénarios
 
@@ -33,14 +33,26 @@
 - **Alors** le bouton « Je prends le prochain » apparaît
 - **Alors** l'événement `hairdressing_toggled` est inscrit au journal du salon
 
+### 3 bis. Clients qui demandaient le gérant quand il coupe « Je coiffe »
+- **Étant donné** des clients en attente qui ont demandé le gérant (`requested_member_id`)
+- **Quand** le gérant coupe « Je coiffe »
+- **Alors** chacun de ces clients qui a coché « Me prévenir » reçoit une notification lui demandant de choisir (E8, même règle qu'un coiffeur absent toute la journée ; sans la case, la notification est marquée `skipped`, K11)
+- **Alors** sa page de suivi ne lui propose que « Premier disponible » ou « Annuler ma place », sans « Attendre » (APP_FLOW F-C5, E7)
+- **Alors** ces tickets sont marqués « en attente de réponse » sur le dashboard
+
+### 3 ter. Pas de réponse en 10 min après la coupure
+- **Étant donné** un client qui demandait le gérant et qui doit choisir depuis la coupure de « Je coiffe »
+- **Quand** 10 min passent sans réponse (tolérance des tests ±60 s, TRD §10.1, K7)
+- **Alors** son ticket passe en « premier disponible » (PRD §5.2 transition 8)
+
 ### 4. Clients prévenus quand leur heure bouge de 10 min ou plus
-- **Étant donné** un client en attente dont l'heure de passage change de 10 min ou plus après le changement de l'interrupteur
+- **Étant donné** un client en attente dont l'heure de passage s'écarte de 10 min ou plus de la dernière heure qui lui a été annoncée (`last_notified_start_at`) après le changement de l'interrupteur
 - **Quand** le recalcul est terminé
 - **Alors** le client reçoit une notification push « changement d'heure » avec la nouvelle heure et la raison
 - **Alors** aucun SMS n'est envoyé pour ce changement (PRD §5.4)
 
 ### 5. Variation de moins de 10 min : pas de notification
-- **Étant donné** un client en attente dont l'heure de passage change de moins de 10 min après le changement de l'interrupteur
+- **Étant donné** un client en attente dont l'heure de passage s'écarte de moins de 10 min de la dernière heure annoncée, écarts précédents compris (E11)
 - **Quand** le recalcul est terminé
 - **Alors** aucune notification ne lui est envoyée
 - **Alors** sa page de suivi affiche la nouvelle heure
@@ -49,10 +61,15 @@
 - **Étant donné** un gérant dont « Je coiffe » est coupé et au moins un ticket éligible en attente
 - **Quand** il clique sur « Je prends le prochain »
 - **Alors** la commande `call_ticket` est envoyée en son nom
-- **Alors** le premier ticket éligible de la file passe au statut « appelé », attribué au gérant
-- **Alors** le client reçoit « votre tour » par push et par SMS
+- **Alors** le premier ticket éligible de la file passe au statut « appelé », attribué au gérant (PRD §5.2 règles 4 et 6 à 8)
+- **Alors** le client reçoit « votre tour » par push et par SMS, même si le plafond de 3 SMS est atteint (E1)
 - **Alors** le compteur de 10 min démarre, visible par le client
 - **Alors** le dashboard affiche l'appel en cours, comme la carte « Appel en cours » de l'espace coiffeur (F-S5)
+
+### 6 bis. « Je prends le prochain » avec la file en pause
+- **Étant donné** une file en pause, un gérant dont « Je coiffe » est coupé et au moins un ticket éligible en attente
+- **Quand** il clique sur « Je prends le prochain »
+- **Alors** le premier ticket éligible passe au statut « appelé » (PRD §5.1, E4 ; TRD §6.2 `call_ticket`)
 
 ### 7. « Je prends le prochain » sans ticket éligible
 - **Étant donné** un gérant dont « Je coiffe » est coupé et aucun ticket éligible
@@ -69,8 +86,14 @@
 ### 9. Second appel alors qu'un appel du gérant est déjà en cours
 - **Étant donné** un gérant qui a déjà un client appelé ou en prestation
 - **Quand** il demande un nouvel appel
-- **Alors** l'appel est refusé (APP_FLOW F-S4 : « refuse un second appel en cours »)
+- **Alors** le message de l'erreur `queue.call_already_in_progress` s'affiche (TRD §6.2)
 - **Alors** aucun autre ticket ne change de statut
+
+### 9 bis. Un coiffeur ne peut pas changer l'interrupteur
+- **Étant donné** un coiffeur connecté du salon
+- **Quand** une commande `set_hairdressing` est envoyée depuis son compte
+- **Alors** la commande est refusée avec l'erreur `queue.forbidden` (TRD §6.2, codes communs)
+- **Alors** `is_hairdressing` ne change pas
 
 ### 10. Double clic sur l'interrupteur ou sur « Je prends le prochain »
 - **Étant donné** le gérant sur le dashboard
@@ -90,13 +113,17 @@
 | `pro-manager.board.take_next` | « Je prends le prochain » | Libellé indicatif (APP_FLOW F-M6) |
 | `notifications.estimate_changed.push` | — (à rédiger) | Push seulement ; nouvelle heure et raison (APP_FLOW §7) |
 | `notifications.estimate_changed.reason.hairdressing_toggled` | — (à rédiger) | Raison montrée au client, sans détail sur le gérant |
+| `notifications.stylist_change_required.push` | — (à rédiger) | Partagée avec S-11 et S-16 ; ici sans « attendre » (E7, E8) |
 | `errors.queue.no_eligible_ticket` | — (à rédiger) | — |
+| `errors.queue.call_already_in_progress` | — (à rédiger) | TRD §6.2 |
 | `errors.queue.invalid_transition` | — (à rédiger) | — |
+| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
 
 ## Questions ouvertes
-- **PRD** : que deviennent les tickets qui demandaient le gérant quand il coupe « Je coiffe » ? Le client doit-il choisir « attendre » ou « premier disponible » (transition 8), ou se passe-t-il autre chose ? Les clients peuvent-ils encore demander le gérant pendant que l'interrupteur est coupé (`public_stylists` = membres « qui coiffent aujourd'hui ») ?
-- **PRD / APP_FLOW** : que se passe-t-il si le gérant coupe « Je coiffe » pendant qu'il a un client appelé ou en prestation ?
+- **Résolu le 18/10** (E8, PRD §5.1) : quand le gérant coupe « Je coiffe », ceux qui le demandaient suivent la règle d'un coiffeur absent : « premier disponible » ou annuler, sans « attendre » ; sans réponse en 10 min, premier disponible.
+- **Résolu le 18/10** (K1, TRD §6.2) : un second appel du même membre renvoie `queue.call_already_in_progress`.
+- **PRD / BACKEND_SCHEMA** : les clients peuvent-ils encore demander le gérant pendant que l'interrupteur est coupé (`public_stylists` = membres « qui coiffent aujourd'hui ») ? Sa réactivation rend-elle le choix « attendre » à ceux qui n'ont pas encore répondu ?
+- **PRD / TRD** : PRD §5.1 dit « la même règle s'applique quand le gérant coupe « Je coiffe » » juste après la règle du client appelé (repris en tête) et du client en prestation (terminé par le gérant). TRD §6.2 `set_hairdressing` ne parle que de « ses clients ». Si le gérant coupe l'interrupteur pendant qu'il a un client appelé ou en prestation, ce client appelé est-il repris en tête par le premier coiffeur libre, ou reste-t-il attribué au gérant ?
 - **APP_FLOW / BACKEND_SCHEMA** : F-M1 ne demande pas ses spécialités au gérant. Or l'éligibilité dépend de la maîtrise de la prestation (H1, règle 4). Où le gérant déclare-t-il ses spécialités ? Quels tickets sont éligibles pour « Je prends le prochain » ?
-- **PRD / BACKEND_SCHEMA** : le gérant doit-il avoir un statut de présence « disponible » (`stylist_presence`) pour recevoir des clients ou pour utiliser « Je prends le prochain » ? Comment cela se combine-t-il avec `is_hairdressing` ?
-- **TRD** : quel code d'erreur renvoie un second `call_ticket` quand le même membre a déjà un appel en cours ? TRD §6.2 ne dit pas quels codes chaque commande peut renvoyer.
+- **PRD / BACKEND_SCHEMA** : BACKEND_SCHEMA §4.4 dit qu'un membre reçoit des clients s'il est actif, `is_hairdressing = true` et présent, et que le gérant qui a coupé « Je coiffe » peut quand même prendre le prochain client. Pour « Je prends le prochain », faut-il aussi que le gérant ait un statut de présence « disponible » (`stylist_presence`, condition de la transition 2) ?
 - **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.

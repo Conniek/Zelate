@@ -3,9 +3,9 @@
 **En tant que** coiffeur invité par mon gérant, **je veux** activer mon compte depuis l'invitation, installer Zelaté Pro sur mon téléphone et me connecter par lien magique, **afin de** recevoir mes clients depuis mon propre téléphone, sans mot de passe.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : PRD §5.1 « Aucune donnée client n'est stockée sur le téléphone du coiffeur : affichage seulement, rien en cache, déconnexion à distance par le gérant » ; décision n° 18 (PRD §11) ; TRD ADR-007 et §7 (ligne « Coiffeur (lot 1) »)
+- Règles appliquées : PRD §5.1 « Aucune donnée client n'est stockée sur le téléphone du coiffeur : affichage seulement, rien en cache, déconnexion à distance par le gérant » ; décision n° 18 (PRD §11) ; TRD ADR-007, ADR-019 (révocation effective en 15 min au plus, K4) et §7 (lignes « Sessions » et « Coiffeur (lot 1) »)
 - Parcours : F-S1, F-S2 (APP_FLOW §4) ; gardes de navigation (APP_FLOW §2.3)
-- Commandes et données : `activate-invitation` (Edge Function, TRD §6.1) · tables `private.member_invitations`, `salon_members`, `profiles`, `salon_events`
+- Commandes et données : `activate-invitation` (Edge Function, TRD §6.1) ; code commun `queue.forbidden` (TRD §6.2) · tables `private.member_invitations`, `salon_members`, `profiles`, `salon_events`
 
 Hors périmètre : l'envoi de l'invitation par le gérant (S-04), la coupure des sessions par le gérant (S-16), la tablette partagée et le PIN (lot 2).
 
@@ -67,15 +67,34 @@ Hors périmètre : l'envoi de l'invitation par le gérant (S-04), la coupure des
 ### 9. Compte désactivé par le gérant
 - **Étant donné** un coiffeur dont le statut est `deactivated`
 - **Quand** il ouvre l'espace coiffeur ou demande un lien de connexion
-- **Alors** il voit un message indiquant que son accès a été retiré (texte à unifier, voir questions)
+- **Alors** il voit « Votre accès a été retiré, contactez votre gérant » (APP_FLOW §2.3, F-S2)
 - **Et** aucune session ne lui est ouverte
 - **Et** aucune donnée de la file du salon ne lui est affichée
 
 ### 10. Sessions coupées par le gérant
 - **Étant donné** un coiffeur actif dont le gérant vient de couper toutes les sessions (« Déconnecter ses appareils », S-16)
 - **Quand** il utilise l'espace coiffeur sur son téléphone
-- **Alors** il est renvoyé vers `/signin` avec un message indiquant que son accès a été retiré
+- **Alors** il est renvoyé vers `/signin` avec le message « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » (APP_FLOW §2.3, F-S2)
 - **Et** la file du salon n'est plus affichée sur son téléphone
+
+### 10 bis. Reconnexion après une coupure des sessions
+- **Étant donné** un coiffeur toujours actif dont le gérant a coupé les sessions
+- **Quand** il saisit son e-mail sur `/signin`, touche « Recevoir mon lien » puis ouvre le lien reçu
+- **Alors** il est connecté avec une nouvelle session de 30 jours
+- **Et** il arrive sur « Ma file » (`/stylist/queue`)
+
+### 10 ter. Révocation refusée côté serveur sans attendre (K4)
+- **Étant donné** un coiffeur dont le gérant vient de couper les sessions ou qui vient d'être désactivé, et dont le téléphone détient encore un jeton d'accès non expiré
+- **Quand** son téléphone envoie une commande de file (par exemple `call_ticket`)
+- **Alors** la commande est refusée avec `queue.forbidden`
+- **Et** aucun ticket ne change
+- **Et** la lecture `get_stylist_queue` ne lui renvoie plus aucun ticket
+
+### 10 quater. Écran de connexion au plus tard 15 min après la révocation (K4)
+- **Étant donné** un coiffeur dont le gérant a coupé les sessions ou qui a été désactivé à 14h00
+- **Quand** il est 14h15
+- **Alors** son téléphone affiche l'écran de connexion `/signin`
+- **Et** aucune donnée de la file du salon n'est affichée
 
 ### 11. Déconnexion volontaire
 - **Étant donné** un coiffeur connecté
@@ -93,12 +112,16 @@ Hors périmètre : l'envoi de l'invitation par le gérant (S-04), la coupure des
 | `pro-stylist.install.ios_steps` | « Partager » → « Sur l'écran d'accueil » → « Ouvrir » | Guide en 3 images, repris de F-C9 |
 | `pro-stylist.signin.email_label` | À rédiger (REQ-3) | Champ e-mail ; espace de noms à confirmer (page `/signin` partagée avec le gérant) |
 | `pro-stylist.signin.request_link` | « Recevoir mon lien » | Libellé indicatif (APP_FLOW F-S2) ; espace de noms à confirmer |
-| `pro-stylist.signin.access_revoked` | « Votre accès a été retiré, contactez votre gérant » | APP_FLOW F-S2 ; diffère de §2.3 (voir questions) |
+| `pro-stylist.signin.access_revoked` | « Votre accès a été retiré, contactez votre gérant » | Compte désactivé (APP_FLOW §2.3, F-S2) |
+| `pro-stylist.signin.sessions_revoked` | « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » | Sessions coupées par le gérant (APP_FLOW §2.3, F-S2) |
+| `errors.queue.forbidden` | À rédiger (REQ-3) | Code commun : droit insuffisant ou membre révoqué (TRD §6.2) |
 | `common.actions.sign_out` | « Se déconnecter » | APP_FLOW F-S2 |
 
 ## Questions ouvertes
-- [APP_FLOW] Le message d'accès retiré diffère : §2.3 « Votre accès a été retiré » ; F-S2 « Votre accès a été retiré, contactez votre gérant ». Lequel retenir ?
-- [APP_FLOW] Après « Déconnecter ses appareils », F-M4 dit que le coiffeur « se reconnecte par lien magique », mais F-S2 affiche « Votre accès a été retiré, contactez votre gérant » aussi pour les « sessions coupées ». Le coiffeur peut-il redemander un lien seul, ou le message bloque-t-il la reconnexion ?
+- **Résolu le 18/10** : deux messages distincts, « Votre accès a été retiré, contactez votre gérant » pour un compte désactivé et « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » pour des sessions coupées (APP_FLOW §2.3, F-S2). Question d'origine : le message d'accès retiré différait entre §2.3 et F-S2.
+- **Résolu le 18/10** : après des sessions coupées, le coiffeur redemande lui-même un lien magique (F-S2 → F-S2, F-M4). Question d'origine : le message bloquait-il la reconnexion ?
+- **Résolu le 18/10 (K4)** : jetons d'accès de 15 min et refus côté serveur dès la révocation (TRD ADR-019). Question d'origine : délai maximal entre la révocation et la perte d'accès.
+- [TRD / APP_FLOW] Wording divergent sur la désactivation : TRD §7 « un coiffeur désactivé perd l'accès immédiatement », APP_FLOW F-M4 « Accès retiré en 15 min au plus ». Et que voit le coiffeur entre le refus serveur et l'expiration de son jeton (jusqu'à 15 min) : un message d'erreur, une file vide, une redirection immédiate vers `/signin` ?
 - [APP_FLOW / PRD] F-S1 propose l'installation « comme F-C9 » : reprend-on tout F-C9 (bouton « Installer » sur Android, « Plus tard ») ou seulement le guide iPhone ? L'installation est-elle obligatoire (PRD C-01 : « installer Zelaté Pro ») ou le coiffeur peut-il travailler dans le navigateur ?
 - [APP_FLOW] Un lien d'invitation inconnu ou mal formé affiche-t-il le même message que le lien expiré ou utilisé ?
 - [APP_FLOW] Le lien de connexion ouvert sur un autre appareil que le téléphone (ordinateur) : accepté ou refusé pour un coiffeur ?

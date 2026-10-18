@@ -3,9 +3,9 @@
 **En tant que** coiffeur, **je veux** rallonger la prestation en cours d'un geste (+5, +15, +30, +45 min), **afin que** les clients suivants aient une heure de passage juste sans que j'arrête de coiffer.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H2, H9 ; PRD §5.2 « Calcul de l'heure de passage » (minimum m = 5 min en cas de débordement) et « Fin de journée » ; PRD §5.1 règle des 10 min ; PRD §5.4 « Changement d'heure », « Risque de fin de journée »
-- Parcours : F-S7 (APP_FLOW §4) ; APP_FLOW §8 (mise à jour de l'app)
-- Commandes et données : `adjust_duration` · tables `tickets` (`planned_duration_minutes`, `estimated_start_at`, `end_of_day_warned_at`), `ticket_events`, `notifications`
+- Règles appliquées : H2, H9, H10 ; PRD §5.2 « Calcul de l'heure de passage » (minimum m = 5 min en cas de débordement), « Fin de journée » (à partir de 2 h avant la dernière fermeture de la journée) et « Prévenir avant de partir » ; PRD §5.1 règle des 10 min, mesurée par rapport à la dernière heure annoncée au client, petits écarts additionnés (E11) ; PRD §5.4 « Changement d'heure », « Risque de fin de journée », « Retard sur un rendez-vous » (sans « Me prévenir », seuls l'inscription et « votre tour » partent, K11)
+- Parcours : F-S7 (APP_FLOW §4) ; F-C13 côté client ; APP_FLOW §8 (mise à jour de l'app)
+- Commandes et données : `adjust_duration` (code propre `queue.not_assigned_to_you` ; codes communs `queue.invalid_transition`, `queue.invalid_payload`, TRD §6.2) · tables `tickets` (`planned_duration_minutes`, `estimated_start_at`, `last_notified_start_at`, `end_of_day_warned_at`, `appointment_delay_warned_steps`), `ticket_events`, `notifications`
 
 ## Scénarios
 
@@ -15,15 +15,31 @@
 - **Alors** la durée prévue devient 45 min
 - **Et** la fin estimée affichée passe à 14h45
 - **Et** le journal du ticket enregistre un événement `duration_adjusted`
-- **Et** chaque client suivant dont l'heure de passage recule de 15 min reçoit une notification push de changement d'heure, avec la nouvelle heure et la raison
+- **Et** chaque client suivant dont l'heure de passage recule de 15 min par rapport à la dernière heure qui lui a été annoncée reçoit une notification push de changement d'heure, avec la nouvelle heure et la raison
+- **Et** pour ces clients, la dernière heure annoncée devient la nouvelle heure (`last_notified_start_at`)
 - **Et** aucun SMS n'est envoyé pour ce changement d'heure
 - **Et** le dashboard affiche la nouvelle fin estimée en moins de 2 s
 
 ### 2. Petit ajustement sans notification
-- **Étant donné** Inès en prestation, avec des clients suivants dont l'heure n'a pas encore bougé
+- **Étant donné** Inès en prestation, avec des clients suivants dont l'heure n'a pas encore bougé depuis la dernière heure annoncée
 - **Quand** elle touche « +5 »
 - **Alors** la durée prévue augmente de 5 min
 - **Et** aucune notification de changement d'heure n'est envoyée
+- **Et** la dernière heure annoncée aux clients ne change pas
+
+### 2 bis. Petits écarts additionnés (E11)
+- **Étant donné** Karim, client suivant d'Inès, à qui la dernière heure annoncée est 15h00, et dont l'heure de passage dépend directement de la prestation en cours
+- **Quand** Inès touche « +5 » (heure de passage de Karim : 15h05)
+- **Alors** Karim ne reçoit aucune notification de changement d'heure
+- **Quand** Inès touche à nouveau « +5 » (heure de passage de Karim : 15h10)
+- **Alors** Karim reçoit une notification push de changement d'heure annonçant 15h10, avec la raison (écart de 10 min par rapport à 15h00)
+- **Et** la dernière heure annoncée à Karim devient 15h10
+
+### 2 ter. Client sans « Me prévenir »
+- **Étant donné** Karim, client suivant d'Inès, qui n'a pas coché « Me prévenir »
+- **Quand** Inès touche « +15 » et l'heure de Karim recule de 15 min
+- **Alors** aucune notification de changement d'heure ne part vers Karim (ligne `skipped`, `no_consent`)
+- **Et** la nouvelle heure s'affiche sur son ticket, avec le bandeau de raison (APP_FLOW F-C5)
 
 ### 3. Ajustements cumulés
 - **Étant donné** Inès en prestation, durée prévue 30 min
@@ -39,7 +55,7 @@
 ### 5. Valeur hors liste refusée
 - **Étant donné** Inès en prestation
 - **Quand** une commande `adjust_duration` est envoyée avec `delta_minutes` = 10
-- **Alors** la commande est refusée par la validation du contrat
+- **Alors** la commande est refusée avec `queue.invalid_payload` (validation du contrat, TRD §6.2)
 - **Et** la durée prévue ne change pas
 
 ### 6. Prestation qui déborde sans ajustement
@@ -49,8 +65,8 @@
 - **Et** la fin estimée affichée est 14h40
 
 ### 7. Ajustement qui fait passer un client après la fermeture
-- **Étant donné** il est moins de 2 h avant la fermeture du salon (valeur par défaut de `salons.end_of_day_warning_minutes` = 120)
-- **Et** Karim, client suivant d'Inès, n'a encore reçu aucune alerte de fin de journée
+- **Étant donné** il est moins de 2 h avant la dernière fermeture de la journée (valeur par défaut de `salons.end_of_day_warning_minutes` = 120 ; pour un salon ouvert 9h-12h et 14h-19h, la référence est 19h00, E5)
+- **Et** Karim, client suivant d'Inès, qui a coché « Me prévenir », n'a encore reçu aucune alerte de fin de journée
 - **Quand** Inès touche « +45 » et la fin estimée de Karim dépasse l'heure de fermeture
 - **Alors** Karim reçoit une seule alerte « Vous risquez de ne pas être pris avant la fermeture », avec « Je reste » ou « J'annule »
 - **Et** l'alerte part par push, ou par SMS s'il n'a pas de push actif, dans la limite de 3 SMS par ticket

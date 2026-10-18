@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : H7, H4, H6 ; PRD §5.2 transition 4 (condition : arrivée validée par le code) et « L'arrivée au salon n'est pas un état mais un horodatage »
 - Parcours : F-S5 (APP_FLOW §4) ; F-C7 côté client
-- Commandes et données : `confirm_arrival` · tables `tickets` (`short_code`, `arrived_at`), `ticket_events`
+- Commandes et données : `confirm_arrival` (codes propres `queue.unknown_code`, `queue.ticket_other_salon` ; codes communs `queue.forbidden`, `queue.invalid_transition`, `queue.rate_limited`, `queue.invalid_payload`, TRD §6.2) · tables `tickets` (`short_code`, `arrived_at`), `ticket_events`
 
 ## Scénarios
 
@@ -81,8 +81,9 @@
 | `errors.queue.invalid_transition` | À rédiger (REQ-3) | Ticket clos ou code déjà utilisé, si ce code est retenu |
 
 ## Questions ouvertes
-- [TRD §6.2] Code d'erreur pour un ticket clos (terminé, annulé, absent) et pour un code « déjà utilisé » (PRD C-05) : `invalid_transition`, `unknown_code`, autre ?
+- [TRD §6.2] Reste ouvert après K1 : le tableau des codes donne à `confirm_arrival` seulement `unknown_code` et `ticket_other_salon`, et dit qu'il « refuse un code […] d'un ticket clos » sans nommer le code. Code pour un ticket clos (terminé, annulé, absent) et pour un code « déjà utilisé » (PRD C-05) : le code commun `invalid_transition`, ou `unknown_code` ?
 - [TRD] Le code n'est unique que par salon et par journée (`unique (salon_id, service_date, short_code)`) : la recherche porte-t-elle seulement sur les tickets du jour du salon ? Un code d'hier qui correspond à un ticket d'aujourd'hui serait accepté pour ce ticket.
 - [PRD / TRD] Un coiffeur peut-il valider l'arrivée d'un client appelé par un autre coiffeur, ou d'un client encore « En attente » (H8 : il reprend la tête de file à son arrivée) ? `confirm_arrival` est autorisé à « Coiffeur, gérant » sans `not_assigned_to_you`. Si oui, où se trouve le pavé de saisie hors de la carte « Appel en cours » (F-S5) ?
-- [TRD] `confirm_arrival` est-il soumis à `rate_limited` pour empêcher l'essai de codes au hasard ?
+- [TRD] `queue.rate_limited` est désormais un code commun à toutes les commandes (TRD §6.2, K1), mais aucun seuil n'est fixé pour `confirm_arrival` (essai de codes au hasard). Quel plafond, par coiffeur ou par salon ?
+- [PRD / APP_FLOW] Rendez-vous : APP_FLOW F-M13 affiche un rendez-vous « arrivé », et les règles 7 et 8 du PRD §5.2 supposent de savoir si le client avec rendez-vous est là. Peut-on valider l'arrivée d'un rendez-vous avant son appel, et depuis quel écran ? Que renvoie `confirm_arrival` pour le code d'un rendez-vous encore « À confirmer » (`pending_confirmation`) ?
 - [APP_FLOW / DESIGN_SYSTEM] Le pavé de saisie : ne propose-t-il que les caractères du code (`A-H`, `J-N`, `P-Z`, `2-9`, sans 0, O, 1, I) ? La saisie en minuscules est-elle acceptée ? L'envoi est-il automatique au 5e caractère ?

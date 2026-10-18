@@ -3,9 +3,9 @@
 **En tant que** client, **je veux** m'identifier avec mon numéro de téléphone et un code reçu par SMS, **afin de** rejoindre une file sans créer de mot de passe.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : code à 6 chiffres, valable 5 min, 3 essais, renvoi après 30 s (PRD §5.3 U-03) ; numéros +33 uniquement (PRD §6, PRD §9 « Fraude au trafic SMS ») ; plafonds de codes SMS par numéro et par IP (PRD §5.3 P-03)
+- Règles appliquées : code à 6 chiffres, valable 5 min, 3 essais, renvoi après 30 s (PRD §5.3 U-03) ; numéros +33 uniquement (PRD §6, PRD §9 « Fraude au trafic SMS ») ; plafonds de codes SMS : 5 par heure et par numéro, 20 par heure et par IP (PRD §5.3 P-03, TRD §7)
 - Parcours : F-C3 étape 4 (APP_FLOW §3) ; écran `/signin` (APP_FLOW §2.1) ; garde `/signin?next=/ticket` (APP_FLOW §2.3) ; lien « Créer mon compte » de F-C10
-- Commandes et données : `signInWithOtp` (Supabase Auth) · Edge Function `auth-send-sms` · tables `profiles` (`first_name`, `is_guest`), `private.rate_limits` · numéro dans `auth.users.phone`
+- Commandes et données : `signInWithOtp` (Supabase Auth) · Edge Function `auth-send-sms` (erreur `auth.otp_rate_limited`, TRD §6.2) · tables `profiles` (`first_name`, `is_guest`), `private.rate_limits` · numéro dans `auth.users.phone`
 
 ## Scénarios
 
@@ -71,11 +71,20 @@
 - **Quand** les 30 s sont écoulées et que je touche « Renvoyer le code »
 - **Alors** un nouveau SMS avec un code est envoyé
 
-### 11. Plafond de codes par numéro ou par IP atteint
-- **Étant donné** que le plafond de codes SMS de mon numéro, ou de mon adresse IP, est atteint
-- **Quand** je touche « Recevoir le code » ou « Renvoyer le code »
+### 11. Plafond de 5 codes par heure et par numéro
+- **Étant donné** que 5 codes ont été envoyés à mon numéro dans l'heure
+- **Quand** je touche « Recevoir le code » ou « Renvoyer le code » pour la 6e fois
 - **Alors** aucun SMS n'est envoyé
-- **Et** un message m'indique de réessayer plus tard
+- **Et** l'erreur `auth.otp_rate_limited` est renvoyée
+- **Et** le message `errors.auth.otp_rate_limited` m'indique de réessayer plus tard
+- **Quand** seuls 4 codes ont été envoyés à mon numéro dans l'heure
+- **Alors** le 5e code est envoyé
+
+### 11 bis. Plafond de 20 codes par heure et par IP
+- **Étant donné** que 20 codes ont été demandés depuis mon adresse IP dans l'heure, pour des numéros différents
+- **Quand** je demande un code pour un autre numéro depuis cette adresse IP
+- **Alors** aucun SMS n'est envoyé
+- **Et** l'erreur `auth.otp_rate_limited` est renvoyée
 
 ### 12. Retour à la page demandée après connexion
 - **Étant donné** que je ne suis pas connecté et que j'ouvre `/ticket`
@@ -108,14 +117,15 @@
 | `errors.auth.invalid_code` | _À rédiger (absent des docs)_ | — |
 | `errors.auth.code_expired` | _À rédiger (absent des docs)_ | — |
 | `errors.auth.too_many_attempts` | _À rédiger_ (APP_FLOW, indicatif : « attendre 5 min ») | — |
-| `errors.queue.rate_limited` | _À rédiger (absent des docs)_ | Partagé avec U-04, P-03 |
+| `errors.auth.otp_rate_limited` | _À rédiger (absent des docs)_ | Partagé avec P-03 |
 | `notifications.auth.otp_code.sms` | _À rédiger (absent des docs)_ | SMS : 160 caractères GSM-7 au plus, code à 6 chiffres |
 
 ## Questions ouvertes
 - **PRD U-03 / APP_FLOW F-C3** : le PRD fixe « 5 min » comme durée de validité du code. APP_FLOW ajoute « au 3e échec : attendre 5 min ». Les 5 min d'APP_FLOW sont-elles un blocage distinct après 3 échecs ? Le « 3e échec » désigne-t-il 3 codes erronés ou 3 demandes de renvoi ?
 - **APP_FLOW F-C3** : un renvoi invalide-t-il le code précédent ? Remet-il le compteur des 3 essais à zéro ?
-- **PRD P-03 / TRD §7** : le PRD ne chiffre pas les plafonds de codes SMS. TRD §7 indique 5 par heure et par numéro, 20 par heure et par IP. Ce sont bien les valeurs à tester ? Il faut les reporter dans le PRD.
-- **TRD §6.1 / §6.2** : le code `queue.rate_limited` est un code de `queue-command`. Quel code d'erreur et quelle clé de message renvoie `auth-send-sms` (passé par Supabase Auth) quand un plafond est atteint ?
+- **Résolu le 18/10** (PRD v1.1 P-03) — Valeurs des plafonds de codes SMS : 5 par heure et par numéro, 20 par heure et par IP, désormais dans le PRD.
+- **Résolu le 18/10** (K1) — Code d'erreur de `auth-send-sms` : `auth.otp_rate_limited` (TRD §6.2, hors `queue-command`), clé `errors.auth.otp_rate_limited`.
+- **PRD P-03 / BACKEND_SCHEMA §5** : la fenêtre d'une heure est-elle glissante ou fixe (`private.rate_limits.window_start` laisse penser à une fenêtre fixe) ? Les scénarios 11 et 11 bis en dépendent à la minute près.
 - **PRD §5.4** : le SMS de code de connexion compte-t-il dans le plafond de 3 SMS par ticket ? Il est envoyé avant la création du ticket et n'est pas une ligne de `notifications`.
 - **TRD** : quelle est la durée de session d'un client ? Elle n'est fixée que pour les coiffeurs (30 jours).
 - **Textes** : aucun texte de cet écran n'est écrit, sauf les libellés de boutons d'APP_FLOW. Le texte du SMS de code manque aussi.

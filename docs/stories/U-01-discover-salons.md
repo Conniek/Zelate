@@ -3,9 +3,9 @@
 **En tant que** client, **je veux** voir les salons ouverts autour de moi en liste et sur une carte, **afin de** choisir où aller selon la distance et l'attente.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : états de la file du salon (PRD §5.2 : Fermée, Ouverte, En pause, Complète) ; décision n° 23 « salons non inscrits sur la carte : non » (PRD §11) ; accueil affiché en moins de 3 s sur mobile 4G (PRD §6)
+- Règles appliquées : états de la file du salon (PRD §5.2 : Fermée, Ouverte, En pause, Complète) ; « Prochain créneau libre » (PRD §5.2, détail dans U-16) ; décision n° 23 « salons non inscrits sur la carte : non » (PRD §11) ; accueil affiché en moins de 3 s sur mobile 4G (PRD §6)
 - Parcours : F-C1 (APP_FLOW §3) ; vers F-C2 (fiche salon) et F-C5 (bandeau « Ma place »)
-- Commandes et données : RPC `search_salons(lat, lng, radius_m, query?)` · vue `public_salons` · table `salons` (`location`, `queue_status`, `waiting_count`, `current_wait_minutes`, `estimate_updated_at`, `status`) · RPC `my_active_ticket` (bandeau « Ma place »)
+- Commandes et données : RPC `search_salons(lat, lng, radius_m, query?)` · vue `public_salons` · table `salons` (`location`, `queue_status`, `waiting_count`, `current_wait_minutes`, `estimate_updated_at`, `next_free_slots`, `status`) · RPC `my_active_ticket` (bandeau « Ma place »)
 
 ## Scénarios
 
@@ -69,6 +69,14 @@
 - **Alors** son badge d'attente porte la mention « à vérifier »
 - **Et** un salon dont l'estimation date de 5 min ou moins n'affiche pas cette mention
 
+### 10 bis. Prochain créneau libre sur la carte du salon (renvoi vers U-16)
+- **Étant donné** qu'un salon de la liste a, dans la journée d'un coiffeur qui maîtrise une prestation, un trou au moins aussi long que la durée de cette prestation (marge de 0 min)
+- **Quand** il apparaît dans la liste ou sur la carte
+- **Alors** il affiche « Créneau libre à 15h20 » pour la prestation la plus courte qui tient dans un trou (exemple APP_FLOW F-C1)
+- **Et** aucun prénom de coiffeur n'est affiché avec ce créneau
+- **Quand** aucune prestation ne tient dans un trou
+- **Alors** aucune mention de créneau libre n'est affichée pour ce salon
+
 ### 11. Aucun résultat : élargir à 10 km
 - **Étant donné** qu'aucun salon ne correspond dans un rayon de 5 km
 - **Quand** la recherche se termine
@@ -111,6 +119,7 @@
 | `client.home.wait_badge` | « ~{minutes} min » (exemple APP_FLOW : « ~25 min ») | Variable `minutes` |
 | `client.home.freshness` | « mis à jour il y a {minutes} min » | Pluriel ICU |
 | `client.home.freshness_stale` | « à vérifier » | Au-delà de 5 min |
+| `client.home.next_free_slot` | _À rédiger_ (APP_FLOW, indicatif : « Créneau libre à 15h20 ») | Variable `time` ; partagé avec U-16 |
 | `client.home.map.locate_me` | « Me localiser » | — |
 | `client.home.empty.message` | _À rédiger (absent des docs)_ | — |
 | `client.home.empty.widen` | « Élargir à 10 km » | — |
@@ -123,4 +132,7 @@
 - **APP_FLOW F-C1** : la demande de géolocalisation est faite « une fois ». Après un refus, l'app propose-t-elle à nouveau la géolocalisation (par exemple avec « Me localiser »), ou seulement la recherche par adresse ?
 - **APP_FLOW F-C1** : que se passe-t-il si la recherche à 10 km ne trouve rien non plus ?
 - **PRD §5.2** : le badge d'attente vient de `current_wait_minutes`. Est-il arrondi aux 5 min supérieures, comme l'attente d'un ticket ?
-- **Textes** : l'explication avant la demande de géolocalisation et le message « aucun résultat » ne figurent dans aucun document.
+- **PRD §5.3 U-16 / PRD §5.2 « Prochain créneau libre » / APP_FLOW F-C1** : U-16 parle du prochain créneau libre « pour chaque prestation » sur la carte et la fiche ; APP_FLOW F-C1 n'en affiche qu'un par salon dans la liste et la carte (« la prestation la plus courte qui tient »). Lequel s'applique à l'accueil ?
+- **APP_FLOW F-C1 / PRD §5.2** : le créneau libre est-il affiché pour un salon en pause, complet ou fermé quand le filtre « Ouvert maintenant » est désactivé ?
+- **TRD §6.3 / BACKEND_SCHEMA §8.1** : le paramètre texte de `search_salons` s'appelle `text?` dans le TRD et `query?` dans le schéma. Lequel retenir ?
+- **Textes** : l'explication avant la demande de géolocalisation, le message « aucun résultat » et le libellé du créneau libre ne figurent dans aucun document (APP_FLOW ne donne que des libellés indicatifs).

@@ -3,7 +3,7 @@
 **En tant que** gérant d'un salon de coiffure, **je veux** créer mon compte, décrire mon salon (nom, adresse, téléphone, SIRET) et envoyer mon dossier, **afin de** le faire valider par la plateforme puis de le publier sur Zelaté.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : aucune règle H ; validation des salons à la main au pilote (PRD §4, §11 n° 20) ; brouillon sauvegardé en continu et conservé 7 jours (PRD §5.3 S-01)
+- Règles appliquées : aucune règle H ; validation des salons à la main au pilote (PRD §4, §11 n° 20) ; un SIRET introuvable ou inactif n'empêche pas l'envoi du dossier, qui part « à vérifier » (PRD §5.1, §11 E14) ; brouillon sauvegardé en continu et conservé 7 jours (PRD §5.3 S-01)
 - Parcours : F-M1 (APP_FLOW §5) ; gardes de navigation (APP_FLOW §2.3)
 - Commandes et données : `salon-signup` · `verify-siret` · tables `profiles`, `salons` (`name`, `phone`, `address_line`, `postal_code`, `city`, `city_code`, `location`, `siret`, `naf_code`, `status`, `draft_expires_at`), `salon_members` (`role` = `manager`), `salon_verifications` (`siret_check_result`, `decision`), `salon_events` (`submitted`)
 
@@ -38,12 +38,19 @@
 - **Alors** le gérant peut passer à l'étape 3
 - **Alors** le résultat `naf_mismatch` est conservé pour le dossier de validation
 
-### 5. SIRET introuvable, inactif ou service de vérification indisponible
+### 5. SIRET introuvable ou inactif : dossier « à vérifier »
 - **Étant donné** le gérant à l'étape 2
-- **Quand** la vérification renvoie un établissement introuvable, inactif, ou une erreur du service
+- **Quand** la vérification renvoie un établissement introuvable ou inactif
 - **Alors** l'indicateur ⚠ « à vérifier » s'affiche (APP_FLOW F-M1 : « ⚠ à vérifier sinon »)
-- **Alors** le résultat (`not_found`, `inactive` ou `error`) est conservé pour le dossier de validation
-- Le droit d'envoyer le dossier dans ces trois cas est une question ouverte.
+- **Alors** le gérant peut passer à l'étape 3 et envoyer son dossier (PRD §5.1, E14)
+- **Alors** le résultat (`not_found` ou `inactive`) est conservé pour le dossier de validation, et l'équipe Zelaté décide (P-01)
+
+### 5 bis. Service de vérification indisponible
+- **Étant donné** le gérant à l'étape 2
+- **Quand** la vérification renvoie une erreur du service
+- **Alors** l'indicateur ⚠ « à vérifier » s'affiche (APP_FLOW F-M1 : « ⚠ à vérifier sinon »)
+- **Alors** le résultat `error` est conservé pour le dossier de validation
+- Le droit d'envoyer le dossier dans ce cas reste une question ouverte (E14 ne parle que d'un SIRET introuvable ou inactif).
 
 ### 6. Format du SIRET invalide
 - **Étant donné** le gérant à l'étape 2
@@ -114,7 +121,8 @@
 | `notifications.signup_resume.email` | — (à rédiger) | E-mail de reprise du brouillon, lien valable 7 jours |
 
 ## Questions ouvertes
-- **PRD / APP_FLOW** : le PRD ne parle que du code NAF (« sinon dossier à vérifier »). Pour un SIRET introuvable, inactif ou une erreur du service, le gérant peut-il envoyer son dossier « à vérifier », ou l'envoi est-il bloqué ?
+- **Résolu le 18/10** (E14, PRD §5.1) : un SIRET introuvable ou inactif n'empêche pas l'envoi ; le dossier part « à vérifier » et l'équipe Zelaté décide.
+- **PRD** : E14 ne couvre pas le cas où le service Recherche d'entreprises est indisponible (`siret_check_result` = `error`). Le dossier part-il aussi « à vérifier », ou le gérant doit-il réessayer plus tard ?
 - **APP_FLOW** : quel e-mail contient le lien de reprise du brouillon ? Est-ce l'e-mail de confirmation de l'étape 1 ou un autre ? Les 7 jours se comptent-ils depuis la création du brouillon ou depuis la dernière saisie ? Les saisies de l'étape 1 sont-elles gardées avant que le compte soit créé ?
 - **APP_FLOW** : que voit le gérant qui ouvre un lien de reprise après 7 jours ?
 - **BACKEND_SCHEMA** : l'e-mail de confirmation et l'e-mail de reprise n'ont pas de modèle dans `notification_template`. Sont-ils envoyés par Supabase Auth, par Brevo, ou faut-il ajouter des modèles ?

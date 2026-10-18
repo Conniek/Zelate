@@ -3,19 +3,23 @@
 **En tant que** gérant, **je veux** déclarer qu'un coiffeur est absent, en retard ou part plus tôt, après avoir vu l'impact sur les clients, **afin que** l'attente annoncée reste juste et que les clients qui le demandaient puissent choisir.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : PRD §5.2 Statuts du coiffeur (En retard, Absent, Fin de journée, En pause) ; PRD §5.2 transition 8 et PRD §11 n° 15 (sans réponse en 10 min : premier disponible si le coiffeur est absent toute la journée, sinon il attend) ; H1 ; variation d'heure de 10 min ou plus expliquée (PRD §5.1) ; H3 et PRD §5.4 (plafond de 3 SMS) ; H6
-- Parcours : F-M8 ; F-M6 (clic sur un coiffeur) ; côté client F-C5 bandeau « Votre coiffeur n'est plus disponible » (story U-12)
-- Commandes et données : `set_presence` · `resolve_stylist_change` (réponse du client) · tables `stylist_presence` (`status`, `expected_back_at`, `shift_end_at`, `break_type`, `updated_by_member_id`), `tickets` (`stylist_change_pending_since`, `estimated_start_at`), `salon_events` (`presence_changed`, `subject_member_id`), `ticket_events` (`stylist_change_requested`), `notifications` (`stylist_change_required`, `estimate_changed`, `cancelled_by_salon`)
+- Règles appliquées : PRD §5.2 Statuts du coiffeur (En retard, Absent, Fin de journée, En pause) ; PRD §5.2 transition 8 et PRD §11 n° 15 (sans réponse en 10 min : premier disponible si le coiffeur est absent toute la journée, sinon il attend) ; coiffeur indisponible : client en prestation terminé par le gérant, client appelé repris en tête par le premier coiffeur libre ; coiffeur absent toute la journée : pas de choix « attendre » (PRD §5.1, §11 E6 et E7) ; H1 ; H10 (rendez-vous attribués à un coiffeur) ; variation d'heure de 10 min ou plus par rapport à la dernière heure annoncée, écarts cumulés, expliquée (PRD §5.1, E11) ; H3 et PRD §5.4 (plafond de 3 SMS ; sans « Me prévenir », seuls l'inscription et « votre tour » partent, K11) ; H6
+- Parcours : F-M8 ; F-M6 (clic sur un coiffeur, panneau « Terminer la prestation ») ; côté client F-C5 bandeau « Votre coiffeur n'est plus disponible » (story U-12)
+- Commandes et données : RPC `preview_presence_change` (`member_id`, `status`, `until?`, K2) · `set_presence` (`member_id`, `status`, `break_type?`, `until?`, `shift_end_at?`) · `complete_service` (gérant, E15) · `resolve_stylist_change` (réponse du client) · tables `stylist_presence` (`status`, `expected_back_at`, `shift_end_at`, `break_type`, `updated_by_member_id`), `tickets` (`stylist_change_pending_since`, `estimated_start_at`, `last_notified_start_at`, `kind` = `appointment`), `salon_events` (`presence_changed`, `subject_member_id`), `ticket_events` (`stylist_change_requested`, `stylist_change_resolved`), `notifications` (`stylist_change_required`, `estimate_changed`, `cancelled_by_salon`)
 
 ## Scénarios
 
 ### 1. Voir l'impact avant de confirmer
 - **Étant donné** le gérant sur `/dashboard`, et un coiffeur avec des tickets demandés et des tickets pressentis
 - **Quand** il ouvre le menu de ce coiffeur, choisit « Absent » et remplit le formulaire
-- **Alors** l'aperçu liste les tickets touchés
+- **Alors** la lecture `preview_presence_change` est appelée, sans rien écrire (TRD §6.3, K2)
+- **Alors** l'aperçu liste les tickets touchés avec leur heure actuelle et leur nouvelle heure
 - **Alors** les tickets sans préférence sont signalés « réassignés automatiquement »
 - **Alors** les tickets qui demandaient ce coiffeur sont signalés « à confirmer par le client »
+- **Alors** les rendez-vous de ce coiffeur sont signalés « rendez-vous à réaffecter » (F-M8)
+- **Alors** un client appelé par ce coiffeur est signalé « repris en tête », et un client en prestation « à terminer par le gérant » (F-M8, E6)
 - **Alors** aucun client n'est encore prévenu
+- **Alors** aucun ticket ni statut ne change
 
 ### 2. Renoncer après l'aperçu
 - **Étant donné** l'aperçu de l'impact affiché
@@ -29,9 +33,30 @@
 - **Alors** la commande `set_presence` (`absent`) est envoyée
 - **Alors** le coiffeur ne reçoit plus de nouveaux clients
 - **Alors** les tickets sans préférence sont recalculés avec les autres coiffeurs
-- **Alors** chaque client qui demandait ce coiffeur reçoit une notification lui demandant de choisir « attendre » ou « premier disponible »
+- **Alors** chaque client qui demandait ce coiffeur reçoit une notification lui demandant de choisir
+- **Alors** sa page de suivi ne lui propose que « Premier disponible » ou « Annuler ma place », sans « Attendre » (PRD §5.1, E7 ; APP_FLOW F-C5)
 - **Alors** ces tickets sont marqués « en attente de réponse » sur le dashboard
 - **Alors** l'événement `presence_changed` est inscrit au journal du salon, avec le coiffeur concerné
+
+### 3 bis. Client appelé par le coiffeur déclaré indisponible
+- **Étant donné** Léa, qui a appelé Sam (compteur de 10 min en cours)
+- **Quand** le gérant confirme l'absence de Léa
+- **Alors** le ticket de Sam passe en tête de file (PRD §5.1, E6)
+- **Alors** Sam est pris par le premier coiffeur qui se libère et maîtrise sa prestation
+
+### 3 ter. Client en prestation chez le coiffeur déclaré indisponible
+- **Étant donné** Léa, qui coiffe Inès
+- **Quand** le gérant confirme l'absence ou le départ de Léa
+- **Alors** la prestation d'Inès reste en cours, à terminer par le gérant (PRD §5.1, E6)
+- **Quand** le gérant clique sur « Terminer la prestation » dans le panneau du ticket d'Inès et confirme
+- **Alors** la commande `complete_service` est envoyée au nom du gérant
+- **Alors** l'action est inscrite au journal du ticket avec l'acteur `manager` (E15)
+
+### 3 quater. Rendez-vous restants du coiffeur déclaré indisponible
+- **Étant donné** Léa, avec un rendez-vous à 15:00 et un autre à 16:30
+- **Quand** le gérant confirme l'absence de Léa
+- **Alors** les deux rendez-vous sont présentés au gérant comme « à réaffecter » (F-M8 ; F-S3 : « les rendez-vous restants sont à réaffecter par le gérant »)
+- La commande de réaffectation d'un rendez-vous et ce que le client en voit sont des questions ouvertes.
 
 ### 4. Déclarer un retard avec une heure d'arrivée prévue
 - **Étant donné** un coiffeur hors ligne en début de journée
@@ -39,7 +64,7 @@
 - **Alors** le coiffeur passe au statut `late` avec cette heure (`expected_back_at`)
 - **Alors** les heures de passage chez lui sont calculées à partir de l'heure prévue
 - **Alors** il ne reçoit de clients qu'après l'heure prévue
-- **Alors** les clients qui le demandaient doivent choisir « attendre » ou « premier disponible »
+- **Alors** les clients qui le demandaient doivent choisir « attendre » ou « premier disponible » (transition 8)
 
 ### 5. Déclarer un départ plus tôt
 - **Étant donné** un coiffeur disponible avec des clients estimés jusqu'en fin d'après-midi
@@ -48,6 +73,7 @@
 - **Alors** il ne reçoit plus de clients après cette heure
 - **Alors** les tickets sans préférence qui dépasseraient cette heure sont redistribués
 - **Alors** les clients qui le demandaient et qui dépasseraient cette heure doivent choisir « attendre » ou « premier disponible »
+- **Alors** ses rendez-vous situés après cette heure sont présentés au gérant comme « à réaffecter » (F-M8, F-S3)
 
 ### 6. Mettre un coiffeur en pause
 - **Étant donné** un coiffeur disponible
