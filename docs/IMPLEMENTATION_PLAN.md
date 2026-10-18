@@ -101,7 +101,7 @@ Tout vit dans le dépôt, sous `.claude/`. Trois façons de les obtenir :
 | REQ-1 | PRD v1.0 : décisions de l'atelier intégrées, cibles des métriques validées | Claude, relu par Koni et Ely | PLN-1 | **Fait le 16/10** ; relecture par Ely à prévoir |
 | REQ-1b | PRD v1.1 : rendez-vous du salon (H10, R1 à R7), questions E1 à E16 et K1 à K12 tranchées ; TRD, schéma et parcours alignés | Claude, réponses d'Ely et Koni | REQ-2 (première passe) | **Fait le 18/10** |
 | REQ-2 | User stories au format Given / When / Then, une par ID du PRD §5.3 (S, C, U, P), avec cas d'erreur | Agent `product-analyst` | REQ-0, REQ-1, REQ-1b | `docs/stories/*.md`, une par story (50 au total après la v1.1) |
-| REQ-3 | Textes du dictionnaire en français : écrans, SMS (≤ 160 caractères), push, e-mails, erreurs | Claude, relu par Ely | REQ-2 | `packages/i18n/src/fr/*.json` en brouillon |
+| REQ-3 | Textes du dictionnaire en français : écrans, SMS (≤ 160 caractères), push, e-mails, erreurs | Claude, relu par Ely | REQ-2 | `packages/i18n/src/fr/*.json` en brouillon — **brouillon fait le 18/10** (860 textes), relecture dans `packages/i18n/REVIEW.md` |
 | REQ-4 | Textes juridiques : CGU, politique de confidentialité, mentions légales | Koni (avec un conseil juridique) | REQ-1 | `legal.json` |
 | REQ-5 | Registre des traitements et contrats de sous-traitance (Supabase, SMS, e-mail, Sentry) | Koni | PLN-4 | Registre à jour |
 
