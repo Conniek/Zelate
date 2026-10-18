@@ -1,0 +1,329 @@
+{
+  "home": {
+    "geolocation": {
+      "explanation": "Zelaté utilise votre position pour vous montrer les salons ouverts autour de vous. Vous pouvez aussi chercher par adresse ou ville.",
+      "allow": "Utiliser ma position",
+      "use_address": "Chercher par adresse",
+      "denied": "Position non disponible : cherchez par adresse ou ville."
+    },
+    "search": {
+      "label": "Adresse ou ville",
+      "suggestions_count": "{count, plural, =0 {Aucune suggestion} one {# suggestion} other {# suggestions}}"
+    },
+    "tabs": {
+      "list": "Liste",
+      "map": "Carte"
+    },
+    "filters": {
+      "open_now": "Ouvert maintenant"
+    },
+    "salon_card": {
+      "image_alt": "Photo du salon {salon_name}"
+    },
+    "wait_badge": "~{minutes} min",
+    "freshness": "{minutes, plural, =0 {mis à jour à l'instant} other {mis à jour il y a # min}}",
+    "freshness_stale": "à vérifier",
+    "next_free_slot": "Créneau libre à {time}",
+    "map": {
+      "aria_label": "Carte des salons autour de vous",
+      "marker_aria": "{salon_name}, attente ~{minutes} min",
+      "locate_me": "Me localiser"
+    },
+    "empty": {
+      "message": "Aucun salon ouvert à moins de 5 km pour le moment.",
+      "widen": "Élargir à 10 km",
+      "message_widened": "Aucun salon ouvert à moins de 10 km pour le moment. Essayez une autre adresse ou revenez un peu plus tard."
+    },
+    "active_ticket_banner": "Ma place"
+  },
+  "salon": {
+    "photos": {
+      "image_alt": "Photo {index} sur {total} du salon {salon_name}",
+      "enlarge_aria": "Agrandir la photo {index} sur {total}"
+    },
+    "wait": {
+      "title": "Attente actuelle",
+      "people_ahead": "{count, plural, =0 {Personne n'attend en ce moment} one {# personne avant vous} other {# personnes avant vous}}",
+      "estimated_time": "Passage estimé vers {time}"
+    },
+    "hours": {
+      "title": "Horaires"
+    },
+    "services": {
+      "title": "Prestations",
+      "next_free_slot": "Prochain créneau libre à {time}"
+    },
+    "free_slot": "Créneau libre à {time}",
+    "free_slot_hint": "Ce créneau est indicatif : il n'est pas réservé pour vous.",
+    "stylists": {
+      "title": "Coiffeurs"
+    },
+    "stylist": {
+      "photo_alt": "Photo de {first_name}",
+      "status": {
+        "available": "disponible",
+        "busy": "en prestation",
+        "away": "indisponible pour le moment"
+      }
+    },
+    "join": "Rejoindre la file",
+    "join_disabled": {
+      "paused": "File en pause, réessayez dans quelques minutes",
+      "full": "Complet pour aujourd'hui"
+    }
+  },
+  "nearby_salons": {
+    "link": "Salons proches"
+  },
+  "signin": {
+    "title": "Recevez un code par SMS",
+    "phone": {
+      "label": "Numéro de téléphone mobile",
+      "prefix": "+33",
+      "hint": "Le salon ne voit jamais votre numéro."
+    },
+    "send_code": "Recevoir le code",
+    "code": {
+      "label": "Code à 6 chiffres reçu par SMS",
+      "digit_aria": "Chiffre {index} sur 6"
+    },
+    "resend": "Renvoyer le code",
+    "resend_countdown": "Renvoyer le code dans {seconds} s",
+    "first_name": {
+      "label": "Votre prénom",
+      "hint": "Le salon voit seulement votre prénom."
+    },
+    "create_account": "Créer mon compte"
+  },
+  "join": {
+    "progress": "Étape {step} sur {total}",
+    "steps": {
+      "service": "Choisissez votre prestation",
+      "stylist": "Choisissez votre coiffeur",
+      "arrival": "Quand arrivez-vous ?",
+      "identification": "Identifiez-vous",
+      "summary": "Vérifiez et confirmez"
+    },
+    "service": {
+      "unknown": "Je ne sais pas encore"
+    },
+    "stylist": {
+      "first_available": "Premier disponible",
+      "estimated_time": "Passage vers {time}",
+      "absent_today": "{first_name} ne travaille pas aujourd'hui. Nous avons choisi « Premier disponible » pour vous."
+    },
+    "arrival": {
+      "asap": "Dès que possible",
+      "around": "J'arrive vers…",
+      "time_picker_label": "Heure d'arrivée"
+    },
+    "summary": {
+      "title": "Récapitulatif",
+      "salon": "Salon",
+      "service": "Prestation",
+      "stylist": "Coiffeur",
+      "estimated_time": "Passage prévu",
+      "call_rule": "Une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min."
+    },
+    "confirm": "Confirmer ma place",
+    "guard": {
+      "already_has_ticket": "Vous avez déjà une place"
+    },
+    "view_my_ticket": "Voir ma place"
+  },
+  "qr": {
+    "header": "Vous êtes chez {salon_name}",
+    "choice": {
+      "join_queue": "Rejoindre la file",
+      "have_appointment": "J'ai rendez-vous"
+    },
+    "invalid": "Ce QR code n'est plus valide, demandez à l'accueil"
+  },
+  "qr_entry": {
+    "join_queue": "Rejoindre la file",
+    "have_appointment": "J'ai rendez-vous"
+  },
+  "check_in": {
+    "progress": "Étape {step} sur {total}",
+    "time": {
+      "label": "Mon rendez-vous est à…"
+    },
+    "stylist": {
+      "label": "Avec quel coiffeur ?",
+      "dont_know": "Je ne sais plus"
+    },
+    "summary": {
+      "title": "Vérifiez votre rendez-vous",
+      "salon": "Salon",
+      "time": "Heure du rendez-vous",
+      "stylist": "Coiffeur"
+    },
+    "confirm": "Me signaler"
+  },
+  "ticket": {
+    "code": {
+      "label": "Votre code, à donner au coiffeur",
+      "aria": "Code du ticket : {code}"
+    },
+    "position": "{count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}",
+    "estimated_time": "Passage prévu vers {time}",
+    "stylist": {
+      "label": "Coiffeur",
+      "first_available": "premier disponible"
+    },
+    "appointment": {
+      "times": "Rendez-vous à {appointment_time} · passage prévu vers {start_time}",
+      "summary": "Rendez-vous à {appointment_time} · passage prévu vers {start_time}",
+      "pending": "Le salon confirme votre rendez-vous…",
+      "pending_hint": "Votre heure de passage s'affichera dès que le salon aura confirmé."
+    },
+    "updated_at": "mis à jour à {time}",
+    "offline": "Connexion perdue, dernière mise à jour à {time}",
+    "change_banner": {
+      "estimate": "Nouvelle heure de passage : vers {time}. {reason}",
+      "postponed": "Votre place a reculé : {position, plural, one {# client} other {# clients}} avant vous. {reason}"
+    },
+    "change_reason": {
+      "service_longer": "La prestation en cours dure plus longtemps que prévu.",
+      "service_shorter": "Une prestation s'est terminée plus tôt que prévu.",
+      "stylist_break": "Le coiffeur prévu pour vous fait une pause.",
+      "stylist_break_ended": "Le coiffeur prévu pour vous a fini sa pause plus tôt que prévu.",
+      "stylist_late": "Le coiffeur prévu pour vous arrive plus tard que prévu.",
+      "stylist_unavailable": "Un coiffeur n'est plus disponible aujourd'hui : l'équipe s'est réorganisée.",
+      "stylist_available": "Un coiffeur de plus est disponible.",
+      "hairdressing_toggled": "L'équipe disponible au salon a changé.",
+      "reassigned": "Le salon a confié votre passage à un autre coiffeur.",
+      "stylist_choice": "Votre choix de coiffeur a été pris en compte.",
+      "client_ahead_left": "Un client placé avant vous a quitté la file.",
+      "client_ahead_late": "Un client placé avant vous arrive plus tard que prévu.",
+      "appointment_ahead": "Un client avec rendez-vous passe à son heure avant vous.",
+      "appointment_changed": "Le salon a modifié un rendez-vous prévu avant vous.",
+      "your_appointment_changed": "Le salon a modifié votre rendez-vous.",
+      "client_late": "Vous avez signalé un retard : le coiffeur a pris le client suivant en attendant votre arrivée.",
+      "other": "Le planning du salon a changé."
+    },
+    "turn_approaching": {
+      "banner": "Votre tour approche. Serez-vous à l'heure ?",
+      "on_time": "Je serai à l'heure",
+      "late": "En retard de…",
+      "cancel": "J'annule",
+      "cancel_confirm": "Annuler votre place ? Elle sera donnée au client suivant."
+    },
+    "late": {
+      "title": "Combien de retard prévoyez-vous ?",
+      "option": "{minutes} min",
+      "hint": "Plus de 30 min de retard ? Annulez votre place et réinscrivez-vous plus tard.",
+      "sent": "Le salon est prévenu. Si votre tour arrive avant vous, le coiffeur pourra prendre le client suivant."
+    },
+    "actions": {
+      "late": "Je serai en retard",
+      "cancel": "Annuler ma place"
+    },
+    "stylist_change": {
+      "banner": "Votre coiffeur n'est plus disponible",
+      "wait": "Attendre {first_name}",
+      "first_available": "Premier disponible",
+      "option_time": "Passage vers {time}",
+      "no_answer_wait": "Sans réponse dans les 10 min, vous continuez d'attendre {first_name}.",
+      "no_answer_first_available": "Sans réponse dans les 10 min, vous passerez avec le premier coiffeur disponible."
+    },
+    "stylist_unavailable": {
+      "wait": "Attendre {first_name}",
+      "first_available": "Premier disponible"
+    },
+    "reassignment": {
+      "banner": "Le salon propose un autre coiffeur",
+      "new_time": "Avec {first_name} : passage prévu vers {time}",
+      "time_left": "{minutes, plural, =0 {Moins d'une minute pour répondre} other {Encore # min pour répondre}}",
+      "no_answer_hint": "Sans réponse de votre part, rien ne change.",
+      "accept": "Accepter",
+      "refuse": "Refuser"
+    },
+    "end_of_day": {
+      "banner": "Vous risquez de ne pas être pris avant la fermeture",
+      "hint": "Si vous restez, le salon décidera à la fermeture s'il peut encore vous prendre.",
+      "stay": "Je reste",
+      "cancel": "J'annule"
+    },
+    "called": {
+      "title": "C'est votre tour !",
+      "stylist": "{first_name} vous attend chez {salon_name}",
+      "code_hint": "Donnez ce code à votre coiffeur en arrivant",
+      "countdown": "Temps restant pour arriver : {remaining}",
+      "countdown_aria": "{minutes, plural, =1 {Plus qu'une minute pour arriver} other {Plus que # minutes pour arriver}}"
+    },
+    "arrived": {
+      "title": "Installez-vous",
+      "body": "Votre arrivée est enregistrée. Votre prestation va bientôt commencer."
+    },
+    "end": {
+      "title": {
+        "completed": "Merci de votre visite",
+        "cancelled": "Place annulée",
+        "no_show": "Place libérée"
+      },
+      "reason": {
+        "completed": "Votre passage chez {salon_name} est terminé. À bientôt !",
+        "client_cancelled": "Vous avez annulé votre place. Elle a été donnée au client suivant.",
+        "no_show": "Votre place a été libérée : le salon ne vous a pas vu arriver à temps après l'appel.",
+        "end_of_day": "Le salon ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses.",
+        "appointment_rejected": "Le salon n'a pas retrouvé votre rendez-vous. Vous pouvez rejoindre la file sans rendez-vous.",
+        "removed_by_salon": "Le salon a dû annuler votre place. Toutes nos excuses.",
+        "stylist_unavailable": "Aucun coiffeur ne peut vous prendre aujourd'hui, le salon a dû annuler votre place. Toutes nos excuses."
+      },
+      "removal_reason": "Motif : {reason}",
+      "rejoin": "Rejoindre une autre file"
+    },
+    "appointment_rejected": {
+      "join_queue": "Rejoindre la file"
+    }
+  },
+  "cancel_dialog": {
+    "title": "Annuler votre place ?",
+    "body": "Votre place sera donnée au suivant",
+    "keep": "Garder ma place",
+    "confirm": "Oui, annuler"
+  },
+  "tracking": {
+    "expired": "Ce lien a expiré",
+    "expired_hint": "Un lien de suivi reste valable 24 h. Rejoignez une file pour en recevoir un nouveau.",
+    "create_account": "Créer mon compte"
+  },
+  "install": {
+    "card": {
+      "title": "Installez Zelaté pour être prévenu sans SMS"
+    },
+    "actions": {
+      "install": "Installer",
+      "how_to": "Comment faire",
+      "enable_notifications": "Activer les notifications",
+      "later": "Plus tard"
+    },
+    "ios_guide": {
+      "title": "Installer Zelaté sur iPhone",
+      "step_share": "Touchez « Partager » dans la barre de Safari.",
+      "step_add_to_home": "Choisissez « Sur l'écran d'accueil », puis « Ajouter ».",
+      "step_open": "Ouvrez Zelaté depuis l'icône de votre écran d'accueil.",
+      "image_alt": "{step, select, share {Barre de Safari avec le bouton Partager, un carré et une flèche vers le haut} add_to_home {Menu de partage de Safari avec l'option Sur l'écran d'accueil} other {Écran d'accueil de l'iPhone avec l'icône Zelaté}}"
+    }
+  },
+  "account": {
+    "title": "Compte",
+    "first_name": {
+      "label": "Prénom",
+      "save": "Enregistrer",
+      "saved": "Prénom enregistré"
+    },
+    "export": "Télécharger mes données",
+    "delete": {
+      "label": "Supprimer mon compte",
+      "confirm_first": "Supprimer votre compte ? Votre prénom et vos consentements seront effacés, et vos anciens passages ne seront plus reliés à vous. Une place en cours sera annulée.",
+      "continue": "Continuer",
+      "confirm_second": "Cette suppression est définitive. Voulez-vous vraiment supprimer votre compte ?",
+      "keep": "Garder mon compte",
+      "confirm": "Oui, supprimer mon compte",
+      "done": "Votre compte a été supprimé. Merci d'avoir utilisé Zelaté."
+    },
+    "sign_out": "Se déconnecter"
+  }
+}
