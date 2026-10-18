@@ -5,8 +5,9 @@ Zelaté is a virtual queue for hair salons: clients join a nearby salon's queue 
 ## Current state
 
 - **Phase 2 · Requirements** (see `docs/IMPLEMENTATION_PLAN.md`). No application code yet: code starts at lot DEV-0, after gate 3.
-- The repository currently holds the reference documents and the `product-analyst` agent only.
-- **Pending decision**: salon appointments in the queue (rule H10), questions sent to Ely on 17-18/10/2026. Do not write stories for appointments until `docs/PRD.md` is updated to v1.1.
+- The repository currently holds the reference documents, the user stories in `docs/stories/` and the `product-analyst` agent only.
+- Salon appointments are in scope since `docs/PRD.md` v1.1 (rule H10, decisions R1-R7 and E1-E16 of 18/10/2026). An appointment is a ticket of kind `appointment` handled by the same queue engine (TRD ADR-016).
+- Open questions still waiting for an answer are listed in `docs/PRD.md` §9 and `docs/stories/README.md`.
 
 ## Read before working
 

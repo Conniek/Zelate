@@ -392,6 +392,7 @@ L'indicateur principal du pilote, validé le 16/10, est la **précision de l'heu
 6. Lot 2 : nombre de tablettes, calendrier de la location et du financement Innov'Up.
 7. Système de pénalité d'annulation : à étudier après le pilote.
 8. Modèle de facturation des SMS : à fixer avec le coût réel du pilote.
+9. **Rendez-vous saisi par le salon avec le téléphone du client** : le client n'a coché aucune case « Me prévenir ». L'alerte de retard (R5) compte-t-elle parmi les messages indispensables, ou faut-il recueillir son accord (par exemple au premier SMS) ? *À trancher par Ely, avec un avis RGPD.*
 
 ### Risques
 
