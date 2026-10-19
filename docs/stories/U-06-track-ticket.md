@@ -174,8 +174,8 @@
 | `client.ticket.appointment.times` | Rendez-vous à {appointment_time} · passage prévu vers {start_time} (APP_FLOW F-C5, indicatif : « Rendez-vous à 14h00 · passage prévu vers 14h20 ») | Variables `appointmentTime`, `estimatedTime` ; pas de position |
 | `client.ticket.appointment.pending` | Le salon confirme votre rendez-vous… (APP_FLOW F-C5, indicatif : « Le salon confirme votre rendez-vous… ») | Partagé avec U-14 |
 | `client.ticket.end.reason.appointment_rejected` | Le salon n'a pas retrouvé votre rendez-vous. Vous pouvez rejoindre la file sans rendez-vous. | Avec « Rejoindre la file » ; partagé avec U-14 |
-| `notifications.appointment_confirmed.push` | _À rédiger (clé absente du dictionnaire)_ | Push ; heure de passage ; partagé avec U-14 |
-| `notifications.appointment_rejected.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement ; partagé avec U-14 |
+| `notifications.appointment_confirmed.push` | Voir `notifications.appointment_confirmed.push.*` dans le dictionnaire (2 textes) | Push ; heure de passage ; partagé avec U-14 |
+| `notifications.appointment_rejected.push` | Voir `notifications.appointment_rejected.push.*` dans le dictionnaire (2 textes) | Push seulement ; partagé avec U-14 |
 | `client.ticket.updated_at` | « mis à jour à {time} » (exemple APP_FLOW : « mis à jour à 14h32 ») | Format fr-FR |
 | `common.actions.directions` | « Itinéraire » | Partagé avec U-02 |
 | `client.ticket.actions.late` | « Je serai en retard » | — |
@@ -189,12 +189,12 @@
 | `client.ticket.offline` | « Connexion perdue, dernière mise à jour à {time} » | — |
 | `client.tracking.expired` | « Ce lien a expiré » | — |
 | `client.tracking.create_account` | « Créer mon compte » | — |
-| `notifications.get_ready.push` | _À rédiger (clé absente du dictionnaire)_ | Heure, adresse, itinéraire |
+| `notifications.get_ready.push` | Voir `notifications.get_ready.push.*` dans le dictionnaire (2 textes) | Heure, adresse, itinéraire |
 | `notifications.get_ready.sms` | {salon_name} : préparez-vous, passage vers {time}. Adresse : {address}. Itinéraire : {link} | SMS : 160 caractères GSM-7 au plus, avec heure, adresse, itinéraire ; nom du salon tronqué à 40, accents translittérés (K5) ; dans le plafond de 3 SMS |
-| `notifications.your_turn.push` | _À rédiger (clé absente du dictionnaire)_ | Priorité haute ; prénom du coiffeur, adresse, code ; message indispensable (K11) |
+| `notifications.your_turn.push` | Voir `notifications.your_turn.push.*` dans le dictionnaire (2 textes) | Priorité haute ; prénom du coiffeur, adresse, code ; message indispensable (K11) |
 | `notifications.your_turn.sms` | Zelaté : c'est votre tour ! {stylist_first_name} vous attend, {address}. Code {code}. Venez sous 10 min : {link} | SMS : 160 caractères GSM-7 au plus, avec prénom du coiffeur (≤ 30), adresse, code ; accents translittérés (K5) ; hors plafond (E1) |
 | `notifications.arrival_reminder.push` | « Le salon vous attend, place libérée dans 5 min » | Push seulement |
-| `notifications.released_no_show.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement ; proposition de se réinscrire |
+| `notifications.released_no_show.push` | Voir `notifications.released_no_show.push.*` dans le dictionnaire (2 textes) | Push seulement ; proposition de se réinscrire |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E13) — Position : nombre de clients avant lui chez son coiffeur, demandé ou pressenti ; voir scénario 1 bis.

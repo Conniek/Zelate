@@ -111,12 +111,12 @@
 | `pro-manager.ticket_panel.reassign` | « Changer de coiffeur » | Libellé indicatif (APP_FLOW F-M10) |
 | `pro-manager.reassign.delay_warning` | « L'heure du client reculerait de {minutes} min : il recevra une demande » | APP_FLOW F-M10 ; variable en minutes ; partagée avec U-17 |
 | `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | Partagée avec S-09 et U-12 |
-| `notifications.estimate_changed.reason.reassigned` | — (à rédiger) | Raison montrée au client (push seulement) |
-| `notifications.reassignment_request.push` | — (à rédiger) | Partagée avec U-17 ; push seulement, « Accepter » et « Refuser » ; pas de modèle SMS |
-| `errors.queue.reassignment_pending` | — (à rédiger) | TRD §6.2 |
-| `errors.queue.stylist_unavailable` | — (à rédiger) | TRD §6.2 ; partagée avec U-04 et U-17 |
-| `errors.queue.invalid_transition` | — (à rédiger) | Partagée avec S-02 et S-12 |
-| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
+| `notifications.estimate_changed.reason.reassigned` | « Le salon vous a confié à un autre coiffeur. » | Raison montrée au client (push seulement) |
+| `notifications.reassignment_request.push` | Voir `notifications.reassignment_request.push.*` dans le dictionnaire (2 textes) | Partagée avec U-17 ; push seulement, « Accepter » et « Refuser » ; pas de modèle SMS |
+| `errors.queue.reassignment_pending` | « Une demande de changement de coiffeur attend déjà la réponse du client. Patientez 10 min au plus. » | TRD §6.2 |
+| `errors.queue.stylist_unavailable` | « Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. » | TRD §6.2 ; partagée avec U-04 et U-17 |
+| `errors.queue.invalid_transition` | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. » | Partagée avec S-02 et S-12 |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E9, PRD §5.1 ; TRD §6.2) : un recul crée une demande au client (`reassignment_request`), réponse par `respond_reassignment` (U-17) ; sans réponse en 10 min, rien ne change. `reassign_ticket` n'a plus de paramètre `client_agreed`, et la case « Le client est d'accord » disparaît.
@@ -127,4 +127,4 @@
 - **TRD** : `remove_ticket` a le code `ticket_other_salon`, mais pas `reassign_ticket`. Quel code reçoit un gérant qui vise un ticket ou un coiffeur d'un autre salon : `forbidden` ?
 - **PRD (consentement, K11)** : `reassignment_request` ne part pas sans la case « Me prévenir » ; la demande expire alors presque toujours (même question dans U-17). Est-ce voulu ?
 - **PRD / TRD (rendez-vous)** : un rendez-vous (`kind` = `appointment`) se réaffecte-t-il par `reassign_ticket` (avec la règle de non-recul) ou par `update_appointment` (`member_id?`) ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

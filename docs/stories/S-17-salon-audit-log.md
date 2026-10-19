@@ -126,9 +126,9 @@
 | `pro-manager.audit.filters.date` | Période | Filtre par date (APP_FLOW F-M11) |
 | `pro-manager.audit.filters.stylist` | Coiffeur | Filtre par coiffeur (APP_FLOW F-M11) |
 | `pro-manager.audit.filters.type` | Type d'action | Filtre par type (APP_FLOW F-M11) |
-| `pro-manager.audit.event_type.<type>` | _À rédiger (clé absente du dictionnaire)_ | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; à partager avec P-02 (`pro-manager.audit.event_type.<type>`) ? |
-| `pro-manager.audit.actor_type.<type>` | _À rédiger (clé absente du dictionnaire)_ | Une clé par valeur de `actor_type` ; le client sans prénom |
-| `pro-manager.audit.reason.<reason_code>` | _À rédiger (clé absente du dictionnaire)_ | Reprend `pro-manager.remove.reason.<removal_reason>` (S-12) pour les retraits |
+| `pro-manager.audit.event_type.<type>` | Voir `pro-manager.audit.event_type.*` dans le dictionnaire (42 textes) | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; à partager avec P-02 (`pro-manager.audit.event_type.<type>`) ? |
+| `pro-manager.audit.actor_type.<type>` | Voir `pro-manager.audit.actor_type.*` dans le dictionnaire (5 textes) | Une clé par valeur de `actor_type` ; le client sans prénom |
+| `pro-manager.audit.reason.<reason_code>` | Voir `pro-manager.audit.reason.*` dans le dictionnaire (6 textes) | Reprend `pro-manager.remove.reason.<removal_reason>` (S-12) pour les retraits |
 | `pro-manager.audit.load_more` | Afficher plus | Pagination |
 | `pro-manager.audit.empty` | Aucune action pour ces filtres. Élargissez la période ou retirez un filtre. | État vide (APP_FLOW §8) |
 

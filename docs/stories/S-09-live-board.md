@@ -119,20 +119,20 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.board.header.waiting_count` | — (à rédiger) | Pluriel ICU |
-| `pro-manager.board.header.average_wait` | — (à rédiger) | Durée en minutes |
+| `pro-manager.board.header.waiting_count` | « {count, plural, =0 {Aucun client en attente} one {# client en attente} other {# clients en attente}} » | Pluriel ICU |
+| `pro-manager.board.header.average_wait` | « Attente moyenne ~{minutes} min » | Durée en minutes |
 | `pro-manager.board.header.synced` | « synchronisé » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | APP_FLOW §7 ; partagée avec S-13 |
 | `pro-manager.board.pending_appointments.banner` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.appointments` | « Rendez-vous » | Libellé indicatif (APP_FLOW F-M6) |
-| `pro-manager.board.ticket.appointment_time` | — (à rédiger) | Heure du rendez-vous, format fr-FR |
-| `pro-manager.board.ticket.appointment_delay` | — (à rédiger) | Retard en minutes |
+| `pro-manager.board.ticket.appointment_time` | « RDV {time} » | Heure du rendez-vous, format fr-FR |
+| `pro-manager.board.ticket.appointment_delay` | « {minutes} min de retard » | Retard en minutes |
 | `pro-manager.ticket_panel.complete` | « Terminer la prestation » | Libellé indicatif (APP_FLOW F-M6) ; partagée avec C-08 |
-| `pro-manager.board.empty` | — (à rédiger) | État vide (APP_FLOW §8) |
-| `pro-manager.board.offline_banner` | — (à rédiger) | Partagée avec S-08 |
-| `common.presence_status.<status>` | — (à rédiger) | Un libellé par valeur de `presence_status` (`offline`, `available`, `in_service`, `on_break`, `late`, `absent`, `off_duty`) |
-| `common.ticket_status.<status>` | — (à rédiger, dont « appelé ») | Un libellé par valeur de `ticket_status` |
-| `common.approach_status.<status>` | — (à rédiger) | Valeurs à arrêter (voir questions ouvertes) |
+| `pro-manager.board.empty` | « Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct. » | État vide (APP_FLOW §8) |
+| `pro-manager.board.offline_banner` | « Connexion perdue : les actions sont bloquées jusqu'au retour du réseau. » | Partagée avec S-08 |
+| `common.presence_status.<status>` | Voir `common.presence_status.*` dans le dictionnaire (7 textes) | Un libellé par valeur de `presence_status` (`offline`, `available`, `in_service`, `on_break`, `late`, `absent`, `off_duty`) |
+| `common.ticket_status.<status>` | Voir `common.ticket_status.*` dans le dictionnaire (7 textes) | Un libellé par valeur de `ticket_status` |
+| `common.approach_status.<status>` | Voir `common.approach_status.*` dans le dictionnaire (4 textes) | Valeurs à arrêter (voir questions ouvertes) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** : APP_FLOW F-S4 reprend la liste de BACKEND_SCHEMA (confirmé à T-30, en retard de X min, sans réponse, arrivé). Question d'origine : les valeurs du statut d'approche ne sont pas les mêmes dans les deux documents. APP_FLOW F-S4 dit « pas parti, en route, arrivé, en retard de X min ». BACKEND_SCHEMA §4.13 dit « arrivé, en retard de X min, confirmé, sans réponse ». Sans GPS (H7), « pas parti » et « en route » ne peuvent pas être calculés. Quelle liste garder ?
@@ -143,4 +143,4 @@
 - **BACKEND_SCHEMA / TRD** : TRD §6.4 liste le message `appointment_pending` sur le canal `salon:{salon_id}`, mais BACKEND_SCHEMA §9 ne le liste pas (seulement `queue_updated`, `queue_status_changed`, `presence_changed`). Il faut aligner les deux.
 - **APP_FLOW** : un rendez-vous « à confirmer » apparaît-il aussi dans la liste globale et dans la colonne du coiffeur choisi, ou seulement dans le bandeau ? Compte-t-il dans le nombre de clients en attente de l'en-tête ?
 - **PRD** : le compteur de 10 min d'un client appelé (H4 : visible par le client et le coiffeur) doit-il aussi s'afficher sur le dashboard ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

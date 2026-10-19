@@ -97,11 +97,11 @@
 | `pro-manager.hours.closures.from` | « Du » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.hours.closures.to` | « Au » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.hours.closures.reason` | « Motif » | 120 caractères maximum |
-| `errors.validation.hours_order` | — (à rédiger) | Fermeture avant ou égale à l'ouverture |
-| `errors.validation.hours_overlap` | — (à rédiger) | Plages qui se chevauchent |
-| `errors.validation.at_least_one_open_day` | — (à rédiger) | — |
-| `errors.validation.closure_dates` | — (à rédiger) | Date de fin avant la date de début |
-| `errors.validation.closure_reason_length` | — (à rédiger) | 120 caractères maximum |
+| `errors.validation.hours_order` | « L'heure de fermeture doit être après l'heure d'ouverture. » | Fermeture avant ou égale à l'ouverture |
+| `errors.validation.hours_overlap` | « Ces plages horaires se chevauchent. Modifiez-les pour qu'elles se suivent. » | Plages qui se chevauchent |
+| `errors.validation.at_least_one_open_day` | « Indiquez au moins un jour d'ouverture. » | — |
+| `errors.validation.closure_dates` | « La date de fin ne peut pas être avant la date de début. » | Date de fin avant la date de début |
+| `errors.validation.closure_reason_length` | « Le motif ne doit pas dépasser 120 caractères. » | 120 caractères maximum |
 
 ## Questions ouvertes
 - **APP_FLOW** : que copie exactement « Copier sur la semaine » ? Vers les 7 jours, les jours ouvrés, ou seulement les jours sans plage ? Les plages déjà saisies sont-elles remplacées ?
@@ -114,4 +114,4 @@
 - **APP_FLOW** : la « prochaine ouverture » affichée sur une file fermée (F-C2 « Fermé · ouvre demain à 9h00 ») tient-elle compte des fermetures exceptionnelles ?
 - **BACKEND_SCHEMA** : `opening_hours.weekday` va de 1 à 7. Le 1, c'est le lundi (norme ISO) ?
 - **TRD / BACKEND_SCHEMA** : les changements d'horaires sont écrits directement sous RLS. Sont-ils inscrits au journal du salon (`settings_updated`) ? Si oui, qui écrit l'événement ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

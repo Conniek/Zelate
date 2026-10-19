@@ -103,14 +103,14 @@
 | --- | --- | --- |
 | `pro-manager.services.title` | « Prestations » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.services.add` | « Ajouter » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.services.suggestions.<id>` | — (à rédiger : liste des suggestions) | Nom de 2 à 60 caractères |
-| `pro-manager.services.field.duration` | — (à rédiger) | Unité « min » ; 15 à 180 |
-| `pro-manager.services.field.price` | — (à rédiger) | Format fr-FR en euros |
-| `pro-manager.services.field.specialty` | — (à rédiger) | Liste `common.specialties.<code>` |
-| `errors.validation.service_duration` | — (à rédiger) | Rappelle 15 à 180 min, multiple de 5 |
-| `errors.validation.service_name` | — (à rédiger) | 2 à 60 caractères |
-| `errors.validation.service_price` | — (à rédiger) | Prix positif ou nul |
-| `errors.validation.at_least_one_active_service` | — (à rédiger) | — |
+| `pro-manager.services.suggestions.<id>` | Voir `pro-manager.services.suggestions.*` dans le dictionnaire (10 textes) | Nom de 2 à 60 caractères |
+| `pro-manager.services.field.duration` | « Durée (min) » | Unité « min » ; 15 à 180 |
+| `pro-manager.services.field.price` | « Prix (€) » | Format fr-FR en euros |
+| `pro-manager.services.field.specialty` | « Spécialité requise » | Liste `common.specialties.<code>` |
+| `errors.validation.service_duration` | « La durée doit être comprise entre 15 et 180 min, par pas de 5 min. » | Rappelle 15 à 180 min, multiple de 5 |
+| `errors.validation.service_name` | « Le nom de la prestation doit faire entre 2 et 60 caractères. » | 2 à 60 caractères |
+| `errors.validation.service_price` | « Le prix ne peut pas être négatif. » | Prix positif ou nul |
+| `errors.validation.at_least_one_active_service` | « Gardez au moins une prestation active. » | — |
 
 ## Questions ouvertes
 - **PRD / APP_FLOW** : la liste des suggestions pré-remplies (noms, durées, prix, spécialités) n'est écrite nulle part.
@@ -122,4 +122,4 @@
 - **APP_FLOW** : la règle « au moins une prestation active » bloque-t-elle l'enregistrement, la désactivation de la dernière prestation, ou seulement la publication ?
 - **APP_FLOW** : le gérant doit-il être averti quand aucun coiffeur actif ne maîtrise la spécialité requise par une prestation ?
 - **APP_FLOW** : le gérant peut-il choisir l'ordre d'affichage des prestations (`sort_order`) ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

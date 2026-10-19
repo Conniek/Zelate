@@ -75,12 +75,12 @@
 | `pro-manager.team.status.invited` | « invité » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.team.status.active` | « actif » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.setup.team_phones.reminder` | « Chaque coiffeur active son compte depuis son invitation et installe Zelaté Pro sur son téléphone. » | Reprend le contenu de APP_FLOW F-M2, formulation à valider |
-| `common.specialties.<code>` | — (à rédiger, un libellé par code) | Codes `women_cut`, `men_cut`, `kids_cut`, `beard`, `color`, `highlights`, `braids`, `curly_hair`, `styling`, `treatment` (BACKEND_SCHEMA §4.5) |
-| `notifications.member_invitation.email.subject` | — (à rédiger) | E-mail |
-| `notifications.member_invitation.email.body` | — (à rédiger) | Lien à usage unique, valable 72 h ; nom du salon et prénom du coiffeur |
-| `errors.team.specialty_required` | — (à rédiger) | Au moins une spécialité |
-| `errors.team.email_already_used` | — (à rédiger) | Ne nomme pas un autre salon |
-| `errors.team.limit_reached` | — (à rédiger) | Rappelle la limite de 20 |
+| `common.specialties.<code>` | Voir `common.specialties.*` dans le dictionnaire (10 textes) | Codes `women_cut`, `men_cut`, `kids_cut`, `beard`, `color`, `highlights`, `braids`, `curly_hair`, `styling`, `treatment` (BACKEND_SCHEMA §4.5) |
+| `notifications.member_invitation.email.subject` | « Votre invitation sur Zelaté Pro » | E-mail |
+| `notifications.member_invitation.email.body` | « Bonjour {first_name}, ↵  ↵ {salon_name} vous invite à rejoindre son équipe sur Zelaté Pro. Depuis votre téléphone, vous verrez votre file, appellerez vos clients et suivrez vos prestations. ↵  ↵ Activez votre compte avec ce lien : ↵ {link} ↵  ↵ Ce lien ne sert qu'une fois et reste valable 72 h. S'il a expiré, demandez une nouvelle invitation à votre salon. ↵  ↵ Vous ne connaissez pas ce salon ? Ignorez simplement ce message. ↵  ↵ L'équipe Zelaté » | Lien à usage unique, valable 72 h ; nom du salon et prénom du coiffeur |
+| `errors.team.specialty_required` | « Choisissez au moins une spécialité. » | Au moins une spécialité |
+| `errors.team.email_already_used` | « Cette adresse e-mail est déjà utilisée. Vérifiez-la ou utilisez-en une autre. » | Ne nomme pas un autre salon |
+| `errors.team.limit_reached` | « Votre salon compte déjà 20 coiffeurs, le maximum. Désactivez un compte pour en inviter un nouveau. » | Rappelle la limite de 20 |
 
 ## Questions ouvertes
 - **PRD / BACKEND_SCHEMA** : le PRD dit « 20 coiffeurs maximum », alors que BACKEND_SCHEMA §4.4 dit « 20 membres actifs maximum par salon ». Le gérant fait-il partie des 20 ? Les coiffeurs « invités » et « désactivés » comptent-ils ?
@@ -88,4 +88,4 @@
 - **TRD** : les codes d'erreur de `invite-member` (spécialité manquante, e-mail déjà utilisé, limite atteinte) ne sont pas listés au TRD §6.
 - **APP_FLOW** : la photo du coiffeur (`photo_path`, montrée sur la fiche salon F-C2) n'est pas demandée dans le formulaire. Qui l'ajoute, et à quel endroit ?
 - **PRD** : si le gérant modifie les spécialités d'un coiffeur actif, quel est l'effet sur les tickets déjà en attente ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

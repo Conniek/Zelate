@@ -130,7 +130,7 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `notifications.turn_approaching.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement, avec trois actions |
+| `notifications.turn_approaching.push` | Voir `notifications.turn_approaching.push.*` dans le dictionnaire (2 textes) | Push seulement, avec trois actions |
 | `notifications.turn_approaching.actions.on_time` | « Je serai à l'heure » | Action push |
 | `notifications.turn_approaching.actions.late` | « En retard de… » | Action push |
 | `notifications.turn_approaching.actions.cancel` | « J'annule » | Action push |
@@ -138,7 +138,7 @@
 | `client.ticket.late.option` | « {minutes} min » | Valeurs : 5, 10, 15, 20, 30 |
 | `client.ticket.turn_approaching.cancel_confirm` | Annuler votre place ? Elle sera donnée au client suivant. | — |
 | `client.ticket.change_reason.client_late` | Vous avez signalé un retard : le coiffeur a pris le client suivant en attendant votre arrivée. | Raison affichée du recul (H5) ; partagé avec C-09 |
-| `notifications.postponed.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement ; nouvelle position et raison ; envoyé après `take_next` (C-09) |
+| `notifications.postponed.push` | Voir `notifications.postponed.push.*` dans le dictionnaire (2 textes) | Push seulement ; nouvelle position et raison ; envoyé après `take_next` (C-09) |
 | `errors.queue.invalid_delay` | Le retard doit être compris entre 5 et 30 min. Choisissez une autre durée. | Retard hors 5 à 30 min |
 | `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Partagé avec U-08, U-11, U-12 |
 

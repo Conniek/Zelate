@@ -158,10 +158,10 @@
 | `client.ticket.reassignment.banner` | « Le salon propose un autre coiffeur » | Nouvelle heure affichée ; partagé avec U-17 |
 | `client.ticket.reassignment.accept` | « Accepter » | Partagé avec U-17 |
 | `client.ticket.reassignment.refuse` | « Refuser » | Partagé avec U-17 |
-| `notifications.reassignment_request.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement, avec « accepter / refuser » ; partagé avec U-17 |
+| `notifications.reassignment_request.push` | Voir `notifications.reassignment_request.push.*` dans le dictionnaire (2 textes) | Push seulement, avec « accepter / refuser » ; partagé avec U-17 |
 | `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Partagé avec U-08, U-11 |
 | `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Partagé avec U-07, U-08, U-11 |
-| `notifications.stylist_change_required.push` | _À rédiger (clé absente du dictionnaire)_ | Choix « attendre » ou « premier disponible » |
+| `notifications.stylist_change_required.push` | Voir `notifications.stylist_change_required.push.*` dans le dictionnaire (2 textes) | Choix « attendre » ou « premier disponible » |
 | `notifications.stylist_change_required.sms` | {salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link} | SMS : 160 caractères GSM-7 au plus, lien court `zelate.fr/t/xxxxxxxx`, nom du salon tronqué à 40, accents translittérés (K5) ; dans le plafond de 3 SMS |
 | `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | Dashboard |
 

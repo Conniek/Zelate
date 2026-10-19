@@ -90,21 +90,21 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `pro-manager.ticket_panel.remove` | « Retirer de la file » | Libellé indicatif (APP_FLOW F-M9) |
-| `pro-manager.remove.reason.emergency` | — (à rédiger) | Valeur `emergency` |
-| `pro-manager.remove.reason.client_request` | — (à rédiger) | Valeur `client_request` |
-| `pro-manager.remove.reason.duplicate` | — (à rédiger) | Valeur `duplicate` |
-| `pro-manager.remove.reason.inappropriate_behaviour` | — (à rédiger) | Valeur `inappropriate_behaviour` |
-| `pro-manager.remove.reason.other` | — (à rédiger) | Valeur `other` |
-| `pro-manager.remove.note` | — (à rédiger) | Précision facultative, 200 caractères maximum |
+| `pro-manager.remove.reason.emergency` | « Urgence » | Valeur `emergency` |
+| `pro-manager.remove.reason.client_request` | « Demande du client » | Valeur `client_request` |
+| `pro-manager.remove.reason.duplicate` | « Doublon » | Valeur `duplicate` |
+| `pro-manager.remove.reason.inappropriate_behaviour` | « Comportement inapproprié » | Valeur `inappropriate_behaviour` |
+| `pro-manager.remove.reason.other` | « Autre motif » | Valeur `other` |
+| `pro-manager.remove.note` | « Précision (facultative) » | Précision facultative, 200 caractères maximum |
 | `pro-manager.remove.submit` | « Retirer » | Libellé indicatif (APP_FLOW F-M9) |
-| `notifications.cancelled_by_salon.push` | — (à rédiger) | Motif, excuses, salons proches |
-| `notifications.cancelled_by_salon.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; motif, excuses, salons proches ; hors plafond |
-| `notifications.cancelled_by_salon.reason.<removal_reason>` | — (à rédiger) | Motif tel que le client le lit, un par valeur |
-| `errors.queue.invalid_transition` | — (à rédiger) | Partagée avec S-02 |
-| `errors.queue.ticket_other_salon` | — (à rédiger) | TRD §6.2 ; ne nomme pas l'autre salon |
-| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
-| `errors.queue.invalid_payload` | — (à rédiger) | Code commun (TRD §6.2) |
-| `errors.validation.removal_note_length` | — (à rédiger) | 200 caractères maximum |
+| `notifications.cancelled_by_salon.push` | Voir `notifications.cancelled_by_salon.push.*` dans le dictionnaire (2 textes) | Motif, excuses, salons proches |
+| `notifications.cancelled_by_salon.sms` | « {salon_name} a annulé votre place : {reason}. Toutes nos excuses. Salons proches : {link} » | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; motif, excuses, salons proches ; hors plafond |
+| `notifications.cancelled_by_salon.reason.<removal_reason>` | Voir `notifications.cancelled_by_salon.reason.*` dans le dictionnaire (6 textes) | Motif tel que le client le lit, un par valeur |
+| `errors.queue.invalid_transition` | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. » | Partagée avec S-02 |
+| `errors.queue.ticket_other_salon` | « Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. » | TRD §6.2 ; ne nomme pas l'autre salon |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
+| `errors.queue.invalid_payload` | « Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. » | Code commun (TRD §6.2) |
+| `errors.validation.removal_note_length` | « La note ne doit pas dépasser 200 caractères. » | 200 caractères maximum |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (K10, TRD §6.2 et §7) : `remove_ticket` prend `note?` (200 caractères au plus), rangée dans `tickets.removal_note` ; le journal ne garde que le motif structuré (`reason_code`), jamais de texte libre.
@@ -115,4 +115,4 @@
 - **APP_FLOW / TRD** : comment des « salons proches » tiennent-ils dans un SMS de 160 caractères ? Faut-il un lien, et vers quelle page ? (K5 fixe les longueurs, pas ce contenu.)
 - **PRD (consentement, K11)** : sans la case « Me prévenir », seuls l'inscription et « votre tour » partent ; `cancelled_by_salon` passe en `skipped` (BACKEND_SCHEMA §4.16). Or le retrait doit être « toujours justifié au client » (PRD §5.1, décisions d'Ely) et l'annulation par le salon « part toujours » (PRD §5.4). Un client retiré sans avoir coché la case est-il prévenu ?
 - **PRD / TRD (rendez-vous)** : pour retirer un rendez-vous, le gérant utilise-t-il `remove_ticket` (motif obligatoire, F-M9) ou `cancel_appointment` (sans motif, F-M13) ? Le panneau ticket d'un rendez-vous propose-t-il « Retirer de la file » ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

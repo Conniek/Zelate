@@ -152,7 +152,7 @@
 | `client.ticket.reassignment.time_left` | {minutes, plural, =0 {Moins d'une minute pour répondre} other {Encore # min pour répondre}} | Temps restant sur 10 min (DESIGN_SYSTEM `ReassignmentPrompt`) |
 | `client.ticket.reassignment.accept` | « Accepter » | — |
 | `client.ticket.reassignment.refuse` | « Refuser » | — |
-| `notifications.reassignment_request.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement, deux actions « Accepter » et « Refuser » ; pas de modèle SMS |
+| `notifications.reassignment_request.push` | Voir `notifications.reassignment_request.push.*` dans le dictionnaire (2 textes) | Push seulement, deux actions « Accepter » et « Refuser » ; pas de modèle SMS |
 | `pro-manager.reassign.delay_warning` | « L'heure du client reculerait de {minutes} min : il recevra une demande » | APP_FLOW F-M10 ; remplace le texte de S-13 |
 | `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | Partagé avec U-12 |
 | `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Même code pour `cancel_ticket`, `resolve_stylist_change`, `respond_end_of_day` (TRD §6.2) |

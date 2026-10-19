@@ -73,9 +73,9 @@
 | `pro-manager.setup.test.passed` | « Test réussi » | Libellé indicatif (APP_FLOW F-M3) |
 | `pro-manager.setup.test.ticket_name` | « Test » | Prénom du client fictif (APP_FLOW F-M3) |
 | `pro-manager.setup.publish` | « Publier mon salon » | Libellé indicatif (APP_FLOW F-M3) |
-| `pro-manager.setup.checklist.<item>` | — (à rédiger) | Un libellé par condition : dossier validé, test réussi, horaires, 1 coiffeur actif, 1 prestation |
-| `errors.queue.salon_already_published` | — (à rédiger) | Refus de `create_test_ticket` sur un salon publié (TRD §6.2) |
-| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
+| `pro-manager.setup.checklist.<item>` | Voir `pro-manager.setup.checklist.*` dans le dictionnaire (8 textes) | Un libellé par condition : dossier validé, test réussi, horaires, 1 coiffeur actif, 1 prestation |
+| `errors.queue.salon_already_published` | « Votre salon est déjà publié : les tickets de test ne sont plus possibles. » | Refus de `create_test_ticket` sur un salon publié (TRD §6.2) |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
 
 ## Questions ouvertes
 - **APP_FLOW** : d'après F-M3, le ticket de test « apparaît sur le dashboard ». Mais les gardes de §2.3 renvoient un salon validé et non publié vers `/dashboard/setup`, et `/dashboard` demande un salon validé. Où le gérant voit-il et traite-t-il le ticket de test ? Peut-il tester avant que la plateforme ait validé le dossier ?
@@ -85,4 +85,4 @@
 - **APP_FLOW** : pour la condition « 1 coiffeur actif », le gérant qui a activé « Je coiffe » compte-t-il ?
 - **Résolu le 18/10** (K1, TRD §6.2) : `create_test_ticket` sur un salon publié renvoie `queue.salon_already_published`.
 - **BACKEND_SCHEMA** : la condition « horaires » (F-M3) veut-elle dire « au moins un jour ouvert » (BACKEND_SCHEMA §4.7) ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

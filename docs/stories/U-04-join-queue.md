@@ -196,7 +196,7 @@
 | `errors.queue.service_unavailable` | Cette prestation n'est plus proposée pour le moment. Choisissez-en une autre, puis réessayez. | — |
 | `errors.queue.stylist_unavailable` | Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. | — |
 | `errors.queue.rate_limited` | Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez. | Partagé avec P-03 |
-| `notifications.ticket_created.push` | _À rédiger (clé absente du dictionnaire)_ | Variables : rang, heure, code ; message indispensable (part sans consentement, K11) |
+| `notifications.ticket_created.push` | Voir `notifications.ticket_created.push.*` dans le dictionnaire (2 textes) | Variables : rang, heure, code ; message indispensable (part sans consentement, K11) |
 | `notifications.ticket_created.sms` | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} | SMS : 160 caractères GSM-7 au plus, avec rang, heure, code et lien court `zelate.fr/t/xxxxxxxx` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés (K5) |
 
 ## Questions ouvertes

@@ -147,12 +147,12 @@
 | `pro-manager.presence.impact.client_to_confirm` | « à confirmer par le client » | Libellé indicatif (APP_FLOW F-M8) |
 | `pro-manager.presence.confirm` | « Confirmer » | Libellé indicatif (APP_FLOW F-M8) |
 | `pro-manager.presence.impact.appointments_to_reassign` | « rendez-vous à réaffecter » | Libellé indicatif (APP_FLOW F-M8) |
-| `pro-manager.presence.impact.called_back_to_top` | — (à rédiger) | Client appelé repris en tête (F-M8, E6) |
-| `pro-manager.presence.impact.service_to_complete` | — (à rédiger) | Client en prestation à terminer par le gérant (F-M8, E6) |
-| `notifications.stylist_change_required.push` | — (à rédiger) | Push ; choix « attendre » ou « premier disponible » ; sans « attendre » si le coiffeur est absent toute la journée (E7) |
-| `notifications.stylist_change_required.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
-| `notifications.estimate_changed.reason.stylist_unavailable` | — (à rédiger) | Raison montrée au client |
-| `notifications.cancelled_by_salon.sms` | — (à rédiger) | Partagée avec S-12 ; **160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5) |
+| `pro-manager.presence.impact.called_back_to_top` | « {first_name} (appel en cours) passe en tête de file pour le premier coiffeur libre. » | Client appelé repris en tête (F-M8, E6) |
+| `pro-manager.presence.impact.service_to_complete` | « Prestation en cours pour {first_name} : à terminer par vous depuis le panneau du ticket. » | Client en prestation à terminer par le gérant (F-M8, E6) |
+| `notifications.stylist_change_required.push` | Voir `notifications.stylist_change_required.push.*` dans le dictionnaire (2 textes) | Push ; choix « attendre » ou « premier disponible » ; sans « attendre » si le coiffeur est absent toute la journée (E7) |
+| `notifications.stylist_change_required.sms` | « {salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link} » | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
+| `notifications.estimate_changed.reason.stylist_unavailable` | « Un coiffeur n'est plus disponible. » | Raison montrée au client |
+| `notifications.cancelled_by_salon.sms` | « {salon_name} a annulé votre place : {reason}. Toutes nos excuses. Salons proches : {link} » | Partagée avec S-12 ; **160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (K2, TRD §6.3) : l'aperçu est calculé par la lecture `preview_presence_change`, qui exécute le moteur sans rien écrire.
@@ -169,4 +169,4 @@
 - **PRD (consentement, K11)** : sans « Me prévenir », `cancelled_by_salon` n'est pas un message indispensable et part en `skipped` (BACKEND_SCHEMA §4.16). Un client annulé pour « absence sans alternative » ne serait donc pas prévenu, alors que PRD §5.4 dit que l'annulation par le salon « part toujours ». Laquelle des deux règles l'emporte ?
 - **PRD / TRD** : un client appelé « repris en tête » (E6) repasse-t-il au statut `waiting`, et son compteur de 10 min est-il annulé ? Le premier coiffeur libre doit-il aussi maîtriser sa prestation (H1) ?
 - **PRD / TRD** : `set_presence` n'a aucun code d'erreur propre (TRD §6.2). Que se passe-t-il pour une heure d'arrivée déjà passée, ou une heure de fin après la fermeture ? Comment annuler une déclaration faite par erreur, ou passer en « disponible » un coiffeur en retard qui vient d'arriver ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

@@ -153,7 +153,7 @@
 | `client.ticket.end_of_day.cancel` | « J'annule » | — |
 | `notifications.end_of_day_risk.push` | « Vous risquez de ne pas être pris avant la fermeture » | Push avec actions « Je reste » et « J'annule » |
 | `notifications.end_of_day_risk.sms` | {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link} (base : « Vous risquez de ne pas être pris avant la fermeture » + lien de suivi) | SMS : 160 caractères GSM-7 au plus ; dans le plafond de 3 SMS |
-| `notifications.cancelled_by_salon.end_of_day.push` | _À rédiger (clé absente du dictionnaire)_ | Motif, excuses, salons proches |
+| `notifications.cancelled_by_salon.end_of_day.push` | Voir `notifications.cancelled_by_salon.end_of_day.push.*` dans le dictionnaire (2 textes) | Motif, excuses, salons proches |
 | `notifications.cancelled_by_salon.end_of_day.sms` | {salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. Salons proches : {link} | SMS : 160 caractères GSM-7 au plus ; hors plafond |
 | `client.ticket.end.reason.end_of_day` | Le salon ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. | — |
 | `client.nearby_salons.link` | « Salons proches » | Partagé avec U-02, U-04 |

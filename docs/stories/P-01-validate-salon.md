@@ -80,15 +80,15 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `pro-manager.admin.salons.filters.to_review` | « à traiter » | — |
-| `pro-manager.admin.salons.siret.valid` | « ✓ » + _alternative textuelle à rédiger_ | Le symbole seul ne suffit pas (RGAA AA) |
-| `pro-manager.admin.salons.siret.to_check` | « ⚠ » + _alternative textuelle à rédiger_ | Idem |
-| `pro-manager.admin.salons.siret.invalid` | « ✗ » + _alternative textuelle à rédiger_ | Idem |
+| `pro-manager.admin.salons.siret.valid` | « SIRET vérifié » | Le symbole seul ne suffit pas (RGAA AA) |
+| `pro-manager.admin.salons.siret.to_check` | « SIRET à vérifier » | Idem |
+| `pro-manager.admin.salons.siret.invalid` | « SIRET non valide » | Idem |
 | `pro-manager.admin.salon.approve` | « Valider » | — |
 | `pro-manager.admin.salon.reject` | « Refuser » | — |
 | `pro-manager.admin.salon.reject_reason.label` | Motif du refus | Obligatoire |
 | `errors.validation.reject_reason_required` | Indiquez le motif du refus. | — |
-| `notifications.salon_decision.approved.email` | _À rédiger (clé absente du dictionnaire)_ | E-mail ; objet et corps |
-| `notifications.salon_decision.rejected.email` | _À rédiger (clé absente du dictionnaire)_ | E-mail ; contient le motif |
+| `notifications.salon_decision.approved.email` | Voir `notifications.salon_decision.approved.email.*` dans le dictionnaire (2 textes) | E-mail ; objet et corps |
+| `notifications.salon_decision.rejected.email` | Voir `notifications.salon_decision.rejected.email.*` dans le dictionnaire (2 textes) | E-mail ; contient le motif |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E14) — SIRET introuvable ou inactif : le dossier est envoyé « à vérifier », l'admin décide ; voir scénario 2 bis.
