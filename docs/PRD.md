@@ -531,3 +531,4 @@ Questions tranchées par Ely le 19/10/2026 (partie D du doc « Questions à tran
 | E30 | « En retard de X min » | Retard du salon sur l'heure du rendez-vous, dès 10 min |
 | E31 | Attente sur la fiche salon | Clients en attente au salon et attente pour « premier disponible » |
 | K28-K41 | Choix techniques issus de la revue d'architecture du 19/10 | Acceptés tels que proposés (TRD v0.5) |
+| E32-E39, K42-K45 | Dernières questions du 19/10 | Closes par leurs propositions (docs/stories/README.md), décisions par défaut révisables par Ely ou Koni |

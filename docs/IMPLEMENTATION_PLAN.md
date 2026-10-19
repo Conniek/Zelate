@@ -1,5 +1,7 @@
 # PLAN D'IMPLÉMENTATION — Zelaté
 
+> version 0.7 · 19/10/2026 · statut : **phase 2 close** ; prochain lot DEV-0
+> v0.7 : questions E32-E39 et K42-K45 closes par leurs propositions (décisions par défaut). Pilote en deux temps : d'abord la boucle de base (rejoindre, appeler, commencer, terminer, recalcul), puis les rendez-vous. Le code démarre sans attendre la fin des maquettes ; règle de travail : un manque se règle par le choix le plus simple, noté dans la PR.
 > version 0.6 · 19/10/2026 · statut : phase 2 (Exigences) en attente des réponses d'Ely ; phase 3 commencée en parallèle
 > v0.6 : K13 à K27 tranchées ; DES-0 (agent `architect`) et DES-6 (skill `zelate-domain` v0) faits avant la porte 2, DES-1 (Figma) lancé par Koni ; les maquettes des rendez-vous et du consentement et DES-4 attendent les réponses E17 à E31.
 > v0.5 : PRD v1.1 (rendez-vous du salon, règles E1 à E16), TRD et schéma v0.3 ; les rendez-vous sont répartis dans les lots existants (moteur, commandes, espace coiffeur, dashboard, app client) ; 9 nouvelles stories (S-17 à S-19, C-11, U-13 à U-17).
