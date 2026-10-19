@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : H5 (recul tracé au journal) ; H6 (numéro jamais affiché) ; retrait et réorganisation toujours justifiés (PRD §5.1, décisions d'Ely) ; le gérant peut clore une prestation oubliée, action inscrite au journal (PRD §5.1, §5.2 transition 5, §11 E15) ; isolation par salon (PRD §5.1) ; journal d'audit inaltérable (PRD §6) ; journal sans prénom ni texte libre (PRD §11 K12, TRD §7 et §8, K10)
 - Parcours : F-M11 (`/dashboard/audit`) ; accès gérant (APP_FLOW §2.2)
-- Commandes et données : RPC `get_audit_log(salon_id?, from, to, type?, cursor?)` (BACKEND_SCHEMA §8.1, TRD §6.3) · tables `ticket_events`, `salon_events` (colonnes `type`, `actor_type`, `actor_member_id`, `actor_profile_id`, `reason_code`, `before`, `after`, `created_at`, `subject_member_id`), `salon_members` (identité de l'acteur), `tickets` (`removal_note`, jamais lue par le journal)
+- Commandes et données : RPC `get_audit_log(salon_id?, from, to, type?, member_id?, cursor?)` (BACKEND_SCHEMA §8.1, TRD §6.3 ; 7 derniers jours par défaut, prénom du membre qui a agi et code du ticket, jamais le prénom du client, pas de temps réel, K25) · tables `ticket_events`, `salon_events` (colonnes `type`, `actor_type`, `actor_member_id`, `actor_profile_id` sans clé étrangère (K29), `reason_code`, `before`, `after`, `created_at`, `subject_member_id`, `ticket_id` facultatif), `salon_members` (identité de l'acteur), `tickets` (`removal_note`, jamais lue par le journal)
 
 ## Scénarios
 
@@ -13,8 +13,8 @@
 - **Étant donné** Nadia, gérante du salon « Démo Enghien », connectée au dashboard
 - **Et** des actions faites aujourd'hui dans son salon : ouverture de la file, appels, retraits, changements de statut des coiffeurs
 - **Quand** elle ouvre `/dashboard/audit`
-- **Alors** elle voit la liste des événements de son salon, du plus récent au plus ancien
-- **Et** chaque ligne indique qui a agi, quand, quoi (type d'action) et le motif s'il y en a un
+- **Alors** elle voit la liste des événements de son salon des 7 derniers jours, du plus récent au plus ancien (K25)
+- **Et** chaque ligne indique qui a agi (prénom du membre), quand, quoi (type d'action), le code du ticket concerné et le motif s'il y en a un (K25)
 - **Et** les événements des tickets (`ticket_events`) et ceux du salon (`salon_events`) figurent dans la même liste
 
 ### 2. Qui a agi
@@ -37,6 +37,22 @@
 - **Quand** elle consulte l'événement `cancelled` de ce ticket
 - **Alors** le motif « urgence » est affiché (valeur de `removal_reason`, libellé du dictionnaire)
 - **Et** la précision « client malade » n'apparaît pas dans le journal (elle reste dans `tickets.removal_note`)
+
+### 4 bis. Motif d'un rendez-vous annulé ou refusé (E29)
+- **Étant donné** que Nadia a refusé un rendez-vous signalé avec un motif de la liste
+- **Quand** elle consulte l'événement `appointment_rejected`
+- **Alors** le motif choisi est affiché (valeur de `removal_reason` dans `reason_code`, TRD §6.2)
+
+### 4 ter. Résultat d'une réaffectation (E27)
+- **Étant donné** une demande de réaffectation restée sans réponse 10 min
+- **Quand** Nadia consulte l'événement `reassignment_resolved`
+- **Alors** le résultat `expired` est affiché (« sans réponse »), comme `accepted` ou `refused` pour les autres demandes (`reason_code`, BACKEND_SCHEMA §3)
+
+### 4 quater. Réglages modifiés, sans valeur
+- **Étant donné** que Nadia a changé le message d'accueil du salon et un horaire
+- **Quand** elle consulte les événements `settings_updated`
+- **Alors** chacun indique la table et les colonnes modifiées, avec Nadia comme actrice
+- **Et** ni l'ancien ni le nouveau message d'accueil, ni les heures n'apparaissent (BACKEND_SCHEMA §4.15, K10)
 
 ### 5. Motif d'un recul (H5)
 - **Étant donné** qu'Inès a choisi « Prendre le suivant » pour une cliente qui avait déclaré un retard
@@ -66,7 +82,8 @@
 ### 9. Filtrer par coiffeur
 - **Étant donné** le journal affiché
 - **Quand** Nadia choisit Inès dans le filtre « Coiffeur »
-- **Alors** seuls les événements qui concernent Inès sont affichés (voir questions : acteur, membre concerné ou coiffeur du ticket)
+- **Alors** la lecture `get_audit_log` part avec `member_id` = Inès
+- **Alors** seuls les événements dont Inès est l'actrice ou le membre concerné (`subject_member_id`) sont affichés (BACKEND_SCHEMA §8.1)
 
 ### 10. Filtrer par type
 - **Étant donné** le journal affiché
@@ -83,6 +100,11 @@
 - **Quand** Nadia demande la suite
 - **Alors** les événements suivants s'affichent (`cursor`)
 - **Et** aucun événement n'est affiché deux fois ni sauté
+
+### 12 bis. Pas de mise à jour en temps réel
+- **Étant donné** le journal ouvert
+- **Quand** un coiffeur appelle un client
+- **Alors** le nouvel événement n'apparaît qu'au rechargement du journal (K25)
 
 ### 13. Aucun événement
 - **Étant donné** des filtres pour lesquels aucun événement n'existe
@@ -123,27 +145,28 @@
 | `pro-manager.audit.columns.date` | « Quand » | PRD §5.3 S-17 ; format fr-FR, heure de Paris |
 | `pro-manager.audit.columns.action` | « Quoi » | PRD §5.3 S-17 |
 | `pro-manager.audit.columns.reason` | « Motif » | PRD §5.3 S-17 |
-| `pro-manager.audit.filters.date` | Période | Filtre par date (APP_FLOW F-M11) |
-| `pro-manager.audit.filters.stylist` | Coiffeur | Filtre par coiffeur (APP_FLOW F-M11) |
-| `pro-manager.audit.filters.type` | Type d'action | Filtre par type (APP_FLOW F-M11) |
-| `pro-manager.audit.event_type.<type>` | Voir `pro-manager.audit.event_type.*` dans le dictionnaire (42 textes) | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; à partager avec P-02 (`pro-manager.audit.event_type.<type>`) ? |
+| `pro-manager.audit.filters.date` | « Période » | Filtre par date (APP_FLOW F-M11) ; avec `.from` « Du » et `.to` « Au » |
+| `pro-manager.audit.filters.stylist` | « Coiffeur » | Filtre par coiffeur (APP_FLOW F-M11) ; avec `.all_stylists` « Tous les coiffeurs » |
+| `pro-manager.audit.filters.type` | « Type d'action » | Filtre par type (APP_FLOW F-M11) ; avec `.all_types` « Tous les types » |
+| `pro-manager.audit.event_type.<type>` | Voir `pro-manager.audit.event_type.*` dans le dictionnaire (42 textes) | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; **manque `appointment_merged`** (43e valeur, K14) |
 | `pro-manager.audit.actor_type.<type>` | Voir `pro-manager.audit.actor_type.*` dans le dictionnaire (5 textes) | Une clé par valeur de `actor_type` ; le client sans prénom |
-| `pro-manager.audit.reason.<reason_code>` | Voir `pro-manager.audit.reason.*` dans le dictionnaire (6 textes) | Reprend `pro-manager.remove.reason.<removal_reason>` (S-12) pour les retraits |
-| `pro-manager.audit.load_more` | Afficher plus | Pagination |
-| `pro-manager.audit.empty` | Aucune action pour ces filtres. Élargissez la période ou retirez un filtre. | État vide (APP_FLOW §8) |
+| `pro-manager.audit.reason.<reason_code>` | Voir `pro-manager.audit.reason.*` dans le dictionnaire (6 textes) | Motifs d'annulation et `take_next` ; les retraits et rendez-vous annulés ou refusés reprennent `pro-manager.remove.reason.<removal_reason>` (S-12, E29) ; **manquent `merged` (K14) et les résultats de réaffectation `accepted`, `refused`, `expired` (E27)** |
+| `pro-manager.audit.postponed_places` | « {count, plural, one {Reculé de # place} other {Reculé de # places}} » | Scénario 5 ; 2 au plus |
+| `pro-manager.audit.load_more` | « Afficher plus » | Pagination |
+| `pro-manager.audit.empty` | « Aucune action pour ces filtres. Élargissez la période ou retirez un filtre. » | État vide (APP_FLOW §8) |
 
 ## Questions ouvertes
-- **BACKEND_SCHEMA §8.1 / TRD §6.3 / PRD §5.3** : S-17 et F-M11 demandent un filtre par coiffeur, mais `get_audit_log` n'a aucun paramètre de membre (`salon_id?`, `from`, `to`, `type?`, `cursor?`). Par ailleurs TRD §6.3 omet `type?`, que BACKEND_SCHEMA §8.1 contient.
-- **APP_FLOW F-M11** : « filtre par coiffeur » = événements dont il est l'acteur (`actor_member_id`), dont il est le sujet (`subject_member_id`, ex. coiffeur déclaré absent), ou des tickets qui lui sont attribués ? Les trois ?
+- **Résolu le 19/10** (constat 29, TRD v0.5 §6.3, BACKEND_SCHEMA §8.1) : `get_audit_log` a `type?` et `member_id?` dans les deux documents.
+- **Résolu en partie le 19/10** (BACKEND_SCHEMA §8.1) : `member_id?` = acteur ou membre concerné. **Reste ouvert (APP_FLOW F-M11)** : faut-il aussi les événements des tickets attribués à ce coiffeur ?
 - **BACKEND_SCHEMA §8.1** : `type?` est une seule valeur, alors qu'il existe deux enums (`ticket_event_type`, `salon_event_type`). Le filtre porte-t-il sur une valeur précise ou sur une famille (« retraits », « rendez-vous », « équipe ») ? Plusieurs types à la fois ?
-- **APP_FLOW F-M11** : sans prénom de client (K10), comment le gérant reconnaît-il le ticket d'un événement ? Par le code du ticket (`short_code`) ? Le code peut-il être affiché ?
-- **APP_FLOW F-M11** : quelle identité afficher pour « qui » : prénom et nom du membre (`salon_members`), prénom seul ? Et pour un membre désactivé depuis ?
-- **APP_FLOW F-M11** : période affichée par défaut (journée en cours ?), période maximale, nombre d'événements par page.
+- **Résolu le 19/10** (K25, TRD §6.3) : chaque ligne porte le code du ticket (`short_code`), jamais le prénom du client.
+- **Résolu le 19/10** (K25) : « qui » = prénom du membre qui a agi. **Reste ouvert (APP_FLOW)** : affichage pour un membre désactivé depuis.
+- **Résolu en partie le 19/10** (K25) : 7 derniers jours par défaut. **Reste ouvert (APP_FLOW F-M11)** : période maximale et nombre d'événements par page.
 - **BACKEND_SCHEMA §3 / §7.2** : `admin_viewed_client_data` est un `salon_events`, donc lisible par le gérant (« L son salon »). Le gérant doit-il voir que l'équipe Zelaté a consulté les données de ses clients ?
-- **TRD §6.3 / BACKEND_SCHEMA §4.15** : les tables de configuration (horaires, prestations, équipe, infos du salon) sont écrites directement sous RLS, sans `queue-command`. Ces modifications sont-elles journalisées (`settings_updated`), par quel mécanisme, et sans les textes libres qu'elles contiennent (`salon_closures.reason`, `welcome_message`) ?
+- **Résolu le 19/10** (constat 33, BACKEND_SCHEMA v0.5 §4.15) : chaque écriture directe de configuration inscrit `settings_updated` par le déclencheur `log_settings_update()`, avec seulement la table et les noms de colonnes, sans valeur ni texte libre.
 - **BACKEND_SCHEMA §4.14** : les événements `estimate_changed` peuvent être très nombreux (chaque recalcul). Sont-ils affichés au gérant, ou masqués par défaut ?
-- **APP_FLOW F-M11 / TRD §6.4** : le journal se met-il à jour en temps réel quand il est ouvert, ou seulement au rechargement ? Aucun événement temps réel n'est prévu pour lui.
+- **Résolu le 19/10** (K25, TRD §6.3) : pas de temps réel au MVP ; le journal se met à jour au rechargement.
 - **APP_FLOW §2.3** : aucune garde n'est décrite pour un coiffeur qui ouvre une route `/dashboard/*` (dont `/dashboard/audit`). Où est-il redirigé ?
 - **TRD §6.3** : quelle erreur renvoie `get_audit_log` hors `queue-command` (pas de code `queue.*`) quand le droit manque ?
 - **P-02** : la question « l'anonymisation à 12 mois supprime les événements textuels libres » est réglée par K10 (TRD §8, BACKEND_SCHEMA §10) ; la story P-02 garde son ancienne formulation et son scénario 4 affiche encore « la précision éventuelle » d'un retrait, contraire à K10.
-- **Textes** : libellés des filtres, des types d'événements, des acteurs, des motifs et de l'état vide absents des documents.
+- **Résolu le 19/10** (dictionnaire REQ-3) : les libellés des filtres, des types, des acteurs, des motifs et de l'état vide existent. **Reste ouvert (dictionnaire, nouveau)** : il manque `pro-manager.audit.event_type.appointment_merged` et les motifs `merged`, `accepted`, `refused`, `expired`.
