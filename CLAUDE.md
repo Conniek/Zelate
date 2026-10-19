@@ -5,7 +5,7 @@ Zelaté is a virtual queue for hair salons: clients join a nearby salon's queue 
 ## Current state
 
 - **Phase 2 · Requirements** (see `docs/IMPLEMENTATION_PLAN.md`). No application code yet: code starts at lot DEV-0, after gate 3.
-- The repository currently holds the reference documents, the user stories in `docs/stories/` and the `product-analyst` agent only.
+- The repository currently holds the reference documents, the user stories in `docs/stories/`, the draft French texts in `packages/i18n/`, the `product-analyst` and `architect` agents and the `zelate-domain` skill. Phase 3 has started in parallel (DES-0, DES-1, DES-6) while Ely answers E17-E31.
 - Salon appointments are in scope since `docs/PRD.md` v1.1 (rule H10, decisions R1-R7 and E1-E16 of 18/10/2026). An appointment is a ticket of kind `appointment` handled by the same queue engine (TRD ADR-016).
 - Open questions still waiting for an answer are listed in `docs/PRD.md` §9 and `docs/stories/README.md`.
 
@@ -33,5 +33,10 @@ In this order, only the parts the task needs:
 | Agent | Use it for |
 | --- | --- |
 | `product-analyst` | Turning PRD requirements into testable user stories in `docs/stories/` |
+| `architect` | Reviewing the technical design (schema, ADRs, commands, RLS) against the PRD and stories; writing ADR files in `docs/adr/` (lot DES-4) |
+
+| Skill | Use it for |
+| --- | --- |
+| `zelate-domain` | Map of the business domain: vocabulary, ticket lifecycle, rules H1-H10, appointments, notifications, privacy, invariants, and where each decision lives. Load it before any work on stories, ADRs, schema, engine or tests |
 
 More skills and agents arrive with their lots (see `docs/IMPLEMENTATION_PLAN.md` §2.1).

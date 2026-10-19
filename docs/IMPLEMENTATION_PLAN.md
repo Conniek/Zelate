@@ -1,6 +1,7 @@
 # PLAN D'IMPLÉMENTATION — Zelaté
 
-> version 0.5 · 18/10/2026 · statut : phase 2 (Exigences) en cours
+> version 0.6 · 19/10/2026 · statut : phase 2 (Exigences) en attente des réponses d'Ely ; phase 3 commencée en parallèle
+> v0.6 : K13 à K27 tranchées ; DES-0 (agent `architect`) et DES-6 (skill `zelate-domain` v0) faits avant la porte 2, DES-1 (Figma) lancé par Koni ; les maquettes des rendez-vous et du consentement et DES-4 attendent les réponses E17 à E31.
 > v0.5 : PRD v1.1 (rendez-vous du salon, règles E1 à E16), TRD et schéma v0.3 ; les rendez-vous sont répartis dans les lots existants (moteur, commandes, espace coiffeur, dashboard, app client) ; 9 nouvelles stories (S-17 à S-19, C-11, U-13 à U-17).
 > v0.4 : porte 1 franchie le 16/10 ; PLN-3, PLN-4 et PLN-6 poursuivis en parallèle.
 > v0.3 : PLN-1 fait le 16/10 (PRD §11) ; DEV-6 devient l'espace coiffeur sur téléphone (tablettes au lot 2, §9) ; fin de journée ajoutée à DEV-5, DEV-7 et DEV-8.
@@ -113,13 +114,13 @@ Tout vit dans le dépôt, sous `.claude/`. Trois façons de les obtenir :
 
 | ID | Tâche | Qui | Dépend de | Sortie |
 | --- | --- | --- | --- | --- |
-| DES-0 | Configurer l'agent `architect` (lecture des documents, écriture limitée à `docs/` et `docs/adr/`) | Claude | Porte 2 | `.claude/agents/architect.md` |
+| DES-0 | Configurer l'agent `architect` (lecture des documents, écriture limitée à `docs/` et `docs/adr/`) | Claude | Porte 2 | `.claude/agents/architect.md` — **fait le 19/10**, avancé avant la porte 2 avec l'accord de Koni |
 | DES-1 | Reprendre le [DESIGN_SYSTEM](./DESIGN_SYSTEM.md) dans Figma : variables, styles de texte, composants ; valider ou corriger les valeurs 🟡 | Koni | Porte 2 | Bibliothèque Figma ; DESIGN_SYSTEM mis à jour |
 | DES-2 | Maquettes des écrans du MVP, un cadre par route et par état important d'[APP_FLOW](./APP_FLOW.md) (en commençant par les écrans absents du prototype) | Koni, Claude (propositions) | DES-1 | Maquettes Figma |
 | DES-3 | Test des maquettes avec 2 gérants, 2 coiffeurs et 5 clients (parcours walk-in, appel, rejoindre la file, rendez-vous saisi puis client qui se signale) | Koni, Ely | DES-2 | Corrections intégrées |
 | DES-4 | Figer le [BACKEND_SCHEMA](./BACKEND_SCHEMA.md) et les ADR du TRD (fichiers `docs/adr/`) ; revue par l'agent `architect` | Claude | DES-0, DES-6 | Schéma v1.0, ADR en statut « accepté » |
 | DES-5 | Logo, icônes des deux apps, illustrations des états vides | Koni | DES-1 | Fichiers SVG et PNG |
-| DES-6 | Écrire la v0 du skill `zelate-domain` : glossaire, cycle de vie du ticket, règles H1 à H10 validées, rendez-vous, décisions d'Ely, sous forme de renvois aux sections du PRD (§5.1, §5.2, §11) | Claude, relu par Koni | Porte 2 | `.claude/skills/zelate-domain/SKILL.md` v0 |
+| DES-6 | Écrire la v0 du skill `zelate-domain` : glossaire, cycle de vie du ticket, règles H1 à H10 validées, rendez-vous, décisions d'Ely, sous forme de renvois aux sections du PRD (§5.1, §5.2, §11) | Claude, relu par Koni | Porte 2 | `.claude/skills/zelate-domain/SKILL.md` v0 — **écrit le 19/10**, à relire par Koni, à mettre à jour avec les réponses E17 à E31 |
 
 **Porte 3** : chaque route d'APP_FLOW a sa maquette ; le schéma est en v1.0 ; aucune valeur 🟡 ne reste dans le design system pour les composants du MVP ; `zelate-domain` v0 est relu et ne contredit aucun document.
 

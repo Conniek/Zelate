@@ -8,14 +8,14 @@ These rules mirror `CLAUDE.md`. If the two files disagree, `CLAUDE.md` wins and 
 
 - **Phase 2 · Requirements**, almost done (see `docs/IMPLEMENTATION_PLAN.md` §4). **No application code yet**: code starts at lot DEV-0, after gate 3. Do not create `apps/`, `supabase/` or `package.json` before then.
 - Done: PRD v1.1, TRD v0.3, data schema v0.3, app flow v0.3, design system v0.3, 50 user stories in `docs/stories/`, draft French texts in `packages/i18n/src/fr/` (REQ-3).
-- Waiting for answers:
-  - business questions E17 to E31, for Ely;
-  - technical questions K13 to K25, for Koni.
+- Waiting for answers: business questions E17 to E31, for Ely.
   
   Both lists are in `docs/stories/README.md`. The texts to review are listed in `packages/i18n/REVIEW.md`.
-- Next lots: REQ-4 (legal texts), REQ-5 (processing register), then phase 3: DES-0 (`architect` agent), DES-6 (`zelate-domain` skill v0), DES-1 to DES-5 (Figma, schema freeze).
+- Technical questions K13 to K27 are answered (TRD v0.4). Phase 3 started in parallel on 19/10: `architect` agent (DES-0) and `zelate-domain` skill v0 (DES-6) are written; Koni works on Figma (DES-1). Waiting for Ely before the appointment and consent mockups and the schema freeze (DES-4). Koni also owns REQ-4 (legal texts) and REQ-5 (processing register).
 
 ## Read before working
+
+Start with the domain map `.claude/skills/zelate-domain/SKILL.md` (vocabulary, ticket lifecycle, rules, invariants, where each decision lives), then:
 
 In this order, only the parts the task needs:
 1. `docs/PRD.md`: business rules (§5.1, §5.2), requirements by ID (§5.3), notifications (§5.4), open questions (§9), decisions log (§11). **Source of truth for business rules.**
