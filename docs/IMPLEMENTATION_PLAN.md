@@ -1,5 +1,7 @@
 # PLAN D'IMPLÉMENTATION — Zelaté
 
+> version 1.1 · 19/10/2026 · statut : **DEV-0 en cours** (fondations)
+> v1.1 : configuration d'un projet Vercel multi-services ; Client est public sur `/`, Pro sur `/pro/*` avec retrait du préfixe.
 > version 1.0 · 19/10/2026 · statut : **DEV-0 en cours** (fondations)
 > v1.0 : Supabase local démarré et vérifié (API, Studio, Mailpit) ; les services publient des ports sur toutes les interfaces réseau, donc usage strictement local et réseau de confiance.
 > version 0.9 · 19/10/2026 · statut : **DEV-0 en cours** (fondations)

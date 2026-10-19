@@ -9,12 +9,17 @@ import '@zelate/ui/theme.css';
 import { HomePage } from './routes/HomePage';
 
 const queryClient = new QueryClient();
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      element: <HomePage />,
+      path: '/',
+    },
+  ],
   {
-    element: <HomePage />,
-    path: '/',
+    basename: import.meta.env.BASE_URL,
   },
-]);
+);
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 
 const rootElement = document.getElementById('root');
