@@ -117,7 +117,7 @@
   "appointment_rejected": {
     "push": {
       "title": "Rendez-vous non confirmé",
-      "body": "{salon_name} n'a pas pu confirmer votre rendez-vous. Vous pouvez rejoindre la file."
+      "body": "{salon_name} : {reason}. Vous pouvez rejoindre la file."
     },
     "actions": {
       "join_queue": "Rejoindre la file"
@@ -197,6 +197,18 @@
     "email": {
       "subject": "Récapitulatif de votre journée du {date}",
       "body": "Bonjour {first_name},\n\nVoici la journée du {date} chez {salon_name}.\n\nClients servis : {served_count}\nAttente annoncée : {announced_wait_minutes} min en moyenne\nAttente réelle : {actual_wait_minutes} min en moyenne\nAbsences : {no_show_count}\nAnnulations : {cancellation_count}\n\nLe détail est sur votre tableau de bord :\n{link}\n\nL'équipe Zelaté"
+    }
+  },
+  "appointment_checked_in": {
+    "push": {
+      "title": "Rendez-vous à confirmer",
+      "body": "{first_name} dit avoir rendez-vous à {time}. Confirmez ou refusez."
+    },
+    "reminder": {
+      "push": {
+        "title": "Toujours à confirmer",
+        "body": "{first_name} attend votre confirmation depuis 10 min (rendez-vous à {time})."
+      }
     }
   }
 }

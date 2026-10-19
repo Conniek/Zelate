@@ -25,7 +25,23 @@
     "postpone_limit_reached": "Ce client a déjà reculé de 2 places, le maximum. Attendez son arrivée : sa place sera libérée à la fin du délai.",
     "reassignment_pending": "Une demande de changement de coiffeur attend déjà la réponse du client. Patientez 10 min au plus.",
     "salon_not_published": "Votre salon n'est pas encore publié : la file ne peut pas être ouverte. Publiez-le d'abord.",
-    "salon_already_published": "Votre salon est déjà publié : les tickets de test ne sont plus possibles."
+    "salon_already_published": "Votre salon est déjà publié : les tickets de test ne sont plus possibles.",
+    "appointment_not_today": "Un rendez-vous ne peut être saisi que pour aujourd'hui.",
+    "member_required": "Choisissez le coiffeur de ce rendez-vous pour le confirmer.",
+    "invalid_merge_target": "Ce rendez-vous ne peut plus être regroupé. Confirmez le signalement seul ou choisissez un autre rendez-vous.",
+    "ticket_closed": "Ce ticket est déjà terminé ou annulé.",
+    "duration_limit_reached": "La prestation ne peut pas dépasser 4 h.",
+    "closing_not_reached": "Ce choix sera possible à l'heure de fermeture.",
+    "invalid_qr_token": "Ce QR code n'est plus valide. Demandez à l'accueil.",
+    "wait_not_offered": "Votre coiffeur n'est pas disponible aujourd'hui : choisissez « Premier disponible » ou annulez.",
+    "salon_not_ready": "Votre salon n'est pas encore prêt à être publié : {missing}.",
+    "salon_not_ready_condition": {
+      "verification": "dossier pas encore validé",
+      "setup_test": "test du parcours à faire",
+      "opening_hours": "horaires à renseigner",
+      "active_stylist": "au moins un coiffeur actif",
+      "active_service": "au moins une prestation active"
+    }
   },
   "auth": {
     "invalid_phone": "Ce numéro n'est pas valide. Vérifiez-le, puis réessayez.",
@@ -54,7 +70,9 @@
     "specialty_required": "Choisissez au moins une spécialité.",
     "email_already_used": "Cette adresse e-mail est déjà utilisée. Vérifiez-la ou utilisez-en une autre.",
     "limit_reached": "Votre salon compte déjà 20 coiffeurs, le maximum. Désactivez un compte pour en inviter un nouveau.",
-    "last_manager": "Le salon doit garder au moins un gérant : ce compte ne peut pas être désactivé."
+    "last_manager": "Le salon doit garder au moins un gérant : ce compte ne peut pas être désactivé.",
+    "member_not_found": "Ce membre de l'équipe est introuvable.",
+    "already_deactivated": "Ce coiffeur est déjà désactivé."
   },
   "network": {
     "request_failed": "La connexion a échoué. Vérifiez votre réseau, puis réessayez.",
@@ -62,5 +80,11 @@
   },
   "generic": {
     "unexpected": "Un problème est survenu de notre côté. Réessayez dans quelques instants."
+  },
+  "account": {
+    "delete_failed": "La suppression de votre compte n'a pas abouti. Réessayez dans quelques minutes."
+  },
+  "admin": {
+    "salon_already_decided": "Ce dossier a déjà été traité."
   }
 }
