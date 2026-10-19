@@ -15,7 +15,14 @@
       "source": "/pro",
       "destination": {
         "service": "pro",
-        "path": "/"
+        "path": "/index.html"
+      }
+    },
+    {
+      "source": "/pro/",
+      "destination": {
+        "service": "pro",
+        "path": "/index.html"
       }
     },
     {
