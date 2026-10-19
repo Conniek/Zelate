@@ -1,6 +1,7 @@
 # PLAN D'IMPLÉMENTATION — Zelaté
 
-> version 1.2 · 19/10/2026 · statut : **DEV-0 en cours** (fondations)
+> version 1.3 · 19/10/2026 · statut : **DEV-0 en cours** (fondations)
+> v1.3 : déploiement en deux projets Vercel (`apps/client`, `apps/pro`) conformément à ADR-002 ; abandon du projet multi-services avec Pro sous `/pro` (404 : un service reçoit le chemin d'origine `/pro/…` alors que ses fichiers sont à la racine de sa sortie).
 > v1.2 : correction du routage Vercel de `/pro` et `/pro/` vers le fichier d'entrée du service Pro.
 > version 1.1 · 19/10/2026 · statut : **DEV-0 en cours** (fondations)
 > version 1.0 · 19/10/2026 · statut : **DEV-0 en cours** (fondations)
