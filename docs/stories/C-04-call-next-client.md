@@ -140,8 +140,8 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-stylist.queue.call` | « Appeler » | Bouton `xl`, état de chargement pendant l'envoi |
-| `pro-stylist.call.title` | « Appel en cours » | APP_FLOW F-S5 |
+| `pro-stylist.queue.call` | Appeler | Bouton `xl`, état de chargement pendant l'envoi |
+| `pro-stylist.call.title` | Appel en cours | APP_FLOW F-S5 |
 | `pro-stylist.call.countdown` | {minutes, plural, =0 {Place libérée dans moins d'1 min} other {Place libérée dans # min}} | Compteur de 10 min |
 | `common.ticket_status.waiting` | « En attente » | PRD §5.2 |
 | `common.ticket_status.called` | « Appelé » | PRD §5.2 |

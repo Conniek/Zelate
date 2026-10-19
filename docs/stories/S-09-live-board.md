@@ -139,7 +139,7 @@
 | `pro-manager.board.pending_appointments.banner` | « {count, plural, one {# rendez-vous à confirmer} other {# rendez-vous à confirmer}} » | Pluriel ICU |
 | `pro-manager.board.appointments` | « Rendez-vous » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.ticket.appointment_time` | « RDV {time} » | Heure du rendez-vous, format fr-FR |
-| `pro-manager.board.ticket.appointment_delay` | « {minutes} min de retard » | Retard en minutes |
+| `pro-manager.board.ticket.appointment_delay` | « {minutes} min de retard » | Retard du salon sur l'heure du rendez-vous, affiché dès 10 min (E30) |
 | `pro-manager.ticket_panel.complete` | « Terminer la prestation » | Libellé indicatif (APP_FLOW F-M6) ; partagée avec C-08 |
 | `pro-manager.board.empty` | « Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct. » | État vide (APP_FLOW §8) |
 | `pro-manager.board.offline_banner` | « Connexion perdue : les actions sont bloquées jusqu'au retour du réseau. » | Partagée avec S-08 |
