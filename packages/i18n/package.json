@@ -1,0 +1,26 @@
+{
+  "name": "@zelate/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./pro": "./src/pro.ts",
+    "./resources": "./src/resources.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "i18next": "^25.2.1",
+    "i18next-icu": "^2.4.0",
+    "react-i18next": "^15.6.0"
+  },
+  "devDependencies": {
+    "@zelate/config": "workspace:*",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -6,11 +6,15 @@ Zelaté is a virtual queue for hair salons: clients join a nearby salon's queue 
 
 - **Phase 2 is closed (19/10/2026).** All business and technical questions are decided: E1-E39 (Ely) and K1-K45 (Koni). For E32-E39 and K42-K45 the written proposals are the default decisions (`docs/stories/README.md`); Ely may still revise one, nothing waits for her.
 - **Next: lot DEV-0 (foundations), then DEV-2 (queue engine).** The pilot is built in two steps: first the core loop (a client joins, a stylist calls, starts and finishes, every wait is recalculated: PRD §2 goal 1), then salon appointments (H10). Figma mockups (DES-1, DES-2) go on in parallel and do not block the code.
-- No application code exists yet.
+- DEV-0 is in progress on `feat/dev-0-foundations`: pnpm workspace, shared config, typed i18n, base UI components, and minimal client/Pro apps.
+- Supabase local is running and its API, Studio and Mailpit endpoints respond. Some ports bind to `0.0.0.0`; Studio, pgMeta and analytics have no authentication. Keep the stack on a trusted local network only; never use its shared default keys in production or share `supabase status` output.
 
 ## Read before working
 
+Start with `.claude/skills/zelate-domain/SKILL.md` for domain work, then follow the source-document order below.
+
 In this order, only the parts the task needs:
+
 1. `docs/PRD.md` — business rules (§5.1, §5.2), requirements by ID (§5.3), decisions log (§11). **Source of truth for business rules.**
 2. `docs/APP_FLOW.md` — routes, screens, what each click does.
 3. `docs/BACKEND_SCHEMA.md` — tables, columns, access rights.
@@ -29,13 +33,34 @@ In this order, only the parts the task needs:
 
 ## Agents
 
-| Agent | Use it for |
-| --- | --- |
-| `product-analyst` | Turning PRD requirements into testable user stories in `docs/stories/` |
-| `architect` | Reviewing the technical design (schema, ADRs, commands, RLS) against the PRD and stories; writing ADR files in `docs/adr/` (lot DES-4) |
+| Agent             | Use it for                                                                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `product-analyst` | Turning PRD requirements into testable user stories in `docs/stories/`                                                                 |
+| `architect`       | Reviewing the technical design (schema, ADRs, commands, RLS) against the PRD and stories; writing ADR files in `docs/adr/` (lot DES-4) |
 
-| Skill | Use it for |
-| --- | --- |
+| Skill           | Use it for                                                                                                                                                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `zelate-domain` | Map of the business domain: vocabulary, ticket lifecycle, rules H1-H10, appointments, notifications, privacy, invariants, and where each decision lives. Load it before any work on stories, ADRs, schema, engine or tests |
 
 More skills and agents arrive with their lots (see `docs/IMPLEMENTATION_PLAN.md` §2.1).
+
+## Repository structure
+
+- `apps/client`: client-facing installable PWA.
+- `apps/pro`: stylist, manager and platform-admin PWA.
+- `packages/ui`: shared accessible UI components, theme and self-hosted fonts.
+- `packages/i18n`: French dictionaries, typed namespaces and app-specific i18next setup.
+- `packages/config`: shared TypeScript and ESLint configuration.
+- `supabase`: local project configuration, migrations, Edge Functions and database tests.
+- `docs`: product, technical, screen-flow and implementation sources of truth.
+
+## Commands
+
+- `corepack pnpm install`: install the workspace from the lockfile.
+- `corepack pnpm dev`: run both Vite applications (client on port 5173, Pro on 5174).
+- `corepack pnpm dev:client` / `corepack pnpm dev:pro`: run one application.
+- `corepack pnpm lint`, `corepack pnpm format:check`, `corepack pnpm typecheck`, `corepack pnpm test`, `corepack pnpm build`: quality checks.
+- `PATH="$HOME/.docker/bin:$PATH" supabase start`: start local Supabase after Docker Desktop is running.
+- `PATH="$HOME/.docker/bin:$PATH" supabase test db`: run database tests after migrations exist.
+
+Do not commit secrets. Use `.env.example` for variable names and keep local values in an ignored `.env`.
