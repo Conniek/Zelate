@@ -1,5 +1,6 @@
 # APP FLOW — Zelaté
 
+> version 0.4 · 19/10/2026 · réponses K13 à K27 (consentement par ticket, export et suppression du compte, push au salon pour un rendez-vous signalé)
 > version 0.3 · 18/10/2026 · statut : mis à jour avec le PRD v1.1 (rendez-vous du salon, règles E1 à E16) et le TRD v0.3
 > Documents liés : [PRD](./PRD.md) · [TRD](./TRD.md) · [DESIGN_SYSTEM](./DESIGN_SYSTEM.md) · [BACKEND_SCHEMA](./BACKEND_SCHEMA.md) · [IMPLEMENTATION_PLAN](./IMPLEMENTATION_PLAN.md)
 
@@ -233,7 +234,8 @@ Même affichage que F-C5, sans session ; le lien court (8 caractères) est réso
 | Élément | Action |
 | --- | --- |
 | Prénom | Modifiable |
-| Consentements | Interrupteur « Notifications de suivi » ; date du consentement affichée |
+| Consentements | Interrupteur « Me prévenir » pour la place en cours (consentement porté par le ticket, K18) ; date du consentement affichée ; sans place en cours, rappel que la case sera proposée, décochée, à la prochaine inscription |
+| « Télécharger mes données » / « Supprimer mon compte » | `account-export` / `account-delete` (K17) |
 | « Télécharger mes données » | Fichier JSON des tickets et consentements |
 | « Supprimer mon compte » | Confirmation en deux temps ; compte supprimé, tickets anonymisés |
 | « Se déconnecter » | Fin de session, retour à l'accueil |

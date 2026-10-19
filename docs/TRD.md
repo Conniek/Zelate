@@ -1,6 +1,7 @@
 # TRD — Zelaté
 
-> **Technical Requirements Document** · version 0.3 · 18/10/2026 · statut : à valider avant le lot DEV-0
+> **Technical Requirements Document** · version 0.4 · 19/10/2026 · statut : à valider avant le lot DEV-0
+> v0.4 · 19/10/2026 : réponses de Koni K13 à K27 (heure annoncée, fusion des rendez-vous, limites de saisie, codes d'erreur complétés, export et suppression du compte, consentement par ticket, push aux membres, raisons d'un changement d'heure, remplissage automatique du code SMS).
 > v0.3 : PRD v1.1 — rendez-vous du salon dans la même file (ADR-016), prochain créneau libre (ADR-017), canaux temps réel publics sans donnée personnelle (ADR-018), réponses de Koni K1 à K12 (codes d'erreur par commande, aperçu d'absence, révocation en 15 min, limites des SMS, compteur d'absences, journal sans texte libre).
 > v0.2 : décisions de l'atelier du 16/10 (PRD §11) — espace coiffeur sur le téléphone du coiffeur avec compte personnel (ADR-007), tablettes au lot 2, arrivée par code sans lecture de QR, compteur de 10 min, fin de journée, distribution au premier coiffeur libre (ADR-015).
 > Documents liés : [PRD](./PRD.md) · [APP_FLOW](./APP_FLOW.md) · [DESIGN_SYSTEM](./DESIGN_SYSTEM.md) · [BACKEND_SCHEMA](./BACKEND_SCHEMA.md) · [IMPLEMENTATION_PLAN](./IMPLEMENTATION_PLAN.md)
@@ -154,7 +155,7 @@ Chaque ADR a son fichier dans `docs/adr/NNN-titre.md` au lot DEV-0 ; voici leur 
 | 016 | **Un rendez-vous est un ticket** de type `appointment`, avec une heure prévue (`scheduled_at`) et un coiffeur fixé dès la saisie ; le même moteur ordonne rendez-vous et clients de dernière minute (H10, règles 6 à 8 du PRD §5.2). Un rendez-vous signalé par le client à son arrivée est créé au statut `pending_confirmation`, hors calcul, jusqu'à la confirmation du salon | 🟡 DES-4 | Une seule source de vérité pour l'attente ; mêmes notifications, même suivi, même journal | Le moteur place les tickets sans rendez-vous dans les trous ; `call_ticket` respecte les créneaux ; tests par propriétés : aucun rendez-vous retardé par un client de dernière minute |
 | 017 | **Prochain créneau libre calculé par le moteur** à chaque commande et à chaque `queue-tick`, stocké dans `salons.next_free_slots` (par prestation, sans le coiffeur) | 🟡 DES-4 | La recherche de salons reste une simple lecture ; pas de calcul dans le navigateur | Marge de 0 min, paramètre du moteur (`slot_margin_minutes`) pour la revoir après le pilote |
 | 018 | **Temps réel public sans donnée personnelle** : canal `salon-public:{salon_id}` pour la fiche salon (visiteurs sans compte) ; canal `ticket-token:{token_key}` pour `/t/:shortCode`, où `token_key` est dérivé du jeton (SHA-256 tronqué) et n'est connu que du porteur du lien | ✅ 18/10 (K6) | Fiche salon et lien SMS à jour sans session | Messages `{ version }` seulement ; la page relit par RPC ou `ticket-public` |
-| 019 | **Révocation effective en 15 min au plus** : jetons d'accès de 15 min, et chaque commande vérifie côté serveur que le membre est actif et que ses sessions n'ont pas été révoquées | ✅ 18/10 (K4) | Téléphone perdu, départ du salon (S-16) | Les lectures RPC font le même contrôle ; un coiffeur révoqué voit l'écran de connexion au plus tard au rafraîchissement du jeton |
+| 019 | **Révocation effective en 15 min au plus** : jetons d'accès de 15 min, et chaque commande vérifie côté serveur que le membre est actif et que ses sessions n'ont pas été révoquées | ✅ 18/10 (K4) | Téléphone perdu, départ du salon (S-16) | Les lectures RPC font le même contrôle ; l'app affiche l'écran de connexion dès la première réponse refusée, au plus tard au rafraîchissement du jeton ; le serveur ferme les canaux temps réel du membre révoqué (K22) |
 
 ---
 
@@ -178,7 +179,9 @@ Toutes valident leur entrée avec le schéma zod de `packages/contracts`, renvoi
 | `revoke-member-sessions` | POST | Dashboard (équipe) | Le gérant déconnecte toutes les sessions d'un coiffeur (S-16) |
 | `deactivate-member` | POST | Dashboard (équipe) | Désactive un coiffeur : révoque ses sessions, applique la règle « coiffeur indisponible » à ses clients (E6, E7), journal `member_deactivated` (K3) |
 | `regenerate-qr` | POST | Dashboard (QR de l'affiche) | Nouveau `qr_token`, l'ancien QR ne mène plus au salon ; génère le PDF A4 dans `qr-posters` (K3) |
-| `push-subscribe` | POST | Client | Enregistre un abonnement push (session ou jeton de ticket) |
+| `push-subscribe` | POST | Client, membre du salon | Enregistre un abonnement push (session client, jeton de ticket, ou membre pour les rendez-vous signalés, K21) |
+| `account-export` | GET | Client (`/account`) | Fichier JSON de ses tickets, consentements et événements visibles, sans jeton ni donnée d'autres personnes (K17) |
+| `account-delete` | POST | Client (`/account`) | Annule le ticket actif, anonymise les tickets passés, supprime le profil et le compte Auth (K17) |
 | `admin-decide-salon` | POST | Admin | Valide ou refuse un dossier, avec motif |
 | `salon-daily-summary` | POST (cron) | pg_cron, à la fermeture | Récapitulatif de fin de journée (S-14) |
 
@@ -190,17 +193,17 @@ Corps commun : `{ command: string, command_id: uuid, payload: {...} }`. Contexte
 | --- | --- | --- | --- |
 | `join_queue` | Client connecté | `salon_id`, `service_id` ou `unknown_service`, `requested_member_id?`, `declared_arrival_at?`, `channel` (`app`, `qr`), `notifications_consent` (faux par défaut, K11) | Crée le ticket, calcule le coiffeur pressenti et l'heure ; notification `ticket_created` |
 | `register_walk_in` | Gérant | `first_name`, `phone`, `service_id?` (30 min par défaut, E12), `requested_member_id?` | Crée le ticket `front_desk` et le contact privé ; SMS avec lien de suivi |
-| `create_appointment` | Gérant ; coiffeur pour lui-même | `first_name`, `scheduled_at`, `member_id` (imposé pour un coiffeur), `service_id?`, `phone?` | Ticket `appointment` au statut `waiting`, coiffeur fixé ; si téléphone : contact privé et SMS avec lien de suivi ; recalcul |
+| `create_appointment` | Gérant ; coiffeur pour lui-même | `first_name`, `scheduled_at`, `member_id` (un coiffeur ne peut viser que lui-même, sinon `forbidden`), `service_id?`, `phone?` | Ticket `appointment` au statut `waiting`, coiffeur fixé ; jour même seulement ; chevauchement mesuré sur la durée de la prestation (30 min sans prestation), deux rendez-vous bout à bout acceptés ; 15 min de tolérance pour un rendez-vous juste passé ; 60 créations par heure et par salon (K15) ; si téléphone : contact privé et SMS avec lien de suivi ; recalcul |
 | `update_appointment` | Gérant ; coiffeur concerné | `ticket_id`, `scheduled_at?`, `member_id?`, `service_id?`, `first_name?`, `phone?` | Modifie un rendez-vous encore `waiting` ; recalcul ; notification si l'heure change de 10 min ou plus |
 | `cancel_appointment` | Gérant ; coiffeur concerné | `ticket_id` | `cancelled` (`removed_by_salon`) ; notification `cancelled_by_salon` si le client est joignable |
-| `check_in_appointment` | Client connecté (QR de l'affiche) | `salon_id`, `scheduled_time` (HH:MM du jour), `member_id?`, `service_id?`, `notifications_consent` | Ticket `appointment` au statut `pending_confirmation`, hors calcul ; prévient le gérant et le coiffeur choisi |
-| `confirm_appointment` | Gérant ; coiffeur concerné | `ticket_id`, `decision` (`confirm`, `reject`), `merge_into_ticket_id?` | `confirm` : `pending_confirmation → waiting`, ou fusion avec le rendez-vous déjà saisi par le salon ; `reject` : `cancelled` (`appointment_rejected`) avec notification |
+| `check_in_appointment` | Client connecté (QR de l'affiche) | `salon_id`, `scheduled_time` (HH:MM du jour), `member_id?`, `service_id?`, `notifications_consent` | Ticket `appointment` au statut `pending_confirmation`, hors calcul ; push `appointment_checked_in` au gérant et au coiffeur choisi (K21). Si ce numéro a déjà un rendez-vous saisi ce jour-là, le ticket est créé quand même et la fusion est proposée au salon, au lieu de `already_has_active_ticket` (K14) |
+| `confirm_appointment` | Gérant ; coiffeur concerné | `ticket_id`, `decision` (`confirm`, `reject`), `member_id?` (obligatoire si le client a choisi « Je ne sais plus »), `merge_into_ticket_id?` | `confirm` : `pending_confirmation → waiting` ; avec fusion, le ticket saisi par le salon survit et reprend le client, le consentement et le contact du ticket signalé, qui est annulé (`merged`, événement `appointment_merged`) (K14) ; `reject` : `cancelled` (`appointment_rejected`) avec notification |
 | `respond_eta` | Client ou jeton | `ticket_id`, `response` (`on_time`, `late`, `cancel`), `delay_minutes?` (5 à 30) | Enregistre la réponse T-30 ; aucun recul automatique : seul « Prendre le suivant » fait reculer (E2) |
 | `cancel_ticket` | Client ou jeton | `ticket_id` | Annule, même appelé, sans absence comptée (E3) ; les suivants avancent |
 | `resolve_stylist_change` | Client ou jeton | `ticket_id`, `choice` (`wait`, `first_available`) | Réponse du client quand le coiffeur demandé devient indisponible (U-12) |
 | `respond_end_of_day` | Client ou jeton | `ticket_id`, `choice` (`stay`, `cancel`) | Réponse à l'alerte de fin de journée (U-11) |
 | `confirm_arrival` | Coiffeur, gérant | `short_code` (5 caractères) | Horodate l'arrivée ; refuse un code d'un autre salon ou d'un ticket clos |
-| `call_ticket` | Coiffeur, gérant qui coiffe (« Je prends le prochain » si « Je coiffe » est coupé) | — (le serveur choisit le premier ticket éligible, règles 4 et 6 à 8) | `waiting → called`, aussi file en pause (E4) ; fixe `assigned_member_id` ; notification `your_turn` ; `release_due_at` = maintenant + 10 min, ou l'heure d'arrivée annoncée si elle est plus tardive (E2) |
+| `call_ticket` | Coiffeur, gérant qui coiffe (« Je prends le prochain » si « Je coiffe » est coupé) | — (le serveur choisit le premier ticket éligible, règles 4 et 6 à 8) | `waiting → called`, aussi file en pause (E4) ; fixe `assigned_member_id` ; notification `your_turn` ; `release_due_at` = la plus tardive de maintenant + 10 min et `declared_arrival_at` (E2) ; un retard déclaré à T-30 fixe `declared_arrival_at` = `t30_estimated_start_at` + `declared_delay_minutes` (K13) |
 | `start_service` | Coiffeur attribué | `ticket_id`, `service_id`, `planned_duration_minutes` | `called → in_service` ; coiffeur `in_service` |
 | `adjust_duration` | Coiffeur attribué | `ticket_id`, `delta_minutes` (+5, +15, +30, +45) | Recalcul ; notifications si l'heure d'un client change de 10 min ou plus (E11) |
 | `complete_service` | Coiffeur attribué ; gérant (E15) | `ticket_id` | `in_service → completed` ; coiffeur `available` ; journal avec l'acteur gérant le cas échéant |
@@ -212,7 +215,7 @@ Corps commun : `{ command: string, command_id: uuid, payload: {...} }`. Contexte
 | `set_hairdressing` | Gérant (soi-même) | `is_hairdressing` | Interrupteur « Je coiffe » ; coupé : même règle qu'un coiffeur absent pour ses clients (E8) ; recalcul |
 | `set_queue_status` | Gérant | `salon_id`, `status` (`open`, `paused`, `closed`) | Ouvre, met en pause, ferme la file |
 | `resolve_closing` | Gérant | `ticket_ids`, `decision` (`serve`, `cancel`) | Après l'heure de fermeture : sert ou annule avec excuses les clients restants ; un client « servi » non pris avant la fin de la journée est annulé avec excuses (E5) |
-| `create_test_ticket` | Gérant (salon non publié) | `salon_id` | Ticket fictif marqué `is_test` pour S-07 |
+| `create_test_ticket` | Gérant (salon non publié) | `salon_id` | Ticket fictif marqué `is_test` pour S-07 ; ignore l'état de la file (K24) |
 
 La libération (`called → no_show`) est faite par `queue-tick` à `release_due_at`, sans commande manuelle. À la 5e absence en 30 jours pour un même numéro, tous salons confondus, le client reçoit la notification `no_show_warning` (E10, K8).
 
@@ -221,24 +224,27 @@ La libération (`called → no_show`) est faite par `queue-tick` à `release_due
 | Commande | Codes propres |
 | --- | --- |
 | `join_queue` | `queue_closed`, `queue_paused`, `queue_full`, `already_has_active_ticket`, `service_unavailable`, `stylist_unavailable` |
-| `register_walk_in` | `queue_closed`, `queue_paused`, `queue_full`, `already_has_active_ticket`, `invalid_phone` |
-| `create_appointment`, `update_appointment` | `appointment_overlap`, `outside_opening_hours`, `appointment_in_past`, `appointment_not_editable`, `already_has_active_ticket`, `invalid_phone` |
-| `cancel_appointment` | `appointment_not_editable` |
+| `register_walk_in` | `queue_closed`, `queue_paused`, `queue_full`, `already_has_active_ticket`, `invalid_phone`, `stylist_unavailable` |
+| `create_appointment`, `update_appointment` | `appointment_overlap`, `outside_opening_hours`, `appointment_in_past`, `appointment_not_today`, `appointment_not_editable`, `already_has_active_ticket`, `invalid_phone`, `ticket_other_salon` (modification) |
+| `cancel_appointment` | `appointment_not_editable`, `ticket_other_salon` |
 | `check_in_appointment` | `queue_closed`, `already_has_active_ticket`, `outside_opening_hours` |
-| `confirm_appointment` | `already_resolved`, `ticket_other_salon` |
+| `confirm_appointment` | `already_resolved`, `ticket_other_salon`, `member_required`, `invalid_merge_target` (rendez-vous appelé, annulé ou d'un autre coiffeur), `appointment_overlap` |
 | `respond_eta` | `invalid_delay` (hors 5 à 30 min) |
 | `cancel_ticket`, `resolve_stylist_change`, `respond_end_of_day`, `respond_reassignment` | `already_resolved` |
-| `confirm_arrival` | `unknown_code`, `ticket_other_salon` |
+| `confirm_arrival` | `unknown_code`, `ticket_other_salon`, `ticket_closed` |
 | `call_ticket` | `no_eligible_ticket`, `call_already_in_progress` (un client déjà appelé ou en prestation) |
-| `start_service`, `adjust_duration`, `take_next` | `not_assigned_to_you` ; `take_next` : `postpone_limit_reached` |
+| `start_service`, `adjust_duration`, `take_next` | `not_assigned_to_you` ; `take_next` : `postpone_limit_reached` ; `adjust_duration` : `duration_limit_reached` (au-delà de 240 min) |
 | `complete_service` | `not_assigned_to_you` (coiffeur qui n'est pas celui du ticket) |
 | `remove_ticket` | `ticket_other_salon` |
-| `reassign_ticket` | `stylist_unavailable`, `reassignment_pending` |
+| `reassign_ticket` | `stylist_unavailable`, `reassignment_pending`, `ticket_other_salon` |
 | `set_presence`, `set_hairdressing` | — |
 | `set_queue_status` | `salon_not_published` |
+| `resolve_closing` | `closing_not_reached` |
 | `create_test_ticket` | `salon_already_published` |
 
-Hors `queue-command` : `auth.otp_rate_limited` (plafond de codes SMS, `auth-send-sms`).
+Hors `queue-command` : `auth.otp_rate_limited` (plafond de codes SMS, `auth-send-sms`) ; `team.member_not_found` et `team.already_deactivated` (`regenerate-qr`, `revoke-member-sessions`, `deactivate-member`) ; `account.delete_failed` (`account-delete`).
+
+**`already_resolved` ou `invalid_transition`** (K16) : `already_resolved` = une réponse a déjà été donnée à la même question (choix de coiffeur, fin de journée, réaffectation, confirmation d'un rendez-vous) ; `invalid_transition` = le statut du ticket ne permet pas l'action.
 
 ### 6.3 Lectures (RLS ou RPC)
 
@@ -252,7 +258,7 @@ Hors `queue-command` : `auth.otp_rate_limited` (plafond de codes SMS, `auth-send
 | Aperçu d'une absence | RPC `preview_presence_change(member_id, status, until?)` : exécute le moteur sans rien écrire et renvoie les clients touchés et leur nouvelle heure (K2) | Dashboard |
 | Rendez-vous à confirmer | Inclus dans `get_salon_board` et `get_stylist_queue` | Dashboard, espace coiffeur |
 | Équipe, prestations, horaires | Tables, RLS gérant | Dashboard (écriture directe autorisée par RLS pour ces tables de configuration) |
-| Journal | RPC `get_audit_log(salon_id?, from, to, type?, member_id?, cursor?)` | Dashboard, admin |
+| Journal | RPC `get_audit_log(salon_id?, from, to, type?, member_id?, cursor?)` : 7 derniers jours par défaut ; chaque ligne porte le prénom du membre qui a agi et le code du ticket, jamais le prénom du client ; pas de temps réel au MVP (K25) | Dashboard, admin |
 
 Les tables de **configuration** (horaires, fermetures, prestations, spécialités des membres, infos du salon) sont modifiées directement par le gérant via supabase-js, sous RLS. Les tables de **file** (tickets, présences, événements, notifications) ne le sont jamais (ADR-003).
 
@@ -289,7 +295,7 @@ Chaque fournisseur recevant des données personnelles fait l'objet d'un contrat 
 | Référentiel | OWASP ASVS niveau 2 ; revue par l'agent `security-reviewer` sur chaque pull request sensible |
 | RLS | Activée sur **toutes** les tables du schéma `public` ; schéma `private` jamais exposé par l'API ; tests pgTAP qui tentent de lire et d'écrire chez un autre salon |
 | Fonctions SQL | `security definer` seulement si nécessaire, avec `set search_path = ''` et contrôle explicite des droits en tête |
-| Codes SMS | 6 chiffres, 5 min, 3 essais, renvoi après 30 s ; plafonds par numéro (5 par heure), par IP (20 par heure) ; numéros +33 uniquement |
+| Codes SMS | 6 chiffres, 5 min, 3 essais, renvoi après 30 s ; plafonds par numéro (5 par heure), par IP (20 par heure) ; numéros +33 uniquement ; dernière ligne du SMS `@zelate.fr #123456` pour le remplissage automatique (K27, suppose le domaine acquis) |
 | Sessions | Jetons d'accès de 15 min ; contrôle serveur du statut du membre à chaque commande et lecture RPC (ADR-019) |
 | Gérant | E-mail + mot de passe (12 caractères minimum) ou lien magique ; MFA proposée |
 | Coiffeur (lot 1) | Compte personnel, connexion par lien magique, session de 30 jours ; le gérant révoque toutes ses sessions (S-16) ; un coiffeur désactivé perd l'accès immédiatement ; aucune donnée client persistée sur l'appareil (pas de `persistQueryClient`, pas de `localStorage` ni d'IndexedDB pour les données, réponses d'API exclues du cache du service worker) |
@@ -307,7 +313,7 @@ Chaque fournisseur recevant des données personnelles fait l'objet d'un contrat 
 
 - Hébergement : Supabase région UE (Francfort ou Paris selon disponibilité), Sentry UE, Vercel pour des fichiers statiques sans donnée personnelle.
 - Minimisation : pas de position stockée ; téléphone jamais exposé aux salons ; prénom seulement affiché côté salon ; rien du client conservé sur le téléphone du coiffeur.
-- Consentements distincts et horodatés : notifications de suivi (case « Me prévenir » décochée par défaut ; sans elle, seuls `ticket_created` et `your_turn` partent, K11), offres marketing (opt-in, hors MVP), mesure d'audience (sans cookie).
+- Consentements distincts et horodatés : notifications de suivi, portées par chaque ticket (`tickets.notifications_consent_at`, K18 ; case « Me prévenir » décochée à chaque inscription ; sans elle, seuls `ticket_created` et `your_turn` partent, K11), offres marketing (opt-in, hors MVP), mesure d'audience (sans cookie).
 - Conservation : brouillons d'inscription salon 7 jours ; tickets anonymisés après **12 mois** (à confirmer avec un conseil RGPD) — prénom, client, note de retrait et contact effacés, horodatages gardés pour les statistiques. Le journal n'a rien à anonymiser : il ne contient ni prénom ni texte libre (K10). Absences : `private.no_show_records` par empreinte du numéro, purgée après 30 jours (K8).
 - Droits : export et suppression du compte client depuis `/account` (suppression = anonymisation des tickets passés).
 - Registre des traitements et contrats de sous-traitance avant le pilote.
@@ -331,7 +337,8 @@ packages/i18n/src/fr/
 - Types générés depuis `fr` : une clé manquante ou mal écrite ne compile pas.
 - ESLint `i18next/no-literal-string` interdit les textes en dur dans les composants.
 - Pluriels et variables au format ICU (`i18next-icu`).
-- Un test vérifie que **chaque modèle SMS** tient en 160 caractères GSM-7 avec des valeurs de longueur maximale : prénom ≤ 30 caractères, nom du salon tronqué à 40 dans les SMS, accents et caractères hors GSM-7 translittérés avant l'envoi, lien court `zelate.fr/t/xxxxxxxx` (8 caractères, résolu côté serveur vers le jeton) (K5). 🟡 Adresse du salon tronquée à 30 caractères dans les SMS « préparez-vous » et « votre tour » (à confirmer, K20).
+- Raisons d'un changement d'heure : enum `estimate_change_reason` (BACKEND_SCHEMA §3), textes uniques dans `common.change_reason.<code>`, chargés par l'app client et par `send-notifications` (K26).
+- Un test vérifie que **chaque modèle SMS** tient en 160 caractères GSM-7 avec des valeurs de longueur maximale : prénom ≤ 30 caractères, nom du salon tronqué à 40 dans les SMS, accents et caractères hors GSM-7 translittérés avant l'envoi, lien court `zelate.fr/t/xxxxxxxx` (8 caractères, résolu côté serveur vers le jeton) (K5). Prénom du coiffeur ≤ 30 ; adresse du salon tronquée à 30 caractères dans les SMS « préparez-vous » et « votre tour » (K20).
 - Chaque app ne charge que ses espaces de noms (`common` + les siens).
 
 ---

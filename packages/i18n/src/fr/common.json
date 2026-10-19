@@ -98,5 +98,24 @@
   "app_update": {
     "toast": "Nouvelle version disponible",
     "reload": "Recharger"
+  },
+  "change_reason": {
+    "service_longer": "Une prestation dure plus longtemps que prévu.",
+    "service_shorter": "Une prestation a été plus courte que prévu.",
+    "client_ahead_left": "Un client avant vous a quitté la file.",
+    "client_ahead_late": "Un client avant vous arrive en retard.",
+    "client_postponed": "Un client en retard passe après vous.",
+    "client_late": "Vous étiez en retard : le suivant est passé.",
+    "stylist_break": "Le coiffeur prévu fait une pause.",
+    "stylist_break_ended": "Le coiffeur prévu a repris plus tôt.",
+    "stylist_late": "Le coiffeur prévu arrive plus tard.",
+    "stylist_unavailable": "Un coiffeur n'est plus disponible aujourd'hui.",
+    "stylist_available": "Un coiffeur de plus est disponible.",
+    "hairdressing_toggled": "Le nombre de coiffeurs disponibles a changé.",
+    "reassigned": "Le salon vous a confié à un autre coiffeur.",
+    "stylist_choice": "Votre choix de coiffeur est pris en compte.",
+    "appointment_ahead": "Un rendez-vous passe à son heure avant vous.",
+    "appointment_changed": "Le salon a modifié un rendez-vous avant vous.",
+    "your_appointment_changed": "Le salon a modifié votre rendez-vous."
   }
 }

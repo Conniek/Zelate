@@ -45,7 +45,7 @@
 ### 6. Donner mon consentement depuis le compte
 - **Étant donné** que l'interrupteur « Notifications de suivi » est désactivé
 - **Quand** je l'active
-- **Alors** la date et l'heure de mon consentement sont enregistrées (`profiles.tracking_consent_at`)
+- **Alors** la date et l'heure de mon consentement sont enregistrées (`tickets.notifications_consent_at`, K18)
 - **Et** cette date est affichée sous l'interrupteur
 
 ### 7. Interrupteur désactivé par défaut

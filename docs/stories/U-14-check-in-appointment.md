@@ -59,7 +59,7 @@
 ### 8. Consentement donné
 - **Étant donné** que je coche la case « Me prévenir » au récapitulatif
 - **Quand** je touche « Me signaler »
-- **Alors** la date et l'heure de mon consentement aux notifications de suivi sont enregistrées (`profiles.tracking_consent_at`)
+- **Alors** la date et l'heure de mon consentement aux notifications de suivi sont enregistrées (`tickets.notifications_consent_at`, K18)
 
 ### 9. Rendez-vous à confirmer : hors calcul
 - **Étant donné** que mon ticket est « À confirmer » chez Léa

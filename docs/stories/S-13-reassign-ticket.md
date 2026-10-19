@@ -111,7 +111,7 @@
 | `pro-manager.ticket_panel.reassign` | « Changer de coiffeur » | Libellé indicatif (APP_FLOW F-M10) |
 | `pro-manager.reassign.delay_warning` | « L'heure du client reculerait de {minutes} min : il recevra une demande » | APP_FLOW F-M10 ; variable en minutes ; partagée avec U-17 |
 | `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | Partagée avec S-09 et U-12 |
-| `notifications.estimate_changed.reason.reassigned` | « Le salon vous a confié à un autre coiffeur. » | Raison montrée au client (push seulement) |
+| `common.change_reason.reassigned` | « Le salon vous a confié à un autre coiffeur. » | Raison montrée au client (push seulement) |
 | `notifications.reassignment_request.push` | Voir `notifications.reassignment_request.push.*` dans le dictionnaire (2 textes) | Partagée avec U-17 ; push seulement, « Accepter » et « Refuser » ; pas de modèle SMS |
 | `errors.queue.reassignment_pending` | « Une demande de changement de coiffeur attend déjà la réponse du client. Patientez 10 min au plus. » | TRD §6.2 |
 | `errors.queue.stylist_unavailable` | « Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. » | TRD §6.2 ; partagée avec U-04 et U-17 |

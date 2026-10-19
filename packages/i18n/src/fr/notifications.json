@@ -60,18 +60,6 @@
     "push": {
       "title": "Votre heure de passage change",
       "body": "Passage prévu vers {time} chez {salon_name}. {reason}"
-    },
-    "reason": {
-      "service_longer": "Une prestation est plus longue que prévu.",
-      "service_shorter": "Une prestation a été plus courte que prévu.",
-      "client_cancelled": "Un client avant vous a annulé.",
-      "client_postponed": "Un client en retard passe après vous.",
-      "stylist_break": "Un coiffeur fait une pause.",
-      "stylist_unavailable": "Un coiffeur n'est plus disponible.",
-      "stylist_available": "Un coiffeur est de nouveau disponible.",
-      "hairdressing_toggled": "Le nombre de coiffeurs disponibles a changé.",
-      "reassigned": "Le salon vous a confié à un autre coiffeur.",
-      "appointment_updated": "Le planning des rendez-vous a changé."
     }
   },
   "postponed": {
