@@ -1,0 +1,26 @@
+[
+  {
+    "query": "Implémente la story C-04 de Zelaté (appeler le prochain client) : tests, code, documentation, en suivant le plan d'implémentation.",
+    "should_trigger": true
+  },
+  {
+    "query": "Let's build Zelaté user story U-08 (cancel my place) end to end: read the docs, write the tests first, then the code, then update the docs and open the PR.",
+    "should_trigger": true
+  },
+  {
+    "query": "On attaque la story S-10 de Zelaté, inscrire un client à l'accueil : fais tout le cycle jusqu'à la validation.",
+    "should_trigger": true
+  },
+  {
+    "query": "Dans Zelaté, faut-il qu'un client avec rendez-vous soit prévenu quand le salon déplace son rendez-vous ? Donne-moi ton avis sur la règle métier.",
+    "should_trigger": false
+  },
+  {
+    "query": "Corrige la faute de frappe dans le README à la ligne 12, « deploiment » au lieu de « déploiement ».",
+    "should_trigger": false
+  },
+  {
+    "query": "Explique-moi la différence entre Vite et Webpack pour un débutant.",
+    "should_trigger": false
+  }
+]

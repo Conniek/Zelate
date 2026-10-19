@@ -1,0 +1,26 @@
+[
+  {
+    "query": "Pour Zelaté, explique-moi précisément quand un ticket passe de « appelé » à « absent », et ce qui se passe si le client avait annoncé un retard de 20 minutes.",
+    "should_trigger": true
+  },
+  {
+    "query": "I'm about to write the test file for the Zelaté queue engine: which invariants must hold after every command, and what are the rules about appointments versus walk-in clients?",
+    "should_trigger": true
+  },
+  {
+    "query": "Dans Zelaté, un coiffeur se met en pause : est-ce que les clients qui l'ont demandé doivent choisir un autre coiffeur ? Vérifie dans les règles avant de répondre.",
+    "should_trigger": true
+  },
+  {
+    "query": "Écris-moi un composant React générique de bouton avec un état de chargement, en TypeScript, pour n'importe quel projet.",
+    "should_trigger": false
+  },
+  {
+    "query": "Explique-moi comment fonctionne la RLS de Postgres en général, avec un exemple simple sur une table de blog.",
+    "should_trigger": false
+  },
+  {
+    "query": "Rédige un post LinkedIn pour annoncer que je lance une application de file d'attente pour les boulangeries.",
+    "should_trigger": false
+  }
+]

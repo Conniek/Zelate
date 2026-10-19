@@ -1,0 +1,26 @@
+[
+  {
+    "query": "Pour Zelaté, écris la migration Supabase qui crée la table tickets avec ses contraintes et sa politique RLS, et le test pgTAP qui prouve qu'un gérant ne lit pas les tickets d'un autre salon.",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to add an index and a check constraint on Zelaté's private.ticket_contacts table; design the migration and its pgTAP test.",
+    "should_trigger": true
+  },
+  {
+    "query": "Ajoute à Zelaté la fonction SQL get_stylist_queue en security definer, avec le contrôle des droits, dans une migration.",
+    "should_trigger": true
+  },
+  {
+    "query": "Dans Zelaté, écris le composant React de l'écran « Ma file » du coiffeur avec ses textes du dictionnaire.",
+    "should_trigger": false
+  },
+  {
+    "query": "Explique-moi ce qu'est une base de données relationnelle, pour un cours d'introduction.",
+    "should_trigger": false
+  },
+  {
+    "query": "Écris une requête SQL pour calculer le chiffre d'affaires mensuel dans mon fichier Excel de ventes exporté en CSV.",
+    "should_trigger": false
+  }
+]

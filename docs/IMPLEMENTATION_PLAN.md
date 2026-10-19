@@ -180,7 +180,7 @@ flowchart TD
   - agents à configurer : `queue-engine`, `code-reviewer`, `security-reviewer` (lecture seule), `qa-e2e`, `a11y-ecodesign`.
 - Fichiers `docs/adr/001` à `019`.
 
-**Fini quand** : la CI passe au vert sur une pull request d'exemple, avec une préversion déployée des deux apps ; chaque skill écrit se déclenche sur une demande type et pas sur une demande hors sujet (test skill-creator) ; `code-reviewer` a relu la pull request d'exemple.
+**Fini quand** : la CI passe au vert sur une pull request d'exemple, avec une préversion déployée des deux apps ; chaque skill écrit se déclenche sur une demande type et pas sur une demande hors sujet (test skill-creator) ; `code-reviewer` a relu la pull request d'exemple. Test de déclenchement fait le 19/10 : 18/18 ([rapport](./reviews/2026-10-19-skill-trigger-tests.md)).
 
 ### DEV-1 · Base de données et RLS
 
