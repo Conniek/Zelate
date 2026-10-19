@@ -1,0 +1,35 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "client": {
+      "root": "apps/client",
+      "framework": "vite"
+    },
+    "pro": {
+      "root": "apps/pro",
+      "framework": "vite"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/pro",
+      "destination": {
+        "service": "pro",
+        "path": "/"
+      }
+    },
+    {
+      "source": "/pro/:path*",
+      "destination": {
+        "service": "pro",
+        "path": "/:path*"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "client"
+      }
+    }
+  ]
+}
