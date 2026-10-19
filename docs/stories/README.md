@@ -2,7 +2,7 @@
 
 50 stories, une par exigence du [PRD v1.1](../PRD.md) §5.3, écrites le 18/10/2026 par l'agent `product-analyst` (lot REQ-2), puis mises à jour le même jour avec le PRD v1.1 (rendez-vous du salon, règle H10) et les réponses E1 à E16 et K1 à K12.
 
-**État : brouillon.** Les scénarios sont prêts à relire ; les questions E17 à E31 ci-dessous bloquent leur version définitive (porte 2).
+**État : brouillon.** Les scénarios sont prêts à relire ; les questions E32 à E36 bloquent leur version définitive (porte 2).
 
 ## Conventions
 
@@ -117,6 +117,12 @@ Relevées par les agents en mettant les stories à jour. Chaque proposition est 
 ### Par Koni (choix techniques)
 
 **Tranchées le 19/10** : K13 à K25 acceptées telles que proposées, plus K26 (raisons d'un changement d'heure : enum `estimate_change_reason`, textes uniques `common.change_reason.*`) et K27 (ligne `@zelate.fr #code` dans le SMS de connexion). Elles sont intégrées au [TRD v0.4](../TRD.md), au [schéma v0.4](../BACKEND_SCHEMA.md) et à l'[APP_FLOW v0.4](../APP_FLOW.md). Les stories seront relues avec les réponses d'Ely (E17 à E31), pour marquer ces questions résolues scénario par scénario.
+
+### Tranchées le 19/10
+
+- **Ely, E17 à E31** : toutes les propositions acceptées, intégrées au [PRD v1.2](../PRD.md) (§5.1, §5.2, §5.4, §11).
+- **Koni, K28 à K41** (issues de la [revue d'architecture](../reviews/2026-10-19-architect-review.md)) : toutes acceptées, intégrées au TRD v0.5 et au schéma v0.5.
+- **Encore ouvertes, pour Ely : E32 à E36** (partie E du doc « Questions à trancher ») : ouverture automatique de la file et fin de pause, rappel après un retard déclaré, heure déclarée (H8), signalement pendant une pause, client appelé repris en tête.
 
 ### Textes à rédiger (REQ-3)
 
