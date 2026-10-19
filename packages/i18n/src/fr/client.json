@@ -183,25 +183,6 @@
       "estimate": "Nouvelle heure de passage : vers {time}. {reason}",
       "postponed": "Votre place a reculé : {position, plural, one {# client} other {# clients}} avant vous. {reason}"
     },
-    "change_reason": {
-      "service_longer": "La prestation en cours dure plus longtemps que prévu.",
-      "service_shorter": "Une prestation s'est terminée plus tôt que prévu.",
-      "stylist_break": "Le coiffeur prévu pour vous fait une pause.",
-      "stylist_break_ended": "Le coiffeur prévu pour vous a fini sa pause plus tôt que prévu.",
-      "stylist_late": "Le coiffeur prévu pour vous arrive plus tard que prévu.",
-      "stylist_unavailable": "Un coiffeur n'est plus disponible aujourd'hui : l'équipe s'est réorganisée.",
-      "stylist_available": "Un coiffeur de plus est disponible.",
-      "hairdressing_toggled": "L'équipe disponible au salon a changé.",
-      "reassigned": "Le salon a confié votre passage à un autre coiffeur.",
-      "stylist_choice": "Votre choix de coiffeur a été pris en compte.",
-      "client_ahead_left": "Un client placé avant vous a quitté la file.",
-      "client_ahead_late": "Un client placé avant vous arrive plus tard que prévu.",
-      "appointment_ahead": "Un client avec rendez-vous passe à son heure avant vous.",
-      "appointment_changed": "Le salon a modifié un rendez-vous prévu avant vous.",
-      "your_appointment_changed": "Le salon a modifié votre rendez-vous.",
-      "client_late": "Vous avez signalé un retard : le coiffeur a pris le client suivant en attendant votre arrivée.",
-      "other": "Le planning du salon a changé."
-    },
     "turn_approaching": {
       "banner": "Votre tour approche. Serez-vous à l'heure ?",
       "on_time": "Je serai à l'heure",

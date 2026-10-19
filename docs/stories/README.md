@@ -2,7 +2,7 @@
 
 50 stories, une par exigence du [PRD v1.1](../PRD.md) §5.3, écrites le 18/10/2026 par l'agent `product-analyst` (lot REQ-2), puis mises à jour le même jour avec le PRD v1.1 (rendez-vous du salon, règle H10) et les réponses E1 à E16 et K1 à K12.
 
-**État : brouillon.** Les scénarios sont prêts à relire ; les questions E17 à E31 et K13 à K25 ci-dessous bloquent leur version définitive (porte 2).
+**État : brouillon.** Les scénarios sont prêts à relire ; les questions E17 à E31 ci-dessous bloquent leur version définitive (porte 2).
 
 ## Conventions
 
@@ -116,21 +116,7 @@ Relevées par les agents en mettant les stories à jour. Chaque proposition est 
 
 ### Par Koni (choix techniques)
 
-| # | Question | Proposition | Stories |
-| --- | --- | --- | --- |
-| K13 | **Heure d'arrivée annoncée** : aucune colonne ne la porte. Comment la calculer à partir d'un retard de *n* min ? | `declared_arrival_at` = heure annoncée à T-30 + *n* ; `release_due_at` = la plus tardive de `called_at` + 10 min et `declared_arrival_at` | C-09, U-07 |
-| K14 | **`confirm_appointment`** : pas de `member_id` pour un client qui a choisi « Je ne sais plus » ; dans une fusion, quel ticket survit ? Un rendez-vous saisi avec le numéro du client rend ce numéro « actif » et bloque son signalement | Ajouter `member_id?` ; le ticket saisi par le salon survit et reprend le client, le consentement et le contact ; l'autre est annulé avec un nouveau motif `merged`, événement `appointment_merged` ; `check_in_appointment` propose la fusion au lieu de `already_has_active_ticket` quand le numéro a déjà un rendez-vous ce jour-là | S-19, U-14, C-11 |
-| K15 | **`create_appointment`** : coiffeur qui vise un collègue, autre jour, mesure du chevauchement, tolérance pour un rendez-vous juste passé, plafond | `forbidden` ; `appointment_not_today` ; durée de la prestation (30 min sans prestation), bout à bout autorisé ; 15 min de tolérance ; 60 créations par heure et par salon | S-18, C-11 |
-| K16 | **Codes d'erreur manquants** : `ticket_other_salon` pour `update_appointment`, `cancel_appointment`, `reassign_ticket` ; `resolve_closing` avant la fermeture ; `stylist_unavailable` pour `register_walk_in` ; ticket clos pour `confirm_arrival` ; `regenerate-qr`, `revoke-member-sessions`, `deactivate-member` ; durée au-delà de 240 min ; frontière `already_resolved` / `invalid_transition` | Les ajouter au tableau du TRD §6.2 ; `already_resolved` = réponse déjà donnée à la même question, `invalid_transition` = statut qui ne permet pas l'action | toutes |
-| K17 | **Export et suppression du compte** : aucune fonction, pas de règle pour un ticket actif | Edge Functions `account-export` et `account-delete` ; un ticket actif est annulé à la suppression ; export sans jeton ni données d'autres personnes | U-13 |
-| K18 | **Consentement par profil ou par ticket** : la case est présentée à chaque inscription, mais rangée dans le profil | Consentement porté par le ticket (`tickets.notifications_consent_at`) ; la case reste décochée à chaque inscription | U-04, U-13 |
-| K19 | **`last_notified_start_at`** : mis à jour quand aucune notification ne part ? | Seulement quand une notification part ; sinon l'écart continue de s'accumuler | U-10, C-07 |
-| K20 | **Longueurs dans les SMS** : prénom du coiffeur et adresse du salon ne sont pas bornés | Prénom du coiffeur ≤ 30 ; l'adresse n'est pas dans le SMS, seulement dans le lien | C-04, U-06 |
-| K21 | **Prévenir le salon quand l'app est fermée** (rendez-vous signalé) | Push web vers les membres (abonnements push liés à `member_id`) | S-19, C-11 |
-| K22 | **Révocation** : que voit le téléphone pendant les 15 min, et le canal temps réel reste-t-il ouvert ? | Les commandes et lectures sont refusées dès la révocation et l'app affiche l'écran de connexion à la première réponse refusée ; le canal est fermé côté serveur | C-01, S-16 |
-| K23 | **`dedupe_key`** de `arrival_reminder` et `appointment_delay` | `arrival_reminder:<n° d'appel>`, `appointment_delay:<palier>` | C-09, U-15 |
-| K24 | **`create_test_ticket`** sur un salon non publié, dont la file ne peut pas s'ouvrir | Le ticket de test ignore l'état de la file | S-07 |
-| K25 | **Journal du salon** : quelle identité afficher pour « qui » et pour le ticket (le journal ne garde que des identifiants, K10) ? Période par défaut, temps réel | Prénom du membre, code du ticket ; 7 derniers jours ; pas de temps réel au MVP | S-17, P-02 |
+**Tranchées le 19/10** : K13 à K25 acceptées telles que proposées, plus K26 (raisons d'un changement d'heure : enum `estimate_change_reason`, textes uniques `common.change_reason.*`) et K27 (ligne `@zelate.fr #code` dans le SMS de connexion). Elles sont intégrées au [TRD v0.4](../TRD.md), au [schéma v0.4](../BACKEND_SCHEMA.md) et à l'[APP_FLOW v0.4](../APP_FLOW.md). Les stories seront relues avec les réponses d'Ely (E17 à E31), pour marquer ces questions résolues scénario par scénario.
 
 ### Textes à rédiger (REQ-3)
 

@@ -137,7 +137,7 @@
 | `client.ticket.turn_approaching.banner` | Votre tour approche. Serez-vous à l'heure ? | — |
 | `client.ticket.late.option` | « {minutes} min » | Valeurs : 5, 10, 15, 20, 30 |
 | `client.ticket.turn_approaching.cancel_confirm` | Annuler votre place ? Elle sera donnée au client suivant. | — |
-| `client.ticket.change_reason.client_late` | Vous avez signalé un retard : le coiffeur a pris le client suivant en attendant votre arrivée. | Raison affichée du recul (H5) ; partagé avec C-09 |
+| `common.change_reason.client_late` | « Vous étiez en retard : le suivant est passé. » | Raison affichée du recul (H5) ; partagé avec C-09 |
 | `notifications.postponed.push` | Voir `notifications.postponed.push.*` dans le dictionnaire (2 textes) | Push seulement ; nouvelle position et raison ; envoyé après `take_next` (C-09) |
 | `errors.queue.invalid_delay` | Le retard doit être compris entre 5 et 30 min. Choisissez une autre durée. | Retard hors 5 à 30 min |
 | `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Partagé avec U-08, U-11, U-12 |

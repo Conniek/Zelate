@@ -500,3 +500,4 @@ Questions tranchées le 18/10/2026 (doc « Questions à trancher avant les user 
 | E16 | Changements dans la journée | Tickets existants inchangés ; horaires pris en compte pour la fin de journée |
 | K11 | Consentement | Case décochée par défaut ; messages indispensables seulement sans elle |
 | K12 | Écrans sans exigence | Ajout de U-13 (compte client) et S-17 (journal du salon) |
+| K13-K27 | Choix techniques du 19/10 | Acceptés tels que proposés (TRD v0.4) ; ceux qui touchent le client : consentement « Me prévenir » porté par chaque place, export et suppression du compte depuis `/account` |

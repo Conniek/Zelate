@@ -151,7 +151,7 @@
 | `pro-manager.presence.impact.service_to_complete` | « Prestation en cours pour {first_name} : à terminer par vous depuis le panneau du ticket. » | Client en prestation à terminer par le gérant (F-M8, E6) |
 | `notifications.stylist_change_required.push` | Voir `notifications.stylist_change_required.push.*` dans le dictionnaire (2 textes) | Push ; choix « attendre » ou « premier disponible » ; sans « attendre » si le coiffeur est absent toute la journée (E7) |
 | `notifications.stylist_change_required.sms` | « {salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link} » | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
-| `notifications.estimate_changed.reason.stylist_unavailable` | « Un coiffeur n'est plus disponible. » | Raison montrée au client |
+| `common.change_reason.stylist_unavailable` | « Un coiffeur n'est plus disponible aujourd'hui. » | Raison montrée au client |
 | `notifications.cancelled_by_salon.sms` | « {salon_name} a annulé votre place : {reason}. Toutes nos excuses. Salons proches : {link} » | Partagée avec S-12 ; **160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5) |
 
 ## Questions ouvertes

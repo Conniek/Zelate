@@ -112,7 +112,7 @@
 | `pro-manager.board.hairdressing.label` | « Je coiffe » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.take_next` | « Je prends le prochain » | Libellé indicatif (APP_FLOW F-M6) |
 | `notifications.estimate_changed.push` | Voir `notifications.estimate_changed.push.*` dans le dictionnaire (2 textes) | Push seulement ; nouvelle heure et raison (APP_FLOW §7) |
-| `notifications.estimate_changed.reason.hairdressing_toggled` | « Le nombre de coiffeurs disponibles a changé. » | Raison montrée au client, sans détail sur le gérant |
+| `common.change_reason.hairdressing_toggled` | « Le nombre de coiffeurs disponibles a changé. » | Raison montrée au client, sans détail sur le gérant |
 | `notifications.stylist_change_required.push` | Voir `notifications.stylist_change_required.push.*` dans le dictionnaire (2 textes) | Partagée avec S-11 et S-16 ; ici sans « attendre » (E7, E8) |
 | `errors.queue.no_eligible_ticket` | « Aucun client à appeler pour l'instant. Il a peut-être été pris par un collègue : vérifiez votre file. » | — |
 | `errors.queue.call_already_in_progress` | « Vous avez déjà un client appelé ou en prestation. Finissez avec lui avant d'appeler le suivant. » | TRD §6.2 |

@@ -85,13 +85,13 @@
 - **Étant donné** que j'ai coché la case « Me prévenir quand mon tour approche »
 - **Quand** je confirme ma place
 - **Alors** la commande `join_queue` part avec `notifications_consent` vrai
-- **Et** la date et l'heure de mon consentement aux notifications de suivi sont enregistrées (`profiles.tracking_consent_at`)
+- **Et** la date et l'heure de mon consentement aux notifications de suivi sont enregistrées (`tickets.notifications_consent_at`, K18)
 
 ### 11 bis. Case laissée décochée : seulement les messages indispensables
 - **Étant donné** que je n'ai jamais donné mon consentement et que je laisse la case « Me prévenir quand mon tour approche » décochée
 - **Quand** je confirme ma place
 - **Alors** le ticket est créé comme au scénario 1
-- **Et** aucun consentement n'est enregistré (`profiles.tracking_consent_at` reste vide)
+- **Et** aucun consentement n'est enregistré (`tickets.notifications_consent_at` reste vide)
 - **Et** la notification d'inscription (`ticket_created`) m'est envoyée
 - **Et** plus tard, la notification « votre tour » (`your_turn`) m'est envoyée quand un coiffeur m'appelle
 - **Et** les autres notifications de suivi de ce ticket (« votre tour approche », « préparez-vous », changement d'heure…) ne partent pas : elles sont enregistrées `skipped` avec le motif `no_consent`
@@ -201,7 +201,7 @@
 
 ## Questions ouvertes
 - **Résolu le 18/10** (K11) — Case de consentement : décochée par défaut ; sans elle, seuls `ticket_created` et `your_turn` partent, les autres notifications passent en `skipped` (`no_consent`) ; voir scénarios 10, 11 et 11 bis.
-- **BACKEND_SCHEMA §4.1 et §4.16 / TRD §6.2 / APP_FLOW F-C3** : le consentement est porté par le profil (`profiles.tracking_consent_at`) alors que la case est présentée, décochée, à chaque inscription (`notifications_consent` dans `join_queue`). Un client qui a consenti pour un ticket précédent voit-il la case décochée au ticket suivant ? S'il la laisse décochée, son consentement est-il retiré, ou reste-t-il valable (et toutes les notifications partent) ?
+- **BACKEND_SCHEMA §4.1 et §4.16 / TRD §6.2 / APP_FLOW F-C3** : le consentement est porté par le profil (`tickets.notifications_consent_at`, K18) alors que la case est présentée, décochée, à chaque inscription (`notifications_consent` dans `join_queue`). Un client qui a consenti pour un ticket précédent voit-il la case décochée au ticket suivant ? S'il la laisse décochée, son consentement est-il retiré, ou reste-t-il valable (et toutes les notifications partent) ?
 - **PRD §5.4 / BACKEND_SCHEMA §4.16** : sans consentement, la notification « Annulation par le salon » (`cancelled_by_salon`) n'est pas dans les messages indispensables : un client retiré par le salon ou annulé en fin de journée ne serait donc prévenu ni par push ni par SMS. Est-ce voulu ? (même question dans U-11)
 - **TRD §6.2** : que recouvre exactement `queue.service_unavailable` (prestation désactivée, aucun coiffeur présent qui la maîtrise, autre) ? Et après cette erreur ou `queue.stylist_unavailable`, le client revient-il à l'étape 1 ou 2 ? APP_FLOW F-C3 ne prévoit de suite que pour `already_has_active_ticket`, `queue_closed`, `queue_paused` et `queue_full`.
 - **PRD §5.2 règle 1 / APP_FLOW F-C3** : le PRD dit que le client « est prévenu avant validation et peut choisir “premier disponible” » ; APP_FLOW repasse automatiquement sur « premier disponible ». Lequel des deux s'applique ?

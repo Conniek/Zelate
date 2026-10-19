@@ -97,7 +97,7 @@
 | --- | --- | --- |
 | `client.ticket.change_banner.estimate` | Nouvelle heure de passage : vers {time}. {reason} | Variables `time`, `reason` |
 | `client.ticket.change_banner.postponed` | Votre place a reculé : {position, plural, one {# client} other {# clients}} avant vous. {reason} | Variables `position`, `reason` |
-| `client.ticket.change_reason.<code>` | Voir `client.ticket.change_reason.*` dans le dictionnaire (17 textes) | Une clé par raison |
+| `common.change_reason.<code>` | Voir `common.change_reason.*` dans le dictionnaire (17 textes) | Une clé par raison |
 | `notifications.estimate_changed.push` | Voir `notifications.estimate_changed.push.*` dans le dictionnaire (2 textes) | Push seulement ; nouvelle heure et raison |
 | `notifications.postponed.push` | Voir `notifications.postponed.push.*` dans le dictionnaire (2 textes) | Partagé avec U-07 ; push seulement ; nouvelle position et raison |
 
