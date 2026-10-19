@@ -2,7 +2,7 @@
 
 50 stories, une par exigence du [PRD v1.1](../PRD.md) §5.3, écrites le 18/10/2026 par l'agent `product-analyst` (lot REQ-2), puis mises à jour le même jour avec le PRD v1.1 (rendez-vous du salon, règle H10) et les réponses E1 à E16 et K1 à K12.
 
-**État : brouillon.** Les scénarios sont prêts à relire ; les questions E17 à E31 ci-dessous bloquent leur version définitive (porte 2).
+**État : brouillon.** Les scénarios sont prêts à relire ; les questions E32 à E39 (Ely) et K42 à K45 (Koni) restent à trancher ; le reste est du détail (porte 2).
 
 ## Conventions
 
@@ -117,6 +117,32 @@ Relevées par les agents en mettant les stories à jour. Chaque proposition est 
 ### Par Koni (choix techniques)
 
 **Tranchées le 19/10** : K13 à K25 acceptées telles que proposées, plus K26 (raisons d'un changement d'heure : enum `estimate_change_reason`, textes uniques `common.change_reason.*`) et K27 (ligne `@zelate.fr #code` dans le SMS de connexion). Elles sont intégrées au [TRD v0.4](../TRD.md), au [schéma v0.4](../BACKEND_SCHEMA.md) et à l'[APP_FLOW v0.4](../APP_FLOW.md). Les stories seront relues avec les réponses d'Ely (E17 à E31), pour marquer ces questions résolues scénario par scénario.
+
+### Tranchées le 19/10
+
+- **Ely, E17 à E31** : toutes les propositions acceptées, intégrées au [PRD v1.2](../PRD.md) (§5.1, §5.2, §5.4, §11).
+- **Koni, K28 à K41** (issues de la [revue d'architecture](../reviews/2026-10-19-architect-review.md)) : toutes acceptées, intégrées au TRD v0.5 et au schéma v0.5.
+- **Encore ouvertes, pour Ely : E32 à E36** (partie E du doc « Questions à trancher ») : ouverture automatique de la file et fin de pause, rappel après un retard déclaré, heure déclarée (H8), signalement pendant une pause, client appelé repris en tête.
+
+### Passe finale des stories (19/10)
+
+Les 50 stories sont alignées sur le PRD v1.2, le TRD v0.5, le schéma v0.5 et l'APP_FLOW v0.7 : 212 questions marquées **Résolu le 19/10**. Ce qui reste ouvert dans les stories est surtout du détail d'écran ou de texte, à régler pendant les maquettes (DES-2) ou au développement. Les questions qui comptent encore :
+
+**Pour Ely**
+| # | Question | Proposition |
+| --- | --- | --- |
+| E32-E36 | Partie E du doc « Questions à trancher » | — |
+| E37 | Le salon déplace un rendez-vous : le client sans « Me prévenir » doit-il être prévenu ? (le changement d'heure est un message d'anticipation) | Oui : un changement d'heure de **son** rendez-vous par le salon est un message indispensable |
+| E38 | Motifs pour annuler ou refuser un rendez-vous : même liste que le retrait, ou liste dédiée ? | Liste dédiée : rendez-vous introuvable, coiffeur indisponible, demande du client, en double, autre |
+| E39 | « Votre tour » dit « 10 min pour arriver » à un client qui a annoncé un retard plus long | Le message donne l'heure limite (« avant 14h50 ») au lieu de « 10 min » |
+
+**Pour Koni**
+| # | Question | Proposition |
+| --- | --- | --- |
+| K42 | Aucun écran ne permet au coiffeur d'activer le push de Zelaté Pro, alors qu'il reçoit `appointment_checked_in` | Proposition d'activation à la fin de F-S1 et dans le menu de l'espace coiffeur, via `push-subscribe` |
+| K43 | Base de K13 pour un retard déclaré avant T-30 | `estimated_start_at` au moment de la déclaration + le retard |
+| K44 | Fenêtre des plafonds (`rate_limits`) | Fenêtres fixes d'une heure ; plafond de création de tickets : 3 par heure et par numéro, 60 par heure et par salon pour l'accueil |
+| K45 | Durée de session d'un client | Session Supabase de 30 jours glissants, comme le coiffeur |
 
 ### Textes à rédiger (REQ-3)
 

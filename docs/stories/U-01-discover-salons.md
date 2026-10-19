@@ -3,9 +3,9 @@
 **En tant que** client, **je veux** voir les salons ouverts autour de moi en liste et sur une carte, **afin de** choisir où aller selon la distance et l'attente.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : états de la file du salon (PRD §5.2 : Fermée, Ouverte, En pause, Complète) ; « Prochain créneau libre » (PRD §5.2, détail dans U-16) ; décision n° 23 « salons non inscrits sur la carte : non » (PRD §11) ; accueil affiché en moins de 3 s sur mobile 4G (PRD §6)
+- Règles appliquées : états de la file du salon (PRD §5.2 : Fermée, Ouverte, En pause, Complète) ; « Prochain créneau libre » : sur la liste et la carte, le créneau le plus tôt avec le nom de sa prestation, rien si la file n'est pas ouverte, pas une réservation (PRD §5.2, E22 ; détail dans U-16) ; décision n° 23 « salons non inscrits sur la carte : non » (PRD §11) ; accueil affiché en moins de 3 s sur mobile 4G (PRD §6)
 - Parcours : F-C1 (APP_FLOW §3) ; vers F-C2 (fiche salon) et F-C5 (bandeau « Ma place »)
-- Commandes et données : RPC `search_salons(lat, lng, radius_m, query?)` · vue `public_salons` · table `salons` (`location`, `queue_status`, `waiting_count`, `current_wait_minutes`, `estimate_updated_at`, `next_free_slots`, `status`) · RPC `my_active_ticket` (bandeau « Ma place »)
+- Commandes et données : RPC `search_salons(lat, lng, radius_m, query?)` (`security definer`, salons publiés seulement, renvoie `next_free_slots` et `is_full`, K32, K36) · vue `public_salons` · table `salons` (`location`, `queue_status`, `is_full`, `waiting_count`, `current_wait_minutes`, `estimate_updated_at`, `next_free_slots`, `status`) · RPC `my_active_ticket` (bandeau « Ma place »)
 
 ## Scénarios
 
@@ -70,12 +70,18 @@
 - **Et** un salon dont l'estimation date de 5 min ou moins n'affiche pas cette mention
 
 ### 10 bis. Prochain créneau libre sur la carte du salon (renvoi vers U-16)
-- **Étant donné** qu'un salon de la liste a, dans la journée d'un coiffeur qui maîtrise une prestation, un trou au moins aussi long que la durée de cette prestation (marge de 0 min)
+- **Étant donné** qu'un salon de la liste a sa file ouverte et que deux prestations tiennent dans un trou d'un coiffeur qui les maîtrise (marge de 0 min) : « Coupe homme » à 15h20 et « Barbe » à 14h40
 - **Quand** il apparaît dans la liste ou sur la carte
-- **Alors** il affiche « Créneau libre à 15h20 » pour la prestation la plus courte qui tient dans un trou (exemple APP_FLOW F-C1)
+- **Alors** il affiche le créneau le plus tôt, 14h40, avec le nom de sa prestation, « Barbe » (PRD §5.2, E22 ; libellé : voir questions ouvertes)
 - **Et** aucun prénom de coiffeur n'est affiché avec ce créneau
 - **Quand** aucune prestation ne tient dans un trou
 - **Alors** aucune mention de créneau libre n'est affichée pour ce salon
+
+### 10 ter. Pas de créneau libre si la file n'est pas ouverte (E22)
+- **Étant donné** que le filtre « Ouvert maintenant » est désactivé et qu'un salon de la zone a sa file fermée ou en pause
+- **Quand** il apparaît dans la liste ou sur la carte
+- **Alors** aucune mention de créneau libre n'est affichée pour ce salon
+- **Et** `search_salons` renvoie pour lui `next_free_slots` vide (`[]`)
 
 ### 11. Aucun résultat : élargir à 10 km
 - **Étant donné** qu'aucun salon ne correspond dans un rayon de 5 km
@@ -117,11 +123,12 @@
 | `client.home.tabs.map` | « Carte » | — |
 | `client.home.filters.open_now` | « Ouvert maintenant » | Activé par défaut |
 | `client.home.wait_badge` | « ~{minutes} min » (exemple APP_FLOW : « ~25 min ») | Variable `minutes` |
-| `client.home.freshness` | « mis à jour il y a {minutes} min » | Pluriel ICU |
+| `client.home.freshness` | {minutes, plural, =0 {mis à jour à l'instant} other {mis à jour il y a # min}} | Pluriel ICU |
 | `client.home.freshness_stale` | « à vérifier » | Au-delà de 5 min |
-| `client.home.next_free_slot` | Créneau libre à {time} (APP_FLOW, indicatif : « Créneau libre à 15h20 ») | Variable `time` ; partagé avec U-16 |
+| `client.home.next_free_slot` | Créneau libre à {time} | Variable `time` ; partagé avec U-16 ; ne porte pas le nom de la prestation demandé par E22 (voir questions ouvertes) |
 | `client.home.map.locate_me` | « Me localiser » | — |
 | `client.home.empty.message` | Aucun salon ouvert à moins de 5 km pour le moment. | — |
+| `client.home.empty.message_widened` | Aucun salon ouvert à moins de 10 km pour le moment. Essayez une autre adresse ou revenez un peu plus tard. | Après « Élargir à 10 km » ; état absent d'APP_FLOW F-C1 |
 | `client.home.empty.widen` | « Élargir à 10 km » | — |
 | `client.home.active_ticket_banner` | « Ma place » | — |
 | `common.queue.closed_with_next_opening` | « Fermé · ouvre {day} à {time} » (exemple APP_FLOW F-C2 : « Fermé · ouvre demain à 9h00 ») | Partagé avec U-02 |
@@ -130,9 +137,9 @@
 - **PRD U-01 / APP_FLOW F-C1** : le PRD parle de « tri par distance, attente et fraîcheur de l'information » ; APP_FLOW trie seulement par distance et affiche l'attente et la fraîcheur dans un badge. Le client peut-il trier par attente ou par fraîcheur, ou s'agit-il seulement des informations affichées ?
 - **PRD U-01 / APP_FLOW F-C1** : le PRD dit « salons ouverts » mais le filtre « Ouvert maintenant » peut être désactivé. Le PRD §5.2 ne dit comment afficher que l'état « Fermée ». Qu'affichent la liste et la carte pour un salon **en pause** ou **complet** quand le filtre est désactivé ?
 - **APP_FLOW F-C1** : la demande de géolocalisation est faite « une fois ». Après un refus, l'app propose-t-elle à nouveau la géolocalisation (par exemple avec « Me localiser »), ou seulement la recherche par adresse ?
-- **APP_FLOW F-C1** : que se passe-t-il si la recherche à 10 km ne trouve rien non plus ?
+- **APP_FLOW F-C1** : que se passe-t-il si la recherche à 10 km ne trouve rien non plus ? Le dictionnaire a un texte (`client.home.empty.message_widened`), mais APP_FLOW ne décrit pas cet état (pas de nouvel élargissement ?).
 - **PRD §5.2** : le badge d'attente vient de `current_wait_minutes`. Est-il arrondi aux 5 min supérieures, comme l'attente d'un ticket ?
-- **PRD §5.3 U-16 / PRD §5.2 « Prochain créneau libre » / APP_FLOW F-C1** : U-16 parle du prochain créneau libre « pour chaque prestation » sur la carte et la fiche ; APP_FLOW F-C1 n'en affiche qu'un par salon dans la liste et la carte (« la prestation la plus courte qui tient »). Lequel s'applique à l'accueil ?
-- **APP_FLOW F-C1 / PRD §5.2** : le créneau libre est-il affiché pour un salon en pause, complet ou fermé quand le filtre « Ouvert maintenant » est désactivé ?
-- **TRD §6.3 / BACKEND_SCHEMA §8.1** : le paramètre texte de `search_salons` s'appelle `text?` dans le TRD et `query?` dans le schéma. Lequel retenir ?
-- **Textes** : l'explication avant la demande de géolocalisation, le message « aucun résultat » et le libellé du créneau libre ne figurent dans aucun document (APP_FLOW ne donne que des libellés indicatifs).
+- **Résolu le 19/10** (E22) — Créneau de l'accueil : la liste et la carte affichent le créneau le plus tôt, avec le nom de sa prestation ; la fiche affiche celui de chaque prestation ; voir scénario 10 bis. **Contradiction restante** : APP_FLOW v0.6 F-C1 dit encore « pour la prestation la plus courte qui tient » et la clé `client.home.next_free_slot` n'a pas de variable pour la prestation ; à aligner sur le PRD.
+- **Résolu le 19/10** (E22) — Créneau d'un salon en pause, complet ou fermé : rien n'est affiché si la file n'est pas ouverte (`next_free_slots` vide) ; voir scénario 10 ter.
+- **Résolu le 18/10** (TRD §6.3 aligné sur BACKEND_SCHEMA §8.1) — Paramètre texte de `search_salons` : `query?`.
+- **Résolu le 19/10** (dictionnaire `client.json`) — Textes : explication avant la géolocalisation, messages « aucun résultat » et libellé du créneau libre rédigés ; seul le libellé avec le nom de la prestation (E22) manque.

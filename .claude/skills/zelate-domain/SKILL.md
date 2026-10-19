@@ -3,7 +3,7 @@ name: zelate-domain
 description: Zelaté business domain map — vocabulary, ticket lifecycle, queue rules H1-H10, salon appointments, notification policy, privacy rules and where each decision lives in the docs. Use whenever a task touches Zelaté's queue, tickets, stylists, salons, appointments, notifications or user stories, before writing a story, an ADR, a schema change, engine code or a test.
 ---
 
-# Zelaté domain (v0 · 19/10/2026)
+# Zelaté domain (v0.1 · 19/10/2026)
 
 Zelaté is a virtual queue for hair salons in France. Clients join a salon's queue (or come for an appointment the salon entered) and follow their real waiting time; stylists call, start and finish clients from their own phone; the manager runs the queue from a dashboard.
 
@@ -34,10 +34,11 @@ Statuses (`ticket_status`, BACKEND_SCHEMA §3): `pending_confirmation` → `wait
 
 Transitions are numbered in **PRD §5.2 « Cycle de vie du ticket »** (1, 1b, 2 to 8). Quote the number when you refer to one. Key facts:
 - Arrival is a timestamp (`arrived_at`), not a status.
-- `called → waiting` only through « Prendre le suivant » (`take_next`), only for a client who declared a delay, at most 2 places in total (H5, transition 3).
+- A client only moves **back** through « Prendre le suivant » (`take_next`), only after a declared delay, at most 2 places in total (H5, transition 3).
 - `called → no_show` happens at `release_due_at`: 10 min after the call, or the announced arrival time if later (H4, E2, K13).
+- Each call increments `call_count` (keys `your_turn:<n>`, `arrival_reminder:<n>`); leaving `called` clears `called_at`, `reminder_sent_at`, `release_due_at` (K31). A called client whose stylist becomes unavailable goes back to the head of the queue (E6; transition still to be confirmed by Ely, E36, `priority_since`).
 - Cancelling is free even once called, and is not an absence (E3).
-- Every queue write goes through the Edge Function `queue-command` with a per-salon lock and a `command_id` (ADR-003, ADR-004). Commands and their error codes: TRD §6.2.
+- Every queue write goes through the shared transaction module (`_shared/queue-transaction`: per-salon lock, engine, writes, outbox), used by `queue-command`, `queue-tick`, `deactivate-member` and `account-delete` (ADR-003, K38); commands carry a `command_id` (ADR-004). Commands and their error codes: TRD §6.2.
 
 ## 3. Rules H1-H10
 
@@ -66,8 +67,8 @@ An appointment is a normal ticket of kind `appointment` handled by the same engi
 
 Policy: **PRD §5.4**; texts: `packages/i18n/src/fr/notifications.json`; keys: TRD §9.
 - Push first; SMS only without active push, except « votre tour » (push **and** SMS, always, even past the cap, E1).
-- Cap: 3 SMS per ticket, excluding `your_turn` and `cancelled_by_salon`.
-- Consent « Me prévenir » is per ticket (`tickets.notifications_consent_at`, K18), unticked by default; without it only `ticket_created` and `your_turn` are sent (K11). **Open: E17** may widen the list of essential messages.
+- Cap: 3 SMS per ticket, excluding `your_turn`, `cancelled_by_salon` and `no_show_warning` (E28).
+- Consent « Me prévenir » is per ticket (`tickets.notifications_consent_at`, K18), unticked by default. It only governs the four **anticipation** messages: `turn_approaching`, `get_ready`, `estimate_changed`, `end_of_day_risk`. Every other client message is essential and always sent (E17). Consent and the SMS cap apply to clients only, never to salon members.
 - Every change of 10 min or more, measured from `last_notified_start_at`, is explained with a reason from `estimate_change_reason` (E11, K19, K26).
 - SMS: 160 GSM-7 characters at maximum variable length (TRD §9, K5, K20).
 
@@ -94,6 +95,6 @@ Each must hold after any command or tick; name tests after them.
 
 ## 8. Where decisions stand
 
-- Decided: H1-H10, R1-R7, E1-E16 (PRD §5.1, §11); K1-K27 (TRD v0.4).
-- **Open for Ely: E17-E31** (`docs/stories/README.md`, « Questions ouvertes après la v1.1 »). Do not build on the proposals as if decided; mark what depends on them.
+- Decided: H1-H10, R1-R7, E1-E31 (PRD v1.2 §5.1, §5.2, §11); K1-K41 (TRD v0.5).
+- **Open for Ely: E32-E36** (automatic queue opening and end of break, reminder after a declared delay, H8 declared time, check-in during a pause, called client back at the head). Do not build on the proposals as if decided; mark what depends on them.
 - Open in PRD §9: pilot salons, data retention, Planity sync, appointment margin, brand, lot 2, penalties, SMS billing.

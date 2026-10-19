@@ -23,7 +23,7 @@
     "wait_badge": "~{minutes} min",
     "freshness": "{minutes, plural, =0 {mis à jour à l'instant} other {mis à jour il y a # min}}",
     "freshness_stale": "à vérifier",
-    "next_free_slot": "Créneau libre à {time}",
+    "next_free_slot": "Créneau libre à {time} · {service_name}",
     "map": {
       "aria_label": "Carte des salons autour de vous",
       "marker_aria": "{salon_name}, attente ~{minutes} min",
@@ -248,7 +248,7 @@
         "client_cancelled": "Vous avez annulé votre place. Elle a été donnée au client suivant.",
         "no_show": "Votre place a été libérée : le salon ne vous a pas vu arriver à temps après l'appel.",
         "end_of_day": "Le salon ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses.",
-        "appointment_rejected": "Le salon n'a pas retrouvé votre rendez-vous. Vous pouvez rejoindre la file sans rendez-vous.",
+        "appointment_rejected": "Le salon n'a pas confirmé votre rendez-vous ({reason}). Vous pouvez rejoindre la file sans rendez-vous.",
         "removed_by_salon": "Le salon a dû annuler votre place. Toutes nos excuses.",
         "stylist_unavailable": "Aucun coiffeur ne peut vous prendre aujourd'hui, le salon a dû annuler votre place. Toutes nos excuses."
       },

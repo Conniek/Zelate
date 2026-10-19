@@ -3,9 +3,9 @@
 **En tant que** coiffeur, **je veux** appeler en un geste le prochain client éligible, **afin qu'**il soit prévenu tout de suite et arrive pendant que je me libère.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H1, H3, H4, H6, H10 ; PRD §5.2 transitions 1b et 2, « Distribution » règles 4 et 6 à 8 ; PRD §5.1 « Le SMS « votre tour » part toujours, même si le plafond de 3 SMS est atteint » (E1), « File en pause : plus de nouvelles inscriptions, mais les coiffeurs continuent d'appeler les clients déjà inscrits » (E4) ; PRD §5.4 « Votre tour » ; PRD §7.1 principe 2 (refus du double déclenchement)
+- Règles appliquées : H1, H3, H4, H6, H10 ; PRD §5.2 transitions 1b et 2, « Distribution » règles 4 et 6 à 8 ; PRD §5.1 « Le SMS « votre tour » part toujours, même si le plafond de 3 SMS est atteint » (E1), « File en pause : plus de nouvelles inscriptions, mais les coiffeurs continuent d'appeler les clients déjà inscrits » (E4) ; PRD §5.4 « Votre tour » (message indispensable, hors plafond, E17, E28) ; PRD §7.1 principe 2 (refus du double déclenchement)
 - Parcours : F-S4 → F-S5 (APP_FLOW §4) ; événement « Votre tour » (APP_FLOW §7)
-- Commandes et données : `call_ticket` (codes `queue.no_eligible_ticket`, `queue.call_already_in_progress`, TRD §6.2) · tables `tickets` (`assigned_member_id`, `called_at`, `release_due_at`), `ticket_events`, `notifications` (`dedupe_key` `your_turn:<n>`), `private.processed_commands` · canaux `salon:{salon_id}`, `ticket:{ticket_id}`, `ticket-token:{token_key}`
+- Commandes et données : `call_ticket` (codes `queue.no_eligible_ticket`, `queue.call_already_in_progress`, TRD §6.2 ; verrou par salon du module `queue-transaction`, ADR-003, K38) · tables `tickets` (`assigned_member_id` fixé à l'appel, K39 ; `call_count`, K31 ; `called_at`, `release_due_at`, `declared_arrival_at`), `ticket_events`, `notifications` (`dedupe_key` `your_turn:<call_count>`), `private.processed_commands` · canaux `salon:{salon_id}`, `ticket:{ticket_id}`, `ticket-token:{token_key}`
 
 ## Scénarios
 
@@ -14,8 +14,9 @@
 - **Et** le premier ticket éligible pour elle est celui de Léa (code AF2K9), sans préférence
 - **Quand** Inès touche « Appeler »
 - **Alors** le ticket de Léa passe de « En attente » à « Appelé » (`status` = `called`, `called_at` renseigné)
-- **Et** le ticket est attribué définitivement à Inès (`assigned_member_id`)
-- **Et** l'heure de libération est fixée à l'appel + 10 min (`release_due_at`), Léa n'ayant déclaré aucun retard (cas du retard : C-09)
+- **Et** le ticket est attribué définitivement à Inès (`assigned_member_id`, K39)
+- **Et** le nombre d'appels du ticket passe à 1 (`call_count`, K31)
+- **Et** l'heure de libération est fixée à l'appel + 10 min (`release_due_at`), Léa n'ayant déclaré aucune heure d'arrivée plus tardive (`declared_arrival_at` vide ; cas du retard : C-09)
 - **Et** la carte « Appel en cours » affiche le prénom Léa et un compteur de 10 min
 - **Et** la notification « Votre tour » part en moins de 5 s
 - **Et** Léa voit l'écran plein « C'est votre tour ! » avec le compteur de 10 min (F-C5)
@@ -33,12 +34,12 @@
 - **Étant donné** Léa, dont le ticket a déjà reçu 3 SMS (par exemple inscription, « Préparez-vous », « choix de coiffeur »)
 - **Quand** Inès l'appelle
 - **Alors** le SMS « Votre tour » part quand même
-- **Et** ce SMS ne compte pas dans le plafond de 3 SMS (BACKEND_SCHEMA §4.16)
+- **Et** ce SMS ne compte pas dans le plafond de 3 SMS (BACKEND_SCHEMA §4.16, E28)
 
 ### 2 ter. Client sans « Me prévenir »
 - **Étant donné** Léa, qui n'a pas coché « Me prévenir »
 - **Quand** Inès l'appelle
-- **Alors** Léa reçoit quand même le SMS « Votre tour » (message indispensable, PRD §5.4, K11)
+- **Alors** Léa reçoit quand même le SMS « Votre tour » (message indispensable, PRD §5.1, E17)
 - **Et** elle reçoit aussi la notification push « Votre tour » si elle a le push actif
 
 ### 3. Le serveur choisit le client
@@ -67,12 +68,19 @@
 - **Alors** la commande est refusée avec `queue.call_already_in_progress`
 - **Et** aucun ticket n'est appelé
 
-### 6. Deux coiffeurs appellent au même moment
+### 6. Deux coiffeurs appellent au même moment, un seul ticket éligible
 - **Étant donné** Inès et Karim, tous deux « Disponibles », pour qui le même ticket est le seul éligible
 - **Quand** ils touchent « Appeler » au même instant
 - **Alors** le ticket est appelé par un seul des deux
-- **Et** l'autre voit un message d'erreur du dictionnaire `errors` (TRD §14 attend `queue.invalid_transition` ; à confirmer, voir questions)
+- **Et** la commande de l'autre est refusée avec `queue.no_eligible_ticket`, jamais avec `queue.invalid_transition` (TRD §14)
 - **Et** aucun ticket n'est appelé pour l'autre
+
+### 6 bis. Deux coiffeurs appellent au même moment, deux tickets éligibles
+- **Étant donné** Inès et Karim, tous deux « Disponibles », et les tickets de Léa puis de Paul, éligibles pour les deux
+- **Quand** ils touchent « Appeler » au même instant
+- **Alors** le ticket de Léa est appelé par l'un des deux
+- **Et** le ticket de Paul est appelé par l'autre (ticket éligible suivant, TRD §14)
+- **Et** aucun ticket n'est appelé deux fois
 
 ### 7. Plus aucun ticket éligible
 - **Étant donné** Inès dont l'écran affiche encore un prochain client, déjà appelé par un autre coiffeur
@@ -132,27 +140,27 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-stylist.queue.call` | « Appeler » | Bouton `xl`, état de chargement pendant l'envoi |
-| `pro-stylist.call.title` | « Appel en cours » | APP_FLOW F-S5 |
+| `pro-stylist.queue.call` | Appeler | Bouton `xl`, état de chargement pendant l'envoi |
+| `pro-stylist.call.title` | Appel en cours | APP_FLOW F-S5 |
 | `pro-stylist.call.countdown` | {minutes, plural, =0 {Place libérée dans moins d'1 min} other {Place libérée dans # min}} | Compteur de 10 min |
-| `common.ticket_status.waiting` | « En attente » | PRD §5.2 |
-| `common.ticket_status.called` | « Appelé » | PRD §5.2 |
+| `common.ticket_status.waiting` | En attente | PRD §5.2 |
+| `common.ticket_status.called` | Appelé | PRD §5.2 |
 | `notifications.your_turn.push.title` / `.body` |Titre : C'est votre tour !<br>Corps : {stylist_first_name} vous attend, {address}. Code {code}. Vous avez 10 min pour arriver.| Push de priorité haute ; prénom du coiffeur, adresse, code du ticket, compteur de 10 min ; partagé avec les stories client |
-| `notifications.your_turn.sms` | Zelaté : c'est votre tour ! {stylist_first_name} vous attend, {address}. Code {code}. Venez sous 10 min : {link} | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5 : nom du salon tronqué à 40, caractères hors GSM-7 translittérés ; longueurs du prénom du coiffeur et de l'adresse : voir questions) ; prénom du coiffeur, adresse, code ; envoyé même si le push est actif, même plafond atteint (E1), même sans « Me prévenir » |
+| `notifications.your_turn.sms` | Zelaté : c'est votre tour ! {stylist_first_name} vous attend, {address}. Code {code}. Venez sous 10 min : {link} | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (TRD §9, K5, K20 : prénom du coiffeur ≤ 30, adresse tronquée à 30, nom du salon tronqué à 40, caractères hors GSM-7 translittérés, lien court `zelate.fr/t/xxxxxxxx`) ; prénom du coiffeur, adresse, code ; envoyé même si le push est actif, même plafond atteint (E1), hors plafond (E28), même sans « Me prévenir » (E17) |
 | `errors.queue.no_eligible_ticket` | Aucun client à appeler pour l'instant. Il a peut-être été pris par un collègue : vérifiez votre file. | Aucun texte dans les documents |
 | `errors.queue.call_already_in_progress` | Vous avez déjà un client appelé ou en prestation. Finissez avec lui avant d'appeler le suivant. | Un client déjà appelé ou en prestation (TRD §6.2) |
-| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun (TRD §6.2) ; scénario 6 si TRD §14 est confirmé |
+| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun (TRD §6.2) ; jamais pour le perdant de deux appels simultanés (TRD §14) |
 
 ## Questions ouvertes
 - **Résolu le 18/10 (E1)** : le SMS « Votre tour » part toujours, hors plafond, comme les annulations par le salon (PRD §5.1, §5.4 ; BACKEND_SCHEMA §4.16). Question d'origine : si le plafond de 3 SMS est déjà atteint, le SMS « Votre tour » part-il ?
-- [TRD] Deux coiffeurs appellent en même temps : TRD §14 attend toujours `invalid_transition` pour le perdant, mais `call_ticket` n'a pas de `ticket_id` et le serveur choisit sous verrou : le second devrait recevoir le ticket éligible suivant, ou `no_eligible_ticket`. Quel comportement ?
+- **Résolu le 19/10 (TRD §14 v0.5, constat 25)** : le second reçoit le ticket éligible suivant, ou `no_eligible_ticket` s'il n'y en a pas, jamais `invalid_transition`. Voir scénarios 6 et 6 bis. Question d'origine : deux coiffeurs appellent en même temps ; TRD §14 attendait `invalid_transition` pour le perdant, mais `call_ticket` n'a pas de `ticket_id` et le serveur choisit sous verrou : le second devrait recevoir le ticket éligible suivant, ou `no_eligible_ticket`. Quel comportement ?
 - **Résolu le 18/10 (K1)** : `queue.call_already_in_progress` (un client déjà appelé ou en prestation, TRD §6.2). Question d'origine : code d'erreur quand un coiffeur appelle alors qu'il a déjà un client appelé ou en prestation.
 - **Résolu le 18/10 (E4)** : file en pause, les coiffeurs continuent d'appeler les inscrits ; seules les nouvelles inscriptions sont bloquées (PRD §5.1, TRD §6.2 `call_ticket`, APP_FLOW F-S4, F-M5). Question d'origine : un coiffeur peut-il appeler pendant la pause de la file ?
-- [PRD §5.2] Contradiction restante : le tableau « États de la file du salon » dit encore, pour « En pause », « les tickets en cours restent et sont traités à la reprise », contraire à E4 (PRD §5.1). À corriger dans le PRD.
+- **Résolu le 19/10 (PRD v1.2 §5.2)** : le tableau « États de la file du salon » dit maintenant « les tickets en cours restent et les coiffeurs continuent de les appeler (E4) ». Question d'origine : le tableau « États de la file du salon » dit encore, pour « En pause », « les tickets en cours restent et sont traités à la reprise », contraire à E4 (PRD §5.1). À corriger dans le PRD.
 - [PRD / TRD] File « Fermée » : F-M5 dit que les inscrits « seront servis jusqu'à la fin de journée », mais ni PRD §5.2 ni TRD §6.2 (`call_ticket`) ne disent explicitement que l'appel reste possible quand la file est fermée. À confirmer.
 - [PRD] Client déjà arrivé et en tête : envoie-t-on quand même le push et le SMS « Votre tour » à un client présent au salon (coût SMS, maintenant hors plafond) ?
 - [PRD / TRD] « Votre tour envoyé en moins de 5 s » : mesuré jusqu'à la remise au fournisseur, ou jusqu'à la réception (TRD §14 : « réception < 5 s ») ?
 - **Résolu le 18/10 (K5)** en partie : prénom ≤ 30, nom du salon tronqué à 40 dans les SMS, translittération des caractères hors GSM-7, lien court `zelate.fr/t/xxxxxxxx` (TRD §9). Question d'origine : longueurs maximales et caractères hors GSM-7.
-- [BACKEND_SCHEMA / TRD §9] Reste ouvert après K5 : « Votre tour » contient le prénom du coiffeur et l'adresse du salon, or `salon_members.first_name`, `salons.address_line` et `salons.city` n'ont toujours pas de longueur maximale, et « prénom ≤ 30 » ne vise que le prénom du client (`tickets.display_name`). Quelles valeurs de longueur maximale utiliser pour le test des 160 caractères ?
+- **Résolu le 19/10 (K20, TRD §9 v0.5)** : prénom du coiffeur ≤ 30 ; adresse du salon tronquée à 30 caractères dans les SMS « préparez-vous » et « votre tour ». Reste [BACKEND_SCHEMA] : `salon_members.first_name` n'a toujours pas la contrainte de 30 caractères. Question d'origine : « Votre tour » contient le prénom du coiffeur et l'adresse du salon, or `salon_members.first_name`, `salons.address_line` et `salons.city` n'ont toujours pas de longueur maximale, et « prénom ≤ 30 » ne vise que le prénom du client (`tickets.display_name`). Quelles valeurs de longueur maximale utiliser pour le test des 160 caractères ?
 - [PRD / TRD] Règles 6 à 8 : quand le seul ticket qui reste est un client sans rendez-vous qui finirait après le prochain rendez-vous d'Inès, et que ce rendez-vous n'est pas encore à son heure, `call_ticket` renvoie-t-il `no_eligible_ticket`, ou appelle-t-il le rendez-vous en avance (règle 8 : « si cela ne retarde personne ») ?
 - [PRD / BACKEND_SCHEMA] Rendez-vous saisi par le salon sans téléphone (`create_appointment` sans `phone`) : le ticket n'a ni compte ni contact. « Votre tour » ne peut partir vers personne ; est-ce attendu, et l'écran d'Inès doit-il le signaler ?

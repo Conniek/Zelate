@@ -3,7 +3,7 @@
 **En tant que** gérant, **je veux** retirer un ticket de la file en cas d'urgence, avec un motif obligatoire envoyé au client, **afin de** gérer une situation exceptionnelle sans laisser le client sans explication.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : retrait de la file strictement encadré et toujours justifié au client (PRD §5.1, décisions d'Ely) ; PRD §5.2 transition 6 (En attente ou Appelé → Annulé, par le gérant avec motif) ; PRD §5.4 « Annulation par le salon » (push et SMS, hors plafond) ; aucun prénom ni texte libre dans le journal (TRD §7, K10) ; H6 (messages envoyés par la plateforme)
+- Règles appliquées : retrait de la file strictement encadré et toujours justifié au client (PRD §5.1, décisions d'Ely) ; PRD §5.2 transition 6 (En attente ou Appelé → Annulé, par le gérant avec motif) ; PRD §5.4 « Annulation par le salon » (push et SMS, hors plafond, E28) ; message indispensable, envoyé sans « Me prévenir » (PRD §5.1, E17) ; aucun prénom ni texte libre dans le journal (TRD §7, K10) ; H6 (messages envoyés par la plateforme)
 - Parcours : F-M9 ; F-M6 (clic sur un ticket) ; écran de fin côté client F-C5
 - Commandes et données : `remove_ticket` (`ticket_id`, `reason_code`, `note?` ≤ 200, K10) · tables `tickets` (`status` = `cancelled`, `cancel_reason` = `removed_by_salon`, `removal_reason`, `removal_note`, `cancelled_at`), `ticket_events` (`cancelled`, `reason_code`, `actor_type` = `manager`), `notifications` (`cancelled_by_salon`, canaux `push` et `sms`)
 
@@ -57,7 +57,12 @@
 ### 7. SMS envoyé même au-delà du plafond
 - **Étant donné** un ticket qui a déjà reçu 3 SMS
 - **Quand** le gérant le retire
-- **Alors** le SMS d'annulation par le salon est quand même envoyé (hors plafond, PRD §5.4)
+- **Alors** le SMS d'annulation par le salon est quand même envoyé (hors plafond, PRD §5.4, E28)
+
+### 7 bis. Client qui n'a pas coché « Me prévenir »
+- **Étant donné** un ticket sans « Me prévenir » (`notifications_consent_at` vide), par exemple un walk-in
+- **Quand** le gérant le retire avec un motif
+- **Alors** le client reçoit quand même la notification push et le SMS `cancelled_by_salon` avec le motif : c'est un message indispensable (PRD §5.1, E17)
 
 ### 8. Ticket en prestation, terminé ou déjà annulé
 - **Étant donné** un ticket en prestation, terminé, annulé ou absent
@@ -105,14 +110,17 @@
 | `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
 | `errors.queue.invalid_payload` | « Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. » | Code commun (TRD §6.2) |
 | `errors.validation.removal_note_length` | « La note ne doit pas dépasser 200 caractères. » | 200 caractères maximum |
+| `pro-manager.remove.client_notice` | « Le client sera prévenu avec ce motif, des excuses et des salons proches. » | Formulaire de retrait |
+| `client.ticket.end.reason.removed_by_salon` | « Le salon a dû annuler votre place. Toutes nos excuses. » | Écran de fin côté client |
+| `client.ticket.end.removal_reason` | « Motif : {reason} » | Écran de fin côté client |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (K10, TRD §6.2 et §7) : `remove_ticket` prend `note?` (200 caractères au plus), rangée dans `tickets.removal_note` ; le journal ne garde que le motif structuré (`reason_code`), jamais de texte libre.
 - **Résolu le 18/10** (K1, TRD §6.2) : un coiffeur reçoit `queue.forbidden` ; un gérant qui vise le ticket d'un autre salon reçoit `queue.ticket_other_salon`.
-- **PRD** : comment chaque motif est-il formulé pour le client ? Par exemple, le motif « comportement inapproprié » lui est-il envoyé tel quel ?
+- **Résolu le 19/10** (dictionnaire REQ-3, `notifications.cancelled_by_salon.reason.*`, brouillon à relire par Ely) : chaque motif a sa formulation pour le client ; « comportement inapproprié » devient « décision du salon ».
 - **PRD** : la précision (`removal_note`) écrite par le gérant est-elle envoyée au client, ou reste-t-elle interne au salon ? Si elle reste interne, qui la lit, puisqu'elle n'est pas dans le journal ?
 - **PRD / APP_FLOW** : le motif « autre » oblige-t-il à remplir la précision ?
-- **APP_FLOW / TRD** : comment des « salons proches » tiennent-ils dans un SMS de 160 caractères ? Faut-il un lien, et vers quelle page ? (K5 fixe les longueurs, pas ce contenu.)
-- **PRD (consentement, K11)** : sans la case « Me prévenir », seuls l'inscription et « votre tour » partent ; `cancelled_by_salon` passe en `skipped` (BACKEND_SCHEMA §4.16). Or le retrait doit être « toujours justifié au client » (PRD §5.1, décisions d'Ely) et l'annulation par le salon « part toujours » (PRD §5.4). Un client retiré sans avoir coché la case est-il prévenu ?
-- **PRD / TRD (rendez-vous)** : pour retirer un rendez-vous, le gérant utilise-t-il `remove_ticket` (motif obligatoire, F-M9) ou `cancel_appointment` (sans motif, F-M13) ? Le panneau ticket d'un rendez-vous propose-t-il « Retirer de la file » ?
+- **Résolu en partie le 19/10** (dictionnaire REQ-3) : le SMS porte un lien (« Salons proches : {link} »). **Reste ouvert (APP_FLOW / TRD)** : vers quelle page mène ce lien ?
+- **Résolu le 19/10** (E17, PRD §5.1 et §5.4 ; BACKEND_SCHEMA §4.16) : `cancelled_by_salon` est un message indispensable ; un client retiré sans avoir coché la case est prévenu par push et SMS, hors plafond.
+- **Résolu en partie le 19/10** (E29, TRD §6.2) : `cancel_appointment` exige aussi un motif de la liste `removal_reason`, envoyé au client. **Reste ouvert (APP_FLOW / TRD)** : le panneau ticket d'un rendez-vous propose-t-il « Retirer de la file » (`remove_ticket`) en plus de « Annuler » (`cancel_appointment`), et lequel utiliser une fois le client appelé (`cancel_appointment` refuse alors avec `appointment_not_editable`) ?
 - **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

@@ -3,9 +3,9 @@
 **En tant que** client en attente, **je veux** accepter ou refuser quand le salon propose de me confier à un autre coiffeur qui me ferait passer plus tard, **afin de** ne jamais reculer sans mon accord.
 
 - Priorité : S (PRD §5.3)
-- Règles appliquées : H5 (aucune réorganisation libre), H6 (numéro jamais affiché au salon) (PRD §5.1) ; changer le coiffeur d'un client ne le fait jamais reculer sauf accord : demande « accepter / refuser », sans réponse en 10 min rien ne change (PRD §5.1 « Autres règles ») ; tout recul est expliqué (PRD §5.1) ; notification « Demande de réaffectation » : push avec « accepter / refuser », pas de SMS (PRD §5.4) ; décisions n° 8-11 et E9 (PRD §11) ; mise à jour en moins de 2 s, sinon toutes les 30 s (PRD §5.3 U-06, §6)
+- Règles appliquées : H5 (aucune réorganisation libre), H6 (numéro jamais affiché au salon) (PRD §5.1) ; changer le coiffeur d'un client ne le fait jamais reculer sauf accord : demande « accepter / refuser », sans réponse en 10 min rien ne change (PRD §5.1 « Autres règles ») ; tout recul est expliqué (PRD §5.1) ; le gérant voit « refusé » ou « sans réponse » ; l'accord vaut tant que l'heure ne recule pas de 10 min de plus, sinon une nouvelle demande part ; les rendez-vous se réaffectent de la même façon (E27) ; une réaffectation acceptée modifie `requested_member_id`, ou `assigned_member_id` pour un rendez-vous (K39) ; notification « Demande de réaffectation » : push avec « accepter / refuser », pas de SMS, message indispensable envoyé sans la case « Me prévenir » (PRD §5.4, E17) ; décisions n° 8-11 et E9 (PRD §11) ; mise à jour en moins de 2 s, sinon toutes les 30 s (PRD §5.3 U-06, §6)
 - Parcours : F-C5 (bandeau « Le salon propose un autre coiffeur ») et F-C10 (`/t/:shortCode`) ; déclenché par F-M10 (« Choix avec recul ») ; événement « Demande de réaffectation » (APP_FLOW §7)
-- Commandes et données : `reassign_ticket` (`ticket_id`, `member_id`) · `respond_reassignment` (`ticket_id`, `choice` = `accept` | `refuse`) · `queue-tick` (fin des demandes sans réponse après 10 min) · tables `tickets` (`reassignment_member_id`, `reassignment_requested_at`, `estimated_start_at`, `estimated_member_id`, `requested_member_id`), `ticket_events` (`reassignment_requested`, `reassignment_resolved`, `reassigned`), `notifications` (`reassignment_request`, `skip_reason`), enum `reassignment_choice` (`accepted`, `refused`, `expired`) · canaux `ticket:{ticket_id}`, `ticket-token:{token_key}`, `salon:{salon_id}` · composant `ReassignmentPrompt`
+- Commandes et données : `reassign_ticket` (`ticket_id`, `member_id`) · `respond_reassignment` (`ticket_id`, `choice` = `accept` | `refuse`) · `queue-tick` (fin des demandes sans réponse après 10 min) · tables `tickets` (`reassignment_member_id`, `reassignment_requested_at`, `reassignment_proposed_start_at`, `estimated_start_at`, `estimated_member_id`, `requested_member_id`, `assigned_member_id` pour un rendez-vous), `ticket_events` (`reassignment_requested`, `reassignment_resolved` avec `reason_code` = valeur de `reassignment_choice`, `reassigned`), `notifications` (`reassignment_request`), enum `reassignment_choice` (`accepted`, `refused`, `expired`) · RPC `get_salon_board` (dernier résultat de réaffectation de chaque ticket) · canaux `ticket:{ticket_id}`, `ticket-token:{token_key}`, `salon:{salon_id}` · composant `ReassignmentPrompt`
 
 ## Scénarios
 
@@ -13,7 +13,7 @@
 - **Étant donné** que j'attends avec une heure de passage à 15h00 et que le gérant choisit Sam, chez qui je passerais à 15h20
 - **Quand** il confirme le message « L'heure du client reculerait de 20 min : il recevra une demande »
 - **Alors** mon ticket ne change pas : même coiffeur, même heure, même rang
-- **Et** la demande est enregistrée sur mon ticket (`reassignment_member_id` = Sam, `reassignment_requested_at` = maintenant)
+- **Et** la demande est enregistrée sur mon ticket (`reassignment_member_id` = Sam, `reassignment_requested_at` = maintenant, `reassignment_proposed_start_at` = 15h20)
 - **Et** un événement `reassignment_requested` est ajouté au journal
 - **Et** je reçois une notification push avec « Accepter » et « Refuser »
 - **Et** aucun SMS n'est envoyé pour cette demande
@@ -29,12 +29,27 @@
 
 ### 3. Accepter
 - **Étant donné** que le bandeau de réaffectation est affiché
-- **Quand** je touche « Accepter »
-- **Alors** mon ticket est confié à Sam
+- **Quand** je touche « Accepter » et que mon heure chez Sam est toujours 15h20
+- **Alors** mon ticket est confié à Sam : Sam devient mon coiffeur demandé (`requested_member_id`, K39)
 - **Et** mon heure de passage est recalculée et affichée
 - **Et** un événement `reassignment_resolved` est ajouté au journal avec le choix `accepted`
+- **Et** les colonnes de la demande sont vidées
 - **Et** le bandeau disparaît
-- **Et** le dashboard ne marque plus mon ticket « en attente de réponse »
+- **Et** le dashboard ne marque plus mon ticket « en attente de réponse » et montre le résultat « accepté » (E27)
+
+### 3 bis. Heure encore reculée au moment d'accepter : nouvelle demande (E27)
+- **Étant donné** que la demande m'annonçait 15h20 chez Sam (`reassignment_proposed_start_at`)
+- **Quand** je touche « Accepter » alors que je passerais maintenant à 15h30 chez Sam (10 min de plus)
+- **Alors** mon ticket ne change pas de coiffeur
+- **Et** une nouvelle demande m'est envoyée avec 15h30
+- **Quand** je passerais à 15h29 (9 min de plus)
+- **Alors** mon acceptation est appliquée comme au scénario 3
+
+### 3 ter. Réaffectation d'un rendez-vous (E27, K39)
+- **Étant donné** que j'ai un rendez-vous à 15h00 avec Léa et que le gérant propose Sam, chez qui je passerais plus tard
+- **Quand** j'accepte la demande
+- **Alors** mon rendez-vous est confié à Sam (`assigned_member_id` = Sam, K39)
+- **Et** l'heure de mon rendez-vous ne change pas
 
 ### 4. Refuser
 - **Étant donné** que le bandeau de réaffectation est affiché
@@ -42,7 +57,7 @@
 - **Alors** mon ticket garde son coiffeur, son heure et son rang
 - **Et** un événement `reassignment_resolved` est ajouté au journal avec le choix `refused`
 - **Et** le bandeau disparaît
-- **Et** le dashboard ne marque plus mon ticket « en attente de réponse »
+- **Et** le dashboard ne marque plus mon ticket « en attente de réponse » et montre « refusé » au gérant (E27)
 
 ### 5. Répondre depuis la notification
 - **Étant donné** que j'ai reçu la notification push de demande de réaffectation
@@ -53,10 +68,10 @@
 - **Étant donné** qu'une demande de réaffectation m'a été envoyée et que je n'ai pas répondu
 - **Quand** 10 min se sont écoulées depuis `reassignment_requested_at`
 - **Alors** mon ticket garde son coiffeur, son heure et son rang
-- **Et** la demande est effacée (`reassignment_member_id` et `reassignment_requested_at` vides)
+- **Et** la demande est effacée (`reassignment_member_id`, `reassignment_requested_at` et `reassignment_proposed_start_at` vides)
 - **Et** un événement `reassignment_resolved` est ajouté au journal avec le choix `expired`
 - **Et** le bandeau disparaît de ma page de suivi
-- **Et** le dashboard ne marque plus mon ticket « en attente de réponse »
+- **Et** le dashboard ne marque plus mon ticket « en attente de réponse » et montre « sans réponse » au gérant (E27)
 - **Et** l'échéance est tenue à ±60 s près (exécution de `queue-tick` chaque minute)
 
 ### 7. Réponse juste avant l'échéance
@@ -89,11 +104,11 @@
 - **Alors** aucun SMS ne m'est envoyé
 - **Et** le bandeau s'affiche si j'ouvre ma page de suivi avant l'échéance de 10 min
 
-### 12. Sans consentement aux notifications de suivi
-- **Étant donné** que je n'ai pas coché « Me prévenir »
+### 12. Sans consentement aux notifications de suivi (E17)
+- **Étant donné** que je n'ai pas coché « Me prévenir » et que j'ai un push actif
 - **Quand** une demande de réaffectation est créée pour mon ticket
-- **Alors** la notification push n'est pas envoyée (marquée `skipped`, motif `no_consent`)
-- **Et** le bandeau s'affiche si j'ouvre ma page de suivi avant l'échéance
+- **Alors** la notification push part quand même : c'est un message indispensable
+- **Et** elle n'est pas marquée `skipped` avec le motif `no_consent`
 
 ### 13. Apparition du bandeau en temps réel
 - **Étant donné** que ma page de suivi est ouverte (`/ticket` ou `/t/:shortCode`)
@@ -148,13 +163,16 @@
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `client.ticket.reassignment.banner` | « Le salon propose un autre coiffeur » | APP_FLOW F-C5 |
-| `client.ticket.reassignment.new_time` | Avec {first_name} : passage prévu vers {time} | Variables `firstName`, `time` |
+| `client.ticket.reassignment.new_time` | Avec {first_name} : passage prévu vers {time} | Variables `first_name`, `time` |
+| `client.ticket.reassignment.no_answer_hint` | Sans réponse de votre part, rien ne change. | E9 |
 | `client.ticket.reassignment.time_left` | {minutes, plural, =0 {Moins d'une minute pour répondre} other {Encore # min pour répondre}} | Temps restant sur 10 min (DESIGN_SYSTEM `ReassignmentPrompt`) |
 | `client.ticket.reassignment.accept` | « Accepter » | — |
 | `client.ticket.reassignment.refuse` | « Refuser » | — |
-| `notifications.reassignment_request.push` | Voir `notifications.reassignment_request.push.*` dans le dictionnaire (2 textes) | Push seulement, deux actions « Accepter » et « Refuser » ; pas de modèle SMS |
-| `pro-manager.reassign.delay_warning` | « L'heure du client reculerait de {minutes} min : il recevra une demande » | APP_FLOW F-M10 ; remplace le texte de S-13 |
-| `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | Partagé avec U-12 |
+| `notifications.reassignment_request.push` | Voir `notifications.reassignment_request.push.*` dans le dictionnaire (2 textes) | Push seulement, deux actions `notifications.reassignment_request.actions.accept` et `.refuse` ; pas de modèle SMS ; message indispensable (E17) |
+| `pro-manager.reassign.delay_warning` | L'heure du client reculerait de {minutes} min : il recevra une demande. | APP_FLOW F-M10 |
+| `pro-manager.reassign.request_sent` | Demande envoyée. Sans réponse du client en 10 min, rien ne change. | Côté gérant |
+| `pro-manager.board.ticket.awaiting_client_answer` | En attente de réponse | Partagé avec U-12 |
+| _Résultat « accepté », « refusé », « sans réponse » sur le dashboard_ | _Absent du dictionnaire_ | E27 ; voir questions ouvertes |
 | `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Même code pour `cancel_ticket`, `resolve_stylist_change`, `respond_end_of_day` (TRD §6.2) |
 | `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun |
 | `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Code commun |
@@ -162,15 +180,15 @@
 | `errors.queue.stylist_unavailable` | Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. | Côté gérant ; partagé avec U-04 |
 
 ## Questions ouvertes
-- **BACKEND_SCHEMA §4.13 / TRD ADR-015** : à l'acceptation, quelle colonne fixe le nouveau coiffeur ? `requested_member_id` (ma préférence devient Sam), `estimated_member_id` (recalculé à chaque événement, donc la réaffectation ne tiendrait pas) ou `assigned_member_id` (réservé à l'appel) ? Si j'avais demandé Léa, l'acceptation remplace-t-elle ma demande ? (Question déjà posée dans S-13.)
-- **PRD §5.1 / TRD §6.2** : l'heure proposée au moment de la demande peut avoir changé quand j'accepte. Si, à l'acceptation, Sam me ferait passer encore plus tard, ou s'il est devenu indisponible, que se passe-t-il ? Aucun code propre à `respond_reassignment` ne couvre ce cas (`stylist_unavailable` n'existe que pour `reassign_ticket`).
+- **Résolu le 19/10** (K39) — À l'acceptation, `requested_member_id` devient Sam (et remplace Léa si je l'avais demandée) ; pour un rendez-vous, `assigned_member_id` ; voir scénarios 3 et 3 ter.
+- **Résolu en partie le 19/10** (E27) — Heure encore reculée de 10 min ou plus à l'acceptation : une nouvelle demande part ; voir scénario 3 bis. Reste ouvert (TRD §6.2) : si Sam est devenu indisponible entre la demande et l'acceptation, que se passe-t-il et avec quel code (`stylist_unavailable` n'existe que pour `reassign_ticket`) ?
 - **PRD §5.1 / §5.4** : « tout recul est expliqué ». Après une acceptation, une notification « Changement d'heure » (`estimate_changed`) part-elle, alors que j'ai déjà vu la nouvelle heure ? La dernière heure annoncée (`last_notified_start_at`) est-elle mise à jour à l'acceptation ?
-- **PRD §5.4 / BACKEND_SCHEMA §4.16** : `reassignment_request` n'est pas un message indispensable ; sans la case « Me prévenir », la demande n'est pas poussée (scénario 12) et expire presque toujours. Est-ce voulu ? Faut-il en faire un message indispensable, ou au moins une exception au consentement comme pour l'inscription et « votre tour » ?
-- **PRD §5.4 / APP_FLOW F-M10** : le gérant est-il informé du refus ou de l'expiration (autrement que par la fin de la mention « en attente de réponse ») ? Le dashboard doit-il distinguer « refusé » et « sans réponse » ?
+- **Résolu le 19/10** (E17) — `reassignment_request` est un message indispensable, envoyé sans la case « Me prévenir » ; voir scénario 12.
+- **Résolu le 19/10** (E27) — Le gérant voit « refusé » ou « sans réponse » (dernier résultat dans `get_salon_board`) ; voir scénarios 4 et 6. Reste ouvert (dictionnaire, APP_FLOW F-M6/F-M10) : aucun texte ni emplacement n'est encore prévu pour ce résultat sur le dashboard.
 - **PRD §5.2** : que devient une demande en cours si mon ticket est appelé par mon coiffeur actuel, si j'annule, ou si mon coiffeur actuel devient indisponible (choix U-12) pendant les 10 min ? Deux bandeaux (U-12 et U-17) peuvent-ils coexister ?
-- **APP_FLOW F-M10 / S-13** : la réaffectation vaut-elle pour un rendez-vous (`kind = 'appointment'`) ? Quand un coiffeur part ou est désactivé, « ses rendez-vous restants sont à réaffecter par le gérant » (F-S3, F-M4) : si la nouvelle heure recule et que le client refuse ou ne répond pas, le rendez-vous reste-t-il chez un coiffeur absent ?
+- **Résolu le 19/10** (E27, E18) — Les rendez-vous se réaffectent de la même façon ; quand le coiffeur devient indisponible, le client avec rendez-vous choisit comme les autres (U-12, scénario 10 bis) ; voir scénario 3 ter.
 - **TRD §6.2** : quel statut de ticket peut recevoir une demande : seulement `waiting`, ou aussi `called` ? Le scénario 9 suppose `waiting` seulement.
-- **TRD §6.2 / BACKEND_SCHEMA §4.13** : l'enum `reassignment_choice` (`accepted`, `refused`, `expired`) n'est rangé dans aucune colonne de `tickets` ; il ne figure que dans le journal (`ticket_events`, champs `after` ou `reason_code` ?). À préciser.
-- **TRD §6.4 / BACKEND_SCHEMA §9** : la charge du message `ticket_updated` sur `ticket:{ticket_id}` est `{ version }` dans le TRD et `{ version, status }` dans le schéma. Laquelle tester (scénario 20) ?
-- **S-13** : la story S-13 décrit encore l'ancien fonctionnement (`client_agreed`, case « Le client est d'accord », code `would_delay_client`), remplacé par E9 et `respond_reassignment`. Elle doit être réécrite.
-- **Textes** : la notification push, la ligne « nouveau coiffeur, nouvelle heure » du bandeau, le temps restant et les messages d'erreur ne figurent dans aucun document.
+- **Résolu le 19/10** (BACKEND_SCHEMA v0.5 §3, constat 24) — `reassignment_choice` vit dans `ticket_events.reason_code` de l'événement `reassignment_resolved`.
+- **Résolu le 18/10** (TRD §6.4 aligné sur BACKEND_SCHEMA §9) — `ticket_updated { version, status }` sur `ticket:{ticket_id}` ; `{ version }` seul sur `ticket-token:{token_key}` ; voir scénario 20.
+- **Résolu** (S-13 réécrite le 18/10, constat 29) — S-13 ne décrit plus `client_agreed` ; la note périmée est retirée.
+- **Résolu le 19/10** (dictionnaire `client.json`, `notifications.json`, `errors.json`) — Notification, bandeau, temps restant et erreurs rédigés, sauf le résultat montré au gérant (voir ci-dessus).

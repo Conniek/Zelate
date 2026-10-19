@@ -31,7 +31,7 @@
     "end_of_day_now": "Maintenant",
     "end_of_day_later": "Plus tard",
     "end_of_day_confirm": "{count, plural, =0 {Aucun client n'attend chez vous.} one {{first_names} passera chez un collègue ou choisira de vous attendre.} other {{first_names} passeront chez vos collègues ou choisiront de vous attendre.}}",
-    "end_of_day_appointments": "{count, plural, one {Rendez-vous restant : {first_names}. Le gérant le réaffectera.} other {Rendez-vous restants : {first_names}. Le gérant les réaffectera.}}",
+    "end_of_day_appointments": "{count, plural, one {Rendez-vous restant : {first_names}. Le client choisira un autre coiffeur ; le gérant peut le réaffecter.} other {Rendez-vous restants : {first_names}. Les clients choisiront un autre coiffeur ; le gérant peut les réaffecter.}}",
     "end_of_day_submit": "Terminer ma journée"
   },
   "connection": {
@@ -120,7 +120,8 @@
     "cancel_submit": "Annuler le rendez-vous",
     "cancel_keep": "Garder",
     "merge_suggestion": "Vous aviez déjà saisi {first_name} à {time}. En confirmant, les deux rendez-vous n'en feront qu'un.",
-    "merge_confirm": "Regrouper et confirmer"
+    "merge_confirm": "Regrouper et confirmer",
+    "warning_stylist_absent": "Vous êtes déclaré absent aujourd'hui. Le rendez-vous est enregistré."
   },
   "summary": {
     "title": "Mon bilan du jour",

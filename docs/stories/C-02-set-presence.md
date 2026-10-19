@@ -3,9 +3,9 @@
 **En tant que** coiffeur, **je veux** me déclarer disponible, en pause (type et durée) ou en fin de journée, **afin que** la file et l'heure annoncée aux clients tiennent compte immédiatement de ma présence réelle.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H1, H2, H10 ; PRD §5.2 « Statuts du coiffeur », « Calcul de l'heure de passage » (t0 = fin de pause), transition 8 ; PRD §5.1 « Toute variation d'heure de 10 min ou plus et tout recul sont expliqués au client » (écart mesuré par rapport à la dernière heure annoncée, E11), « Coiffeur indisponible » (E6, E7) ; PRD §5.4 (changement d'heure, choix de coiffeur ; sans « Me prévenir », seuls l'inscription et « votre tour » partent, K11)
-- Parcours : F-S3 (APP_FLOW §4) ; F-C5 (bandeau « Votre coiffeur n'est plus disponible ») ; ouverture du bilan F-S9 après « Fin de journée »
-- Commandes et données : `set_presence` ; codes communs `queue.forbidden`, `queue.invalid_transition` (TRD §6.2, aucun code propre) · tables `stylist_presence`, `salon_events`, `tickets` (`stylist_change_pending_since`, `last_notified_start_at`), `notifications` · canal `salon:{salon_id}` (`presence_changed`)
+- Règles appliquées : H1, H2, H10 ; PRD §5.2 « Statuts du coiffeur », « Calcul de l'heure de passage » (t0 = fin de pause), transition 8 ; PRD §5.1 « Toute variation d'heure de 10 min ou plus et tout recul sont expliqués au client » (écart mesuré par rapport à la dernière heure annoncée, E11), « Coiffeur indisponible » (E6, E7 ; rendez-vous compris, E18 ; une pause ne déclenche pas le choix, E25), « Me prévenir » (E17 : le changement d'heure est un message d'anticipation, le choix de coiffeur un message indispensable) ; PRD §5.4 (changement d'heure, choix de coiffeur)
+- Parcours : F-S3 (APP_FLOW §4) ; F-C5 (bandeau « Votre coiffeur n'est plus disponible », pas pour une pause) ; ouverture du bilan F-S9 après « Fin de journée »
+- Commandes et données : `set_presence` ; codes communs `queue.forbidden`, `queue.invalid_transition` (TRD §6.2, aucun code propre) · tables `stylist_presence` (`status`, `break_type`, `expected_back_at`, `shift_end_at`), `salon_events`, `tickets` (`stylist_change_pending_since`, `last_notified_start_at`, `priority_since` 🟡 E36), `notifications` (`estimate_changed` avec une raison de `estimate_change_reason`, `stylist_change_required`) · canal `salon:{salon_id}` (`presence_changed`)
 
 ## Scénarios
 
@@ -39,8 +39,21 @@
 - **Et** un compte à rebours de la pause s'affiche dans sa barre de statut
 - **Et** le bouton « Appeler » est désactivé
 - **Et** l'heure de passage de ses clients est calculée à partir de la fin de la pause
-- **Et** chaque client dont l'heure de passage bouge de 10 min ou plus par rapport à la dernière heure qui lui a été annoncée (`last_notified_start_at`, E11) reçoit une notification push de changement d'heure, avec la nouvelle heure et la raison
+- **Et** chaque client qui a coché « Me prévenir » et dont l'heure de passage bouge de 10 min ou plus par rapport à la dernière heure qui lui a été annoncée (`last_notified_start_at`, E11) reçoit une notification push de changement d'heure, avec la nouvelle heure et la raison `stylist_break` (« Le coiffeur prévu fait une pause. »)
 - **Et** aucun SMS n'est envoyé pour ce changement d'heure
+
+### 4 bis. Client sans « Me prévenir » pendant la pause (E17)
+- **Étant donné** Karim, client d'Inès, qui n'a pas coché « Me prévenir », et dont l'heure recule de 30 min avec la pause repas d'Inès
+- **Quand** Inès confirme sa pause
+- **Alors** aucune notification de changement d'heure ne part vers Karim (ligne `skipped`, `no_consent`)
+- **Et** la nouvelle heure et le bandeau de raison s'affichent sur son ticket (APP_FLOW F-C5)
+
+### 4 ter. Une pause ne déclenche pas le choix de coiffeur (E25)
+- **Étant donné** Léa, qui a demandé Inès
+- **Quand** Inès prend une pause de 30 min
+- **Alors** Léa ne reçoit pas la notification « choix de coiffeur »
+- **Et** le bandeau « Votre coiffeur n'est plus disponible » ne s'affiche pas sur son ticket
+- **Et** `stylist_change_pending_since` reste vide pour son ticket
 
 ### 5. Pause courte sans notification
 - **Étant donné** un coiffeur « Disponible » dont les clients reculeraient de 5 min au plus avec une pause de 5 min
@@ -54,7 +67,7 @@
 - **Alors** son statut redevient « Disponible »
 - **Et** le compte à rebours de la pause disparaît
 - **Et** l'attente des clients est recalculée immédiatement
-- **Et** chaque client dont l'heure avance de 10 min ou plus reçoit une notification push de changement d'heure
+- **Et** chaque client qui a coché « Me prévenir » et dont l'heure avance de 10 min ou plus reçoit une notification push de changement d'heure, avec la raison `stylist_break_ended` (« Le coiffeur prévu a repris plus tôt. »)
 
 ### 7. Fin de journée : confirmation
 - **Étant donné** un coiffeur « Disponible » avec des clients dans sa file
@@ -69,7 +82,8 @@
 - **Et** il ne reçoit plus de nouveaux clients
 - **Et** les tickets sans préférence sont redistribués aux autres coiffeurs, avec une nouvelle heure de passage
 - **Et** chaque client qui le demandait reçoit la notification « choix de coiffeur » : « attendre » ou « premier disponible » (U-12)
-- **Et** cette notification part par push, ou par SMS si le client n'a pas de push actif, dans la limite de 3 SMS par ticket
+- **Et** cette notification part par push, ou par SMS si le client n'a pas de push actif, dans la limite de 3 SMS par ticket, que le client ait coché « Me prévenir » ou non (message indispensable, E17)
+- **Et** les clients sans préférence dont l'heure bouge de 10 min ou plus et qui ont coché « Me prévenir » reçoivent un changement d'heure avec la raison `stylist_unavailable` (« Un coiffeur n'est plus disponible aujourd'hui. »)
 - **Et** son bilan du jour s'ouvre automatiquement (C-10)
 
 ### 8 bis. Choix proposé aux clients qui le demandaient (E7)
@@ -79,17 +93,27 @@
 - **Et** ce n'est pas le choix réduit à « Premier disponible » ou « Annuler ma place », réservé à un coiffeur absent toute la journée ou désactivé (E7)
 - **Et** sans réponse de Léa en 10 min, son ticket continue d'attendre Inès (transition 8 ; voir questions)
 
-### 8 ter. Fin de journée avec des rendez-vous restants
-- **Étant donné** Inès qui a encore aujourd'hui le rendez-vous de Marc à 17h30
-- **Quand** elle confirme sa fin de journée maintenant
+### 8 ter. Fin de journée avec des rendez-vous restants (E18)
+- **Étant donné** Inès qui a encore aujourd'hui le rendez-vous de Marc à 17h30, saisi avec le téléphone de Marc
+- **Quand** elle choisit « Fin de journée » maintenant
+- **Alors** la confirmation affiche aussi « Rendez-vous restant : Marc. Le gérant le réaffectera. »
+- **Quand** elle confirme
 - **Alors** le rendez-vous de Marc n'est pas redistribué automatiquement aux autres coiffeurs
-- **Et** il reste à réaffecter par le gérant (APP_FLOW F-S3 ; ce que voient le gérant et Marc : voir questions)
+- **Et** Marc reçoit le choix « attendre » ou « premier disponible », comme les autres clients qui demandaient Inès (E18)
+- **Et** le gérant voit le rendez-vous de Marc parmi les rendez-vous touchés, qu'il peut réaffecter s'il le souhaite (E18 ; où il le voit : voir questions)
 
-### 8 quater. Client sans « Me prévenir »
-- **Étant donné** Karim, qui demandait Inès et n'a pas coché « Me prévenir »
+### 8 quater. Client sans « Me prévenir » : le choix part quand même (E17)
+- **Étant donné** Karim, qui demandait Inès et n'a pas coché « Me prévenir », sans push actif, dont le ticket a reçu 1 SMS
 - **Quand** Inès confirme sa fin de journée maintenant
-- **Alors** aucune notification « choix de coiffeur » ne part vers Karim, ni push ni SMS (la ligne passe en `skipped`, `no_consent`)
-- **Et** le bandeau de choix s'affiche quand même sur son ticket (`/ticket` ou `/t/:shortCode`)
+- **Alors** Karim reçoit le SMS « choix de coiffeur » (message indispensable, E17)
+- **Et** ce SMS compte dans le plafond de 3 SMS du ticket
+- **Et** le bandeau de choix s'affiche sur son ticket (`/ticket` ou `/t/:shortCode`)
+
+### 8 quinquies. Plafond de 3 SMS déjà atteint
+- **Étant donné** Karim, qui demandait Inès, sans push actif, dont le ticket a déjà reçu 3 SMS comptés dans le plafond
+- **Quand** Inès confirme sa fin de journée maintenant
+- **Alors** aucun SMS « choix de coiffeur » ne part vers Karim (ligne `skipped`, `sms_cap_reached`)
+- **Et** le bandeau de choix s'affiche sur son ticket
 
 ### 9. Fin de journée à une heure plus tardive
 - **Étant donné** un coiffeur « Disponible » à 15h00
@@ -125,35 +149,45 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-stylist.presence.ready` | « Je suis prêt » | Libellé indicatif (APP_FLOW F-S3) |
-| `pro-stylist.presence.break` | « Pause » | Libellé indicatif |
-| `pro-stylist.presence.resume` | « Reprendre » | Libellé indicatif |
-| `pro-stylist.presence.end_of_day` | « Fin de journée » | Libellé indicatif |
-| `pro-stylist.presence.end_of_day_now` | « maintenant » | Choix de l'heure de fin (APP_FLOW F-S3) |
-| `pro-stylist.presence.end_of_day_later` | « plus tard » | Choix de l'heure de fin |
+| `pro-stylist.presence.ready` | Je suis disponible | PRD §5.2 et APP_FLOW F-S3 disent « Je suis prêt » (voir questions) |
+| `pro-stylist.presence.break` | Pause | APP_FLOW F-S3 |
+| `pro-stylist.presence.break_sheet_title` | Prendre une pause | Feuille de choix du type et de la durée |
+| `pro-stylist.presence.break_type_label` | Type | Repas, courte, imprévu |
+| `pro-stylist.presence.break_duration_label` | Durée | 5, 10, 15, 30, 45, 60 min |
+| `pro-stylist.presence.break_start` | Partir en pause | Validation de la feuille |
+| `pro-stylist.presence.resume` | Reprendre | APP_FLOW F-S3 |
+| `pro-stylist.presence.end_of_day` | Fin de journée | APP_FLOW F-S3 |
+| `pro-stylist.presence.end_of_day_time_label` | Heure de fin | Choix de l'heure de fin |
+| `pro-stylist.presence.end_of_day_now` | Maintenant | APP_FLOW F-S3 |
+| `pro-stylist.presence.end_of_day_later` | Plus tard | APP_FLOW F-S3 |
 | `pro-stylist.presence.end_of_day_confirm` | {count, plural, =0 {Aucun client n'attend chez vous.} one {{first_names} passera chez un collègue ou choisira de vous attendre.} other {{first_names} passeront chez vos collègues ou choisiront de vous attendre.}} | Confirmation listant les prénoms des clients concernés ; pluriel ICU |
+| `pro-stylist.presence.end_of_day_appointments` | {count, plural, one {Rendez-vous restant : {first_names}. Le gérant le réaffectera.} other {Rendez-vous restants : {first_names}. Le gérant les réaffectera.}} | Rendez-vous restants dans la confirmation (F-S3, E18) |
+| `pro-stylist.presence.end_of_day_submit` | Terminer ma journée | Bouton de confirmation |
 | `pro-stylist.presence.break_countdown` | Pause · encore {minutes} min | Compte à rebours de la pause |
-| `common.presence_status.offline` | « Hors ligne » | PRD §5.2 ; partagé avec le dashboard |
-| `common.presence_status.available` | « Disponible » | PRD §5.2 |
-| `common.presence_status.in_service` | « En prestation » | PRD §5.2 |
-| `common.presence_status.on_break` | « En pause » | PRD §5.2 |
-| `common.presence_status.late` | « En retard » | PRD §5.2 (posé par le gérant) |
-| `common.presence_status.absent` | « Absent » | PRD §5.2 (posé par le gérant) |
-| `common.presence_status.off_duty` | « Fin de journée » | PRD §5.2 |
-| `common.break_type.meal` | « repas » | APP_FLOW F-S3 ; casse à valider |
-| `common.break_type.short` | « courte » | APP_FLOW F-S3 |
-| `common.break_type.unexpected` | « imprévu » | APP_FLOW F-S3 |
-| `common.units.minutes` | « {count} min » | Durées 5, 10, 15, 30, 45, 60 |
-| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Push seulement, pas de SMS ; nouvelle heure et raison (pause, fin de journée du coiffeur) ; partagé avec U-10 |
-| `notifications.stylist_change_required.push.title` / `.body` |Titre : Votre coiffeur n'est plus disponible<br>Corps : Attendre {stylist_first_name} ou prendre le premier coiffeur disponible ? Sans réponse, rien ne change.| « attendre » ou « premier disponible » ; partagé avec U-12 |
-| `notifications.stylist_change_required.sms` | {salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link} | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (prénom ≤ 30, nom du salon tronqué à 40, caractères hors GSM-7 translittérés, lien court `zelate.fr/t/xxxxxxxx`, TRD §9, K5) ; seulement sans push actif, dans le plafond de 3 SMS, avec « Me prévenir » |
-| `client.ticket.stylist_unavailable.wait` | « Attendre {firstName} » | APP_FLOW F-C5 ; partagé avec U-12 |
-| `client.ticket.stylist_unavailable.first_available` | « Premier disponible » | APP_FLOW F-C5 ; partagé avec U-12 |
+| `common.presence_status.offline` | Hors ligne | PRD §5.2 ; partagé avec le dashboard |
+| `common.presence_status.available` | Disponible | PRD §5.2 |
+| `common.presence_status.in_service` | En prestation | PRD §5.2 |
+| `common.presence_status.on_break` | En pause | PRD §5.2 |
+| `common.presence_status.late` | En retard | PRD §5.2 (posé par le gérant) |
+| `common.presence_status.absent` | Absent | PRD §5.2 (posé par le gérant) |
+| `common.presence_status.off_duty` | Fin de journée | PRD §5.2 |
+| `common.break_type.meal` | Repas | APP_FLOW F-S3 |
+| `common.break_type.short` | Courte | APP_FLOW F-S3 |
+| `common.break_type.unexpected` | Imprévu | APP_FLOW F-S3 |
+| `common.units.minutes` | {count} min | Durées 5, 10, 15, 30, 45, 60 |
+| `common.change_reason.stylist_break` | Le coiffeur prévu fait une pause. | Raison `{reason}` d'une pause (K26) |
+| `common.change_reason.stylist_break_ended` | Le coiffeur prévu a repris plus tôt. | Raison d'une reprise avant la fin de la pause |
+| `common.change_reason.stylist_unavailable` | Un coiffeur n'est plus disponible aujourd'hui. | Raison d'une fin de journée |
+| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Push seulement, pas de SMS ; message d'anticipation, seulement avec « Me prévenir » (E17) ; raison `common.change_reason.<code>` ; partagé avec U-10 |
+| `notifications.stylist_change_required.push.title` / `.body` |Titre : Votre coiffeur n'est plus disponible<br>Corps : Attendre {stylist_first_name} ou prendre le premier coiffeur disponible ? Sans réponse, rien ne change.| « attendre » ou « premier disponible » ; message indispensable, part sans « Me prévenir » (E17) ; partagé avec U-12 |
+| `notifications.stylist_change_required.sms` | {salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link} | SMS ≤ 160 caractères GSM-7, testé avec les valeurs de longueur maximale (prénom du coiffeur ≤ 30, nom du salon tronqué à 40, caractères hors GSM-7 translittérés, lien court `zelate.fr/t/xxxxxxxx`, TRD §9, K5, K20) ; seulement sans push actif, dans le plafond de 3 SMS ; part sans « Me prévenir » (E17) |
+| `client.ticket.stylist_unavailable.wait` | Attendre {first_name} | APP_FLOW F-C5 ; partagé avec U-12 |
+| `client.ticket.stylist_unavailable.first_available` | Premier disponible | APP_FLOW F-C5 ; partagé avec U-12 |
 | `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Code commun (TRD §6.2) ; voir C-01 |
 
 ## Questions ouvertes
-- [PRD / APP_FLOW] Quand la durée de pause est écoulée sans « Reprendre » : retour automatique à « Disponible », ou le coiffeur reste « En pause » ?
-- [PRD / TRD] Peut-on prendre une pause ou déclarer la fin de journée pendant un appel en cours ou une prestation en cours ? `set_presence` n'a aucun code propre (TRD §6.2) : si c'est refusé, est-ce `queue.invalid_transition` ? Si c'est accepté, le client appelé est-il « repris en tête » comme pour un coiffeur absent (E6) ?
+- [PRD / APP_FLOW / BACKEND_SCHEMA] **E32 (en attente d'Ely)** : quand la durée de pause est écoulée sans « Reprendre », retour automatique à « Disponible », ou le coiffeur reste « En pause » ? Même question pour le passage à « Fin de journée » à l'heure `shift_end_at` choisie « plus tard ».
+- [PRD / TRD] Peut-on prendre une pause ou déclarer la fin de journée pendant un appel en cours ou une prestation en cours ? `set_presence` n'a aucun code propre (TRD §6.2) : si c'est refusé, est-ce `queue.invalid_transition` ? Si c'est accepté, TRD §6.2 reprend le client appelé en tête (E6, marqueur `tickets.priority_since`), transition encore **en attente d'Ely (E36)** ; ce cas vaut-il aussi pour une pause, qui n'est pas une indisponibilité (E25) ?
 - [PRD] Transition 8 et décision n° 15 : sans réponse en 10 min, le client « attend » ; E7 ne retire « attendre » que pour un coiffeur absent toute la journée ou désactivé. Pour un coiffeur en fin de journée maintenant, le client attendrait un coiffeur qui ne revient pas aujourd'hui : est-ce voulu ?
 - **Résolu le 18/10** : la transition 8 cite désormais « Système, gérant, coiffeur (fin de journée) » (PRD §5.2). Question d'origine : acteurs de la transition 8 à aligner avec F-S3.
 - [PRD] « Tickets qui dépasseraient » l'heure de fin : la prestation commencerait après `shift_end_at`, ou finirait après ?
@@ -161,6 +195,7 @@
 - **Résolu le 18/10 (K1)** : `set_presence` n'a pas de code propre ; un `member_id` d'un autre coiffeur ou un statut réservé au gérant relève du code commun `queue.forbidden` (droit insuffisant, TRD §6.2). Question d'origine : code d'erreur de ces deux cas.
 - **Résolu le 18/10** : `tickets.stylist_change_pending_since` décrit maintenant la règle tranchée (BACKEND_SCHEMA §4.13). Question d'origine : le schéma la disait « à valider en PLN-1 ».
 - **Résolu le 18/10 (E7)** : quand le coiffeur demandé est absent toute la journée ou désactivé, « attendre » n'est pas proposé, seulement « premier disponible » ou annuler ; la fin de journée garde les deux choix (APP_FLOW F-C5). Question d'origine : « attendre » est-il proposé quand le coiffeur demandé ne revient pas ?
-- [APP_FLOW / PRD] F-C5 affiche le bandeau « Votre coiffeur n'est plus disponible » aussi quand le coiffeur demandé est « en pause », alors que la transition 8 ne cite que « absent, en retard ou partant plus tôt » et que F-S3 ne prévoit, pour une pause, qu'une notification de changement d'heure. Une pause déclenche-t-elle le choix du client ?
-- [APP_FLOW / PRD] Rendez-vous restants à la fin de journée : F-S3 dit qu'ils « sont à réaffecter par le gérant ». Comment le gérant en est-il prévenu (dashboard, bandeau, liste des rendez-vous) ? Le client du rendez-vous est-il notifié, et que devient son rendez-vous si le gérant ne le réaffecte pas avant l'heure ?
-- [PRD §5.4 / K11] Sans « Me prévenir », la notification « choix de coiffeur » ne part pas : le client ne l'apprend qu'en ouvrant son ticket, et sans réponse en 10 min il « attend ». Est-ce voulu, ou ce message doit-il compter parmi les indispensables ?
+- **Résolu le 19/10 (E25)** : une pause du coiffeur ne déclenche pas le choix « attendre / premier disponible » ; APP_FLOW F-C5 est corrigé. Voir scénario 4 ter. Question d'origine : une pause déclenche-t-elle le choix du client ?
+- **Résolu le 19/10 (E18)** en partie : le client avec rendez-vous choisit comme les autres, et le gérant voit les rendez-vous touchés pour les réaffecter s'il le souhaite. Voir scénario 8 ter. Reste [APP_FLOW] : où le gérant voit-il les rendez-vous touchés par une fin de journée déclarée par le coiffeur lui-même (F-M8 ne montre « rendez-vous à réaffecter » que dans l'aperçu d'une absence déclarée par le gérant) ?
+- **Résolu le 19/10 (E17)** : le choix de coiffeur est un message indispensable, il part sans « Me prévenir ». Voir scénarios 8 quater et 8 quinquies. Question d'origine : sans consentement, la notification « choix de coiffeur » ne partait pas.
+- [PRD / APP_FLOW / dictionnaire] Le bouton de mise en disponibilité s'appelle « Je suis prêt » dans PRD §5.2 et APP_FLOW F-S3, « Je suis disponible » dans `pro-stylist.presence.ready`. Lequel retenir ? Les scénarios gardent le libellé du PRD.

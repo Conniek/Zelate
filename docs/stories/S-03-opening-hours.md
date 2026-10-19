@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : PRD §5.2 États de la file (« Fermée » avec la prochaine ouverture, « Ouverte » et « Complète » calculés par rapport à la fermeture) ; H9 (la fin de journée se calcule par rapport à la dernière fermeture de la journée, E5) ; un changement d'horaires dans la journée ne modifie pas les tickets déjà en file, et les nouveaux horaires comptent pour la fin de journée (PRD §5.1, §11 E16)
 - Parcours : F-M2 « Horaires », F-M11 `/dashboard/hours` ; affichage côté client F-C2 « Horaires »
-- Commandes et données : écriture directe du gérant sous RLS (TRD §6.3, tables de configuration) · tables `opening_hours` (`weekday`, `opens_at`, `closes_at`), `salon_closures` (`starts_on`, `ends_on`, `reason`)
+- Commandes et données : écriture directe du gérant sous RLS, limitée par colonne (TRD §6.3, tables de configuration, K32) · tables `opening_hours` (`weekday`, `opens_at`, `closes_at`), `salon_closures` (`starts_on`, `ends_on`, `reason`), `salon_events` (`settings_updated`, écrit par le déclencheur `log_settings_update()`, BACKEND_SCHEMA §4.15)
 
 ## Scénarios
 
@@ -26,6 +26,12 @@
 - **Alors** aucune alerte de fin de journée n'est envoyée (H9 : « dernière fermeture de la journée », E5)
 - **Quand** il est 17:00, soit 2 h avant 19:00
 - **Alors** la fenêtre de fin de journée commence (détail dans S-15)
+
+### 2 ter. La coupure de midi n'annule rien
+- **Étant donné** un lundi avec les plages 09:00-12:00 et 14:00-19:00, et des clients encore en attente à 12:00
+- **Quand** il est 12:15
+- **Alors** aucun ticket n'est annulé : la file reprend à la plage suivante (PRD §5.2 « Fin de journée », E24)
+- **Alors** les clients en attente gardent leur place
 
 ### 3. Plages qui se chevauchent
 - **Étant donné** le lundi avec une plage de 09:00 à 12:00
@@ -82,6 +88,12 @@
 - **Alors** les tickets déjà en file ne sont pas modifiés (PRD §5.1, E16)
 - **Alors** la fenêtre de fin de journée se calcule à partir de 18:00, soit à partir de 16:00 avec la fenêtre par défaut de 2 h (E16, H9)
 
+### 11 ter. Changement d'horaires inscrit au journal, sans le motif
+- **Étant donné** le gérant qui modifie une plage ou ajoute une fermeture exceptionnelle avec le motif « Congés »
+- **Quand** l'enregistrement réussit
+- **Alors** l'événement `settings_updated` est inscrit au journal du salon, avec le gérant comme acteur (BACKEND_SCHEMA §4.15)
+- **Alors** l'événement ne porte que le nom de la table et des colonnes modifiées : ni les heures, ni le motif « Congés » (K10)
+
 ### 12. Isolation par salon
 - **Étant donné** le gérant du salon A
 - **Quand** il essaie de lire ou de modifier les horaires ou les fermetures du salon B (par l'API)
@@ -96,7 +108,9 @@
 | `pro-manager.hours.closures.title` | « Fermetures exceptionnelles » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.hours.closures.from` | « Du » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.hours.closures.to` | « Au » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.hours.closures.reason` | « Motif » | 120 caractères maximum |
+| `pro-manager.hours.closures.reason` | « Motif (facultatif) » | 120 caractères maximum |
+| `pro-manager.hours.closures.add` | « Ajouter une fermeture » | — |
+| `pro-manager.hours.day_closed` | « Fermé » | Jour sans plage |
 | `errors.validation.hours_order` | « L'heure de fermeture doit être après l'heure d'ouverture. » | Fermeture avant ou égale à l'ouverture |
 | `errors.validation.hours_overlap` | « Ces plages horaires se chevauchent. Modifiez-les pour qu'elles se suivent. » | Plages qui se chevauchent |
 | `errors.validation.at_least_one_open_day` | « Indiquez au moins un jour d'ouverture. » | — |
@@ -109,9 +123,10 @@
 - **Résolu le 18/10** (E16, PRD §5.1) : un changement d'horaires dans la journée ne modifie pas les tickets déjà en file ; les nouveaux horaires comptent pour la fin de journée.
 - **Résolu le 18/10** (E5, PRD H9) : la fin de journée s'applique à la dernière plage de la journée, pas à chaque plage.
 - **PRD** : que se passe-t-il si une fermeture exceptionnelle couvre aujourd'hui alors que la file est ouverte et a des tickets actifs ? E16 parle des horaires, pas des fermetures exceptionnelles. L'état « Complète » est-il aussi recalculé avec les nouveaux horaires ?
-- **BACKEND_SCHEMA / PRD** : BACKEND_SCHEMA §10 dit que `queue-tick` ouvre et ferme la file « selon les horaires ». Avec une coupure à midi, la file est-elle fermée puis rouverte entre deux plages ? Les clients inscrits restent-ils pendant la coupure ?
-- **PRD / TRD** : un rendez-vous ne peut pas être saisi hors des horaires (`outside_opening_hours`, TRD §6.2). Que devient un rendez-vous déjà saisi quand le gérant réduit les horaires du jour ou ajoute une fermeture exceptionnelle qui le couvre ?
+- **Résolu le 19/10** (E24, PRD §5.2) : une coupure de midi n'annule aucun ticket ; les clients inscrits restent et la file reprend à la plage suivante.
+- **En attente de E32 (Ely)** : BACKEND_SCHEMA §10 dit que `queue-tick` ouvre et ferme la file « selon les horaires », TRD §6.1 ne le dit plus, et le PRD et APP_FLOW ne décrivent qu'une action du gérant. Avec une coupure à midi, la file est-elle fermée puis rouverte automatiquement entre deux plages ?
+- **Résolu le 19/10** (E16, PRD §5.1) : un rendez-vous déjà saisi est un ticket déjà en file ; réduire les horaires du jour ne le modifie pas. Reste ouvert le cas d'une fermeture exceptionnelle qui couvre le jour même (question ci-dessus).
+- **Résolu le 19/10** (constat 33, BACKEND_SCHEMA v0.5 §4.15) : chaque écriture directe sur les horaires et les fermetures inscrit `settings_updated` au journal du salon par le déclencheur `log_settings_update()`, avec seulement la table et les colonnes modifiées, sans valeur ni motif (K10).
 - **APP_FLOW** : la « prochaine ouverture » affichée sur une file fermée (F-C2 « Fermé · ouvre demain à 9h00 ») tient-elle compte des fermetures exceptionnelles ?
 - **BACKEND_SCHEMA** : `opening_hours.weekday` va de 1 à 7. Le 1, c'est le lundi (norme ISO) ?
-- **TRD / BACKEND_SCHEMA** : les changements d'horaires sont écrits directement sous RLS. Sont-ils inscrits au journal du salon (`settings_updated`) ? Si oui, qui écrit l'événement ?
 - **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

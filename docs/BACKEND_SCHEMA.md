@@ -1,6 +1,7 @@
 # BACKEND SCHEMA — Zelaté
 
-> version 0.4 · 19/10/2026 · statut : à figer au lot DES-4, avant la première migration
+> version 0.5 · 19/10/2026 · statut : à figer au lot DES-4, avant la première migration
+> v0.5 · 19/10/2026 : décisions de Koni K28 à K41, impact technique des réponses d'Ely E17 à E31 (PRD v1.2), alignements de la revue d'architecture du 19/10 (constats 6, 7, 13, 14, 19, 23, 24, 27, 28, 31, 33, 34, 37). Contacts privés pour tout ticket dont le numéro est connu (K28) ; règles de suppression vers `profiles` (K29) ; profil créé par l'action qui demande le prénom (K30) ; `call_count`, `priority_since` (K31) ; droits par colonne et vues publiques en droits du propriétaire (K32) ; `push_subscriptions` écrites par le serveur seulement (K33) ; `salons.is_full` (K36) ; outbox réservée par `skip locked` et e-mails sans ticket dédupliqués (K37) ; sens de `assigned_member_id` (K39) ; purges (K40) ; contraintes `check` complétées ; `salon_events.ticket_id` ; nouvelles colonnes `confirmation_reminder_sent_at`, `reassignment_proposed_start_at` et table `private.no_show_warnings` (E19, E27, E28).
 > v0.4 : réponses K13 à K27 — consentement par ticket, fusion des rendez-vous (`merged`, `appointment_merged`), heure annoncée, push aux membres, raisons d'un changement d'heure (`estimate_change_reason`), clés de déduplication.
 > v0.3 : PRD v1.1 et TRD v0.3 — rendez-vous (`ticket_kind`, `scheduled_at`, statut `pending_confirmation`), demande de réaffectation, libération à l'heure annoncée, dernière heure notifiée, prochain créneau libre, compteur d'absences par numéro, lien court, journal sans texte libre.
 > v0.2 : décisions de l'atelier du 16/10 (PRD §11) — coiffeurs avec compte personnel, tablettes au lot 2 (annexe A), interrupteur « Je coiffe », compteur de 10 min, fin de journée, coiffeur pressenti.
@@ -57,7 +58,7 @@ erDiagram
 | Schéma | Tables |
 | --- | --- |
 | `public` | `profiles`, `platform_admins`, `salons`, `salon_members`, `specialties`, `member_specialties`, `opening_hours`, `salon_closures`, `services`, `stylist_presence`, `tickets`, `ticket_events`, `salon_events`, `notifications`, `push_subscriptions`, `salon_verifications` |
-| `private` | `ticket_contacts`, `member_invitations`, `processed_commands`, `rate_limits`, `no_show_records` |
+| `private` | `ticket_contacts`, `member_invitations`, `processed_commands`, `rate_limits`, `no_show_records`, `no_show_warnings` |
 | Lot 2 (annexe A) | `salon_devices`, `stylist_sessions`, `private.member_pins`, `private.device_pairing_requests` |
 
 ---
@@ -67,7 +68,7 @@ erDiagram
 | Type | Valeurs | Remarque |
 | --- | --- | --- |
 | `salon_status` | `draft`, `pending_review`, `approved`, `published`, `rejected`, `suspended` | Brouillon → à valider → validé → public, ou refusé ; `suspended` pour un abus |
-| `queue_status` | `closed`, `open`, `paused` | « Complète » est calculée, pas stockée |
+| `queue_status` | `closed`, `open`, `paused` | « Complète » n'est pas un état : le moteur la calcule et la stocke dans `salons.is_full` (K36) |
 | `member_role` | `manager`, `stylist` | — |
 | `member_status` | `invited`, `active`, `deactivated` | — |
 | `presence_status` | `offline`, `available`, `in_service`, `on_break`, `late`, `absent`, `off_duty` | `off_duty` = fin de journée |
@@ -75,18 +76,18 @@ erDiagram
 | `ticket_status` | `pending_confirmation`, `waiting`, `called`, `in_service`, `completed`, `cancelled`, `no_show` | Actifs : `pending_confirmation`, `waiting`, `called`, `in_service` ; `pending_confirmation` = rendez-vous signalé par le client, hors calcul |
 | `ticket_kind` | `queue`, `appointment` | `appointment` = rendez-vous à heure fixe (H10, ADR-016) |
 | `appointment_source` | `salon_entry`, `client_check_in` | Saisi par le salon, ou signalé par le client à son arrivée |
-| `ticket_channel` | `app`, `qr`, `front_desk` | Un rendez-vous saisi par le salon a le canal `front_desk` |
-| `reassignment_choice` | `accepted`, `refused`, `expired` | Réponse du client à une réaffectation qui recule son heure (E9) |
-| `eta_response` | `on_time`, `late` | « J'annule » donne le statut `cancelled` |
-| `end_of_day_choice` | `stay`, `cancel` | Réponse à l'alerte de fin de journée ; `cancel` donne le statut `cancelled` |
+| `ticket_channel` | `app`, `qr`, `front_desk` | Un rendez-vous saisi par le salon a le canal `front_desk` ; un rendez-vous signalé par `check_in_appointment` a le canal `qr` |
+| `reassignment_choice` | `accepted`, `refused`, `expired` | Réponse du client à une réaffectation qui recule son heure (E9). Aucune colonne de `tickets` : la valeur vit dans `ticket_events.reason_code` de l'événement `reassignment_resolved`, d'où `get_salon_board` tire le résultat montré au gérant (E27) |
+| `eta_response` | `on_time`, `late` | « J'annule » donne le statut `cancelled`, motif `client_cancelled` |
+| `end_of_day_choice` | `stay`, `cancel` | Réponse à l'alerte de fin de journée ; `cancel` donne le statut `cancelled`, motif `client_cancelled` |
 | `closing_decision` | `serve`, `cancel` | Décision du gérant pour un client resté après la fermeture |
-| `cancel_reason` | `client_cancelled`, `removed_by_salon`, `stylist_unavailable`, `end_of_day`, `appointment_rejected`, `merged` | `merged` : ticket signalé regroupé avec le rendez-vous saisi par le salon (K14) ; « Fermer la file » n'annule aucun ticket : seule la fin de journée (H9) le fait |
-| `removal_reason` | `emergency`, `client_request`, `duplicate`, `inappropriate_behaviour`, `other` | Motif de retrait par le gérant (S-12) |
+| `cancel_reason` | `client_cancelled`, `removed_by_salon`, `stylist_unavailable`, `end_of_day`, `appointment_rejected`, `merged` | `merged` : ticket signalé regroupé avec le rendez-vous saisi par le salon (K14) ; « Fermer la file » n'annule aucun ticket : seule la fin de journée (H9) le fait ; `end_of_day` aussi pour un client « servi » non pris à minuit et un rendez-vous encore à confirmer à la fermeture (E19, E24) ; `client_cancelled` pour « J'annule » à T-30 ou à l'alerte de fin de journée, et pour l'annulation d'un rendez-vous à confirmer par le client |
+| `removal_reason` | `emergency`, `client_request`, `duplicate`, `inappropriate_behaviour`, `other` | Motif de retrait par le gérant (S-12) ; aussi motif d'annulation ou de refus d'un rendez-vous (E29), en attendant une liste dédiée 🟡 |
 | `actor_type` | `client`, `stylist`, `manager`, `system`, `admin` | — |
 | `ticket_event_type` | `created`, `assigned`, `reassigned`, `estimate_changed`, `eta_responded`, `postponed`, `stylist_change_requested`, `stylist_change_resolved`, `arrival_confirmed`, `called`, `service_started`, `duration_adjusted`, `completed`, `cancelled`, `no_show`, `end_of_day_warned`, `end_of_day_responded`, `appointment_checked_in`, `appointment_confirmed`, `appointment_rejected`, `appointment_merged`, `appointment_updated`, `appointment_delay_warned`, `reassignment_requested`, `reassignment_resolved` | `completed` par un gérant : `actor_type = 'manager'` (E15) |
 | `salon_event_type` | `submitted`, `approved`, `rejected`, `published`, `suspended`, `queue_opened`, `queue_paused`, `queue_closed`, `closing_resolved`, `presence_changed`, `hairdressing_toggled`, `member_invited`, `member_activated`, `member_deactivated`, `member_sessions_revoked`, `qr_regenerated`, `settings_updated`, `admin_viewed_client_data` | — |
 | `notification_channel` | `push`, `sms`, `email` | — |
-| `notification_template` | `ticket_created`, `turn_approaching`, `get_ready`, `your_turn`, `arrival_reminder`, `released_no_show`, `estimate_changed`, `postponed`, `stylist_change_required`, `end_of_day_risk`, `cancelled_by_salon`, `appointment_confirmed`, `appointment_rejected`, `appointment_delay`, `reassignment_request`, `no_show_warning`, `appointment_checked_in`, `member_invitation`, `salon_decision`, `daily_summary` | Textes dans `notifications.json` ; indispensables (envoyés sans consentement, K11) : `ticket_created`, `your_turn` |
+| `notification_template` | `ticket_created`, `turn_approaching`, `get_ready`, `your_turn`, `arrival_reminder`, `released_no_show`, `estimate_changed`, `postponed`, `stylist_change_required`, `end_of_day_risk`, `cancelled_by_salon`, `appointment_confirmed`, `appointment_rejected`, `appointment_delay`, `reassignment_request`, `no_show_warning`, `appointment_checked_in`, `member_invitation`, `salon_decision`, `daily_summary` | Textes dans `notifications.json`. Messages d'anticipation (retenus sans consentement, E17) : `turn_approaching`, `get_ready`, `estimate_changed`, `end_of_day_risk` ; tous les autres modèles adressés au client partent sans consentement. `appointment_checked_in` (au gérant et au coiffeur, variante `reminder` après 10 min, E19), `member_invitation`, `salon_decision`, `daily_summary` : personnel du salon |
 | `estimate_change_reason` | `service_longer`, `service_shorter`, `client_ahead_left`, `client_ahead_late`, `client_postponed`, `client_late`, `stylist_break`, `stylist_break_ended`, `stylist_late`, `stylist_unavailable`, `stylist_available`, `hairdressing_toggled`, `reassigned`, `stylist_choice`, `appointment_ahead`, `appointment_changed`, `your_appointment_changed` | Raison d'un changement d'heure, dans `notifications.params.reason` et l'événement `estimate_changed` ; textes dans `common.change_reason.<code>` (K26) |
 | `notification_status` | `pending`, `sent`, `failed`, `skipped` | `skipped` : plafond SMS atteint, push actif, consentement absent |
 | `verification_decision` | `pending`, `approved`, `rejected` | — |
@@ -106,12 +107,14 @@ Légende : **PK** clé primaire · **FK** clé étrangère · **U** unique · **
 | `first_name` | text | NN, 1 à 30 caractères | Prénom affiché au salon |
 | `last_name` | text | ≤ 50 caractères | Gérants seulement |
 | `email` | citext | U | Gérants ; facultatif pour les clients |
-| `is_guest` | boolean | NN, défaut `true` | Client qui n'a pas finalisé de compte (ADR-005) |
+| `is_guest` | boolean | NN, défaut `true` | Client qui n'a pas finalisé de compte (ADR-005) ; `false` pour le personnel (gérant, coiffeur), écrit par `salon-signup` et `activate-invitation` (K30) |
 | `tracking_consent_at` | timestamptz | | Dernier choix « Me prévenir » du client, pour information sur `/account` ; ne pré-coche jamais la case et ne sert pas à l'envoi (K18) |
 | `marketing_consent_at` | timestamptz | | Hors MVP, colonne prévue |
 | `created_at`, `updated_at` | timestamptz | NN | |
 
 Le **téléphone** n'est pas ici : il reste dans `auth.users.phone` (ADR-011). Les coiffeurs ont un profil comme les gérants (compte personnel, ADR-007).
+
+**Création** (K30) : aucun déclencheur à l'inscription Auth. Le profil est créé par l'action qui demande le prénom : `join_queue` ou `check_in_appointment` au premier passage d'un client, `salon-signup` pour le gérant, `activate-invitation` pour le coiffeur. `first_name` est donc toujours connu à la création.
 
 ### 4.2 `platform_admins`
 
@@ -144,13 +147,14 @@ Le **téléphone** n'est pas ici : il reste dans `auth.users.phone` (ADR-011). L
 | `auto_release_after_minutes` | smallint | NN, défaut 10 | Libération automatique (H4) ; contrainte `reminder < auto_release` ; fixes au pilote, réglables plus tard |
 | `end_of_day_warning_minutes` | smallint | NN, défaut 120, 30 à 240 | Début de la fenêtre d'alerte avant la fermeture (H9) |
 | `closing_grace_minutes` | smallint | NN, défaut 15 | Délai après la fermeture avant l'annulation automatique des clients restants |
-| `waiting_count` | integer | NN, défaut 0 | Calculé par le moteur |
+| `waiting_count` | integer | NN, défaut 0 | Calculé par le moteur ; clients en attente au salon, affichés sur la fiche (E31) |
 | `current_wait_minutes` | integer | | Attente pour un nouveau client « premier disponible », calculée par le moteur |
+| `is_full` | boolean | NN, défaut `false` | « File complète » : la prochaine prestation finirait après la fermeture ; calculé par le moteur à chaque commande et à chaque `queue-tick`, exposé dans `public_salons` ; l'interface ne le recalcule jamais (K36) |
 | `estimate_updated_at` | timestamptz | | Fraîcheur affichée |
-| `next_free_slots` | jsonb | NN, défaut `[]` | Prochain créneau libre par prestation, calculé par le moteur (ADR-017) : `[{ service_id, starts_at }]`, sans coiffeur ; seules les prestations qui tiennent dans un trou y figurent |
+| `next_free_slots` | jsonb | NN, défaut `[]` | Prochain créneau libre par prestation, calculé par le moteur (ADR-017) : `[{ service_id, starts_at }]`, sans coiffeur ; seules les prestations qui tiennent dans un trou y figurent ; vide quand la file n'est pas ouverte (E22) |
 | `queue_version` | bigint | NN, défaut 0 | Incrémentée à chaque commande ; envoyée dans les messages temps réel |
-| `setup_test_passed_at` | timestamptz | | Test S-07 réussi |
-| `published_at` | timestamptz | | |
+| `setup_test_passed_at` | timestamptz | | Test S-07 réussi ; écrit par `complete_service` quand le ticket terminé est `is_test` (K35) |
+| `published_at` | timestamptz | | Écrit par `publish_salon` (K35) |
 | `draft_expires_at` | timestamptz | | Brouillon supprimé après cette date (7 jours) |
 | `created_by` | uuid | NN, FK → `profiles(id)` | Gérant créateur |
 | `created_at`, `updated_at` | timestamptz | NN | |
@@ -166,7 +170,7 @@ Fuseau horaire implicite `Europe/Paris` (marché France uniquement) ; pas de col
 | `profile_id` | uuid | FK → `profiles(id)` | Compte du membre ; rempli à l'activation de l'invitation (obligatoire si `status = 'active'`) |
 | `role` | `member_role` | NN | |
 | `status` | `member_status` | NN, défaut `invited` | |
-| `first_name` | text | NN | |
+| `first_name` | text | NN, 1 à 30 caractères | Limite des SMS (K20) |
 | `last_name` | text | NN | |
 | `email` | citext | NN | Adresse d'invitation |
 | `photo_path` | text | | Bucket `member-photos` |
@@ -181,6 +185,7 @@ Contraintes :
 - Au moins un gérant par salon : vérifié par la fonction de désactivation.
 - 20 membres actifs maximum par salon : vérifié par `invite-member`.
 - Un membre reçoit des clients s'il est actif, `is_hairdressing = true` et présent (statut de présence) ; le gérant qui a coupé « Je coiffe » peut quand même prendre le prochain client.
+- Écritures directes (K32) : `grant update (first_name, last_name, photo_path)` pour `authenticated` ; la politique RLS limite les lignes au gérant du salon et au membre lui-même ; le déclencheur `restrict_member_self_update()` refuse, quand l'auteur n'est pas le gérant du salon, toute modification autre que `photo_path`. `role`, `status`, `email`, `profile_id`, `is_hairdressing`, `served_today_count` : serveur.
 
 ### 4.5 `specialties` — référentiel
 
@@ -210,6 +215,7 @@ Au moins une spécialité par coiffeur : vérifié à l'invitation.
 | `weekday` | smallint | NN, 1 à 7 | |
 | `opens_at` | time | NN | |
 | `closes_at` | time | NN, `> opens_at` | |
+| `created_at`, `updated_at` | timestamptz | NN | |
 
 Plusieurs plages par jour possibles ; contrainte d'exclusion contre le chevauchement des plages d'un même jour. Au moins un jour ouvert pour publier.
 
@@ -222,6 +228,7 @@ Plusieurs plages par jour possibles ; contrainte d'exclusion contre le chevauche
 | `starts_on` | date | NN | |
 | `ends_on` | date | NN, `>= starts_on` | |
 | `reason` | text | ≤ 120 caractères | |
+| `created_at`, `updated_at` | timestamptz | NN | |
 
 ### 4.9 `services` — prestations
 
@@ -255,7 +262,7 @@ Les tables `salon_devices` et `stylist_sessions` ne sont créées qu'au lot 2 (t
 | `expected_back_at` | timestamptz | | Fin de pause ou heure d'arrivée prévue (`late`) |
 | `shift_end_at` | timestamptz | | Fin de journée prévue |
 | `updated_by_member_id` | uuid | FK → `salon_members(id)` | |
-| `updated_at` | timestamptz | NN | |
+| `created_at`, `updated_at` | timestamptz | NN | |
 
 `unique (member_id, service_date)`. L'historique des changements est dans `salon_events` (`presence_changed`).
 
@@ -274,27 +281,31 @@ Les tables `salon_devices` et `stylist_sessions` ne sont créées qu'au lot 2 (t
 | `appointment_source` | `appointment_source` | | Obligatoire si `kind = 'appointment'` |
 | `confirmed_at` | timestamptz | | Rendez-vous signalé confirmé par le salon |
 | `confirmed_by_member_id` | uuid | FK → `salon_members(id)` | Gérant ou coiffeur qui confirme |
-| `appointment_delay_warned_steps` | smallint | NN, défaut 0 | Nombre d'alertes de retard envoyées (10, 20, 30 min… de retard), dans le plafond SMS (R5) |
-| `client_id` | uuid | FK → `profiles(id)` | Vide pour un walk-in |
-| `display_name` | text | NN, ≤ 30 caractères | Prénom affiché |
+| `confirmation_reminder_sent_at` | timestamptz | | Rappel au gérant et au coiffeur envoyé 10 min après un rendez-vous signalé non confirmé (une seule fois, E19) |
+| `appointment_delay_warned_steps` | smallint | NN, défaut 0 | Dernier palier de retard signalé (1 = 10 min, 2 = 20 min…) ; un saut de plusieurs paliers ne donne qu'une alerte (E23) ; dans le plafond SMS (R5) |
+| `client_id` | uuid | FK → `profiles(id)` on delete set null (K29) | Vide pour un walk-in, et après la suppression du compte |
+| `display_name` | text | NN, ≤ 30 caractères | Prénom affiché ; « Client » après anonymisation (K29) |
 | `channel` | `ticket_channel` | NN | |
 | `is_test` | boolean | NN, défaut `false` | Ticket fictif de S-07, exclu des statistiques |
 | `service_id` | uuid | FK → `services(id)` | Vide si « je ne sais pas encore » |
 | `planned_duration_minutes` | smallint | NN, 5 à 240 | Durée de la prestation, ou 30 si inconnue |
-| `requested_member_id` | uuid | FK → `salon_members(id)` | Coiffeur demandé ; vide = premier disponible |
+| `requested_member_id` | uuid | FK → `salon_members(id)` | Coiffeur demandé ; vide = premier disponible. Une réaffectation acceptée d'un ticket de file modifie cette colonne (K39) |
 | `estimated_member_id` | uuid | FK → `salon_members(id)` | Coiffeur pressenti par la simulation, pour l'estimation (ADR-015) |
-| `assigned_member_id` | uuid | FK → `salon_members(id)` | Coiffeur fixé à l'appel ; vide tant que le ticket attend (sauf coiffeur demandé : rempli dès la création) |
+| `assigned_member_id` | uuid | FK → `salon_members(id)` | Coiffeur fixé à l'appel, vide tant qu'un ticket de file attend, même avec un coiffeur demandé ; pour un rendez-vous, fixé dès la saisie (ou à la confirmation d'un rendez-vous signalé), et modifié par une réaffectation acceptée (K39) |
 | `status` | `ticket_status` | NN, défaut `waiting` | `pending_confirmation` à la création par `check_in_appointment` |
 | `queue_rank` | integer | NN | Ordre d'inscription au salon pour la journée |
+| `priority_since` | timestamptz | | Marqueur « prioritaire en tête » : client appelé repris en tête quand son coiffeur devient indisponible (E6). 🟡 En attente de la réponse d'Ely à E36 (K31) |
+| `call_count` | smallint | NN, défaut 0 | Nombre d'appels du ticket, incrémenté par `call_ticket` ; sert aux clés `your_turn:<n>` et `arrival_reminder:<n>` (K31) |
 | `postpone_count` | smallint | NN, défaut 0 | Places reculées au total (≤ 2, H5) |
 | `declared_arrival_at` | timestamptz | | Heure d'arrivée déclarée à l'inscription (H8), ou après un retard déclaré à T-30 : `t30_estimated_start_at` + `declared_delay_minutes` (K13) |
 | `notifications_consent_at` | timestamptz | | Case « Me prévenir » cochée pour ce ticket ; vide = messages indispensables seulement (K11, K18) |
 | `eta_response` | `eta_response` | | Réponse à T-30 |
 | `declared_delay_minutes` | smallint | 5 à 30 | Retard déclaré |
 | `arrived_at` | timestamptz | | Arrivée validée au salon par le code du ticket |
-| `stylist_change_pending_since` | timestamptz | | Coiffeur demandé devenu indisponible, réponse du client attendue (`resolve_stylist_change`) ; sans réponse en 10 min : « premier disponible » si le coiffeur est absent toute la journée ou désactivé (seul choix proposé, E7), sinon attente |
+| `stylist_change_pending_since` | timestamptz | | Coiffeur demandé devenu indisponible, réponse du client attendue (`resolve_stylist_change`) ; jamais pour une pause (E25) ; sans réponse en 10 min, `queue-tick` applique « premier disponible » si le coiffeur est absent toute la journée ou désactivé (seul choix proposé, E7), sinon attente, puis vide la colonne |
 | `reassignment_member_id` | uuid | FK → `salon_members(id)` | Coiffeur proposé par le gérant, en attente de l'accord du client (E9) |
 | `reassignment_requested_at` | timestamptz | | Demande envoyée ; sans réponse en 10 min, `queue-tick` l'efface (`expired`) |
+| `reassignment_proposed_start_at` | timestamptz | | Heure de passage annoncée dans la demande ; à l'acceptation, si la nouvelle heure recule de 10 min ou plus par rapport à elle, une nouvelle demande part (E27) |
 | `estimated_start_at` | timestamptz | | Heure de passage courante |
 | `last_notified_start_at` | timestamptz | | Dernière heure annoncée au client ; le seuil de 10 min se mesure par rapport à elle, écarts cumulés (E11) ; mise à jour seulement quand une notification part réellement (K19) |
 | `initial_estimated_start_at` | timestamptz | | Heure annoncée à l'inscription (métrique) |
@@ -302,9 +313,9 @@ Les tables `salon_devices` et `stylist_sessions` ne sont créées qu'au lot 2 (t
 | `estimate_version` | integer | NN, défaut 0 | Incrémentée quand l'estimation change |
 | `turn_approaching_sent_at` | timestamptz | | T-30 envoyé (une seule fois) |
 | `get_ready_sent_at` | timestamptz | | T-10 envoyé |
-| `called_at` | timestamptz | | |
-| `release_due_at` | timestamptz | | Libération automatique : `called_at` + 10 min, ou l'heure d'arrivée annoncée si elle est plus tardive (E2) |
-| `reminder_sent_at` | timestamptz | | Rappel à 5 min |
+| `called_at` | timestamptz | | Remis à vide en quittant `called` (K31) ; l'heure de chaque appel reste dans l'événement `called` |
+| `release_due_at` | timestamptz | | Libération automatique : `called_at` + 10 min, ou l'heure d'arrivée annoncée si elle est plus tardive (E2) ; remis à vide en quittant `called` (K31) |
+| `reminder_sent_at` | timestamptz | | Rappel à 5 min ; remis à vide en quittant `called` (K31) |
 | `end_of_day_warned_at` | timestamptz | | Alerte de fin de journée envoyée (une seule fois) |
 | `end_of_day_choice` | `end_of_day_choice` | | Réponse du client |
 | `closing_decision` | `closing_decision` | | Décision du gérant après la fermeture |
@@ -313,7 +324,7 @@ Les tables `salon_devices` et `stylist_sessions` ne sont créées qu'au lot 2 (t
 | `actual_duration_minutes` | smallint | | Calculée à la fin |
 | `cancelled_at` | timestamptz | | |
 | `cancel_reason` | `cancel_reason` | | |
-| `removal_reason` | `removal_reason` | | Si retrait par le gérant |
+| `removal_reason` | `removal_reason` | | Motif choisi par le salon : retrait (`remove_ticket`), annulation ou refus d'un rendez-vous (`cancel_appointment`, `confirm_appointment` `reject`, E29) |
 | `removal_note` | text | ≤ 200 caractères | Précision facultative ; jamais copiée dans le journal ; effacée à l'anonymisation (K10) |
 | `no_show_at` | timestamptz | | |
 | `created_by_member_id` | uuid | FK → `salon_members(id)` | Walk-in ou rendez-vous saisi : membre qui inscrit |
@@ -326,6 +337,16 @@ Contraintes et index :
 - Pas deux rendez-vous qui se chevauchent chez un même coiffeur : contrôlé par le moteur (`appointment_overlap`), pas par une contrainte, car la durée réelle varie.
 - Un seul ticket `called` ou `in_service` par coiffeur : index unique partiel sur `assigned_member_id` où `status in ('called','in_service')`.
 - Cohérence des horodatages par statut (contrainte `check`) : `called` ⇒ `called_at` ; `in_service` ⇒ `started_at` ; `completed` ⇒ `completed_at` ; `cancelled` ⇒ `cancelled_at` et `cancel_reason` ; `no_show` ⇒ `no_show_at`.
+- Autres contraintes `check` (constat 23 de la revue, règles déjà décidées) :
+  - `status in ('called','in_service','completed')` ⇒ `assigned_member_id is not null` ;
+  - `status = 'in_service'` ⇒ `arrived_at is not null` (H7) ;
+  - `status = 'pending_confirmation'` ⇒ `appointment_source = 'client_check_in'` ;
+  - `appointment_source = 'client_check_in' and status in ('waiting','called','in_service','completed','no_show')` ⇒ `confirmed_at is not null` ;
+  - `(eta_response = 'late') = (declared_delay_minutes is not null)` (avec `eta_response` vide comptant comme faux) ;
+  - `reassignment_member_id`, `reassignment_requested_at` et `reassignment_proposed_start_at` tous vides ou tous renseignés ;
+  - `cancel_reason in ('removed_by_salon','appointment_rejected')` ⇒ `removal_reason is not null` (S-12, E29) ;
+  - `status <> 'called'` ⇒ `called_at`, `reminder_sent_at` et `release_due_at` vides (K31) ;
+  - `call_count >= 0`.
 - `postpone_count between 0 and 2`.
 - Index : `(salon_id, service_date, status)`, `(assigned_member_id, status)`, `(client_id, created_at desc)`, `(salon_id, service_date, scheduled_at)` où `kind = 'appointment'`.
 
@@ -341,8 +362,8 @@ Le **statut d'approche** affiché dans l'espace coiffeur (« arrivé », « en r
 | `type` | `ticket_event_type` | NN | |
 | `actor_type` | `actor_type` | NN | |
 | `actor_member_id` | uuid | FK → `salon_members(id)` | |
-| `actor_profile_id` | uuid | FK → `profiles(id)` | |
-| `reason_code` | text | | Motif structuré (valeur d'un enum de motif) ; pas de texte libre dans le journal (K10) |
+| `actor_profile_id` | uuid | sans clé étrangère (K29) | Profil qui a agi ; reste en place après la suppression du compte, sans rien qui le relie à une personne |
+| `reason_code` | text | `check (reason_code ~ '^[a-z_]+$')` | Motif structuré (valeur d'un enum de motif, par exemple `removal_reason`, `reassignment_choice` pour `reassignment_resolved`) ; pas de texte libre dans le journal (K10) |
 | `before` | jsonb | | Champs modifiés, avant |
 | `after` | jsonb | | Champs modifiés, après |
 | `command_id` | uuid | | Commande d'origine |
@@ -352,21 +373,23 @@ Jamais de téléphone, de jeton, de prénom ni de texte libre dans `before` / `a
 
 ### 4.15 `salon_events` — journal d'audit du salon (ajout seul)
 
-Mêmes colonnes que `ticket_events`, sans `ticket_id`, avec `type salon_event_type` et `subject_member_id uuid` (membre concerné, par exemple le coiffeur déclaré absent). Même déclencheur d'ajout seul.
+Mêmes colonnes que `ticket_events`, avec `type salon_event_type`, `subject_member_id uuid` (membre concerné, par exemple le coiffeur déclaré absent) et `ticket_id uuid` **facultatif** (FK → `tickets(id)`), renseigné pour `admin_viewed_client_data` (ticket consulté). Même déclencheur d'ajout seul, même contrainte sur `reason_code`, `actor_profile_id` sans clé étrangère (K29).
+
+**`settings_updated`** : écrit par le déclencheur `log_settings_update()` (`after insert or update or delete`) sur les tables de configuration écrites directement par le gérant ou le coiffeur (`salons`, `salon_members`, `member_specialties`, `opening_hours`, `salon_closures`, `services`). Acteur : `private.member_id()`. `after` ne contient que `{ "table": …, "columns": [noms des colonnes modifiées] }`, sans aucune valeur, pour ne jamais copier de texte libre (message d'accueil, motif de fermeture, nom) dans le journal (K10). Les écritures faites par le rôle service (Edge Functions) ont leurs propres événements et ne passent pas par ce déclencheur.
 
 ### 4.16 `notifications` — outbox (ADR-008)
 
 | Colonne | Type | Contraintes | Description |
 | --- | --- | --- | --- |
 | `id` | uuid | PK | |
-| `ticket_id` | uuid | FK → `tickets(id)` | Vide pour les e-mails gérant |
+| `ticket_id` | uuid | FK → `tickets(id)` | Vide pour les e-mails au personnel (invitation, décision, récapitulatif) |
 | `salon_id` | uuid | NN, FK | |
-| `recipient_profile_id` | uuid | FK → `profiles(id)` | |
-| `recipient_member_id` | uuid | FK → `salon_members(id)` | E-mails d'invitation, récapitulatif |
+| `recipient_profile_id` | uuid | FK → `profiles(id)` on delete set null (K29) | |
+| `recipient_member_id` | uuid | FK → `salon_members(id)` | Destinataire membre du salon : e-mails d'invitation, de décision et récapitulatif, push `appointment_checked_in` (K21). Renseigné = notification au personnel, hors consentement et hors plafond SMS |
 | `channel` | `notification_channel` | NN | |
 | `template` | `notification_template` | NN | |
 | `params` | jsonb | NN, défaut `{}` | Variables du modèle (prénom, heure, code…), **sans téléphone** |
-| `dedupe_key` | text | NN | Ex. `your_turn:1` (numéro d'appel, pour qu'un second appel après « Prendre le suivant » reparte), `estimate_changed:v7`, `arrival_reminder:1` (numéro d'appel), `appointment_delay:2` (palier de 10 min) (K23) |
+| `dedupe_key` | text | NN | Ex. `your_turn:<call_count>` et `arrival_reminder:<call_count>` (numéro d'appel, pour qu'un second appel après « Prendre le suivant » reparte, K23, K31), `estimate_changed:v7`, `appointment_delay:2` (palier de 10 min), `appointment_checked_in:<member_id>` et `appointment_checked_in:<member_id>:reminder` (un par destinataire, E19), `daily_summary:<date>` (K37). Clés des autres e-mails sans ticket 🟡 (proposition : `member_invitation:<member_id>:<n° d'envoi>`, `salon_decision:<verification_id>`) |
 | `status` | `notification_status` | NN, défaut `pending` | |
 | `skip_reason` | text | | `sms_cap_reached`, `push_active`, `no_consent`… |
 | `provider_message_id` | text | | |
@@ -377,7 +400,14 @@ Mêmes colonnes que `ticket_events`, sans `ticket_id`, avec `type salon_event_ty
 | `sent_at` | timestamptz | | |
 | `created_at` | timestamptz | NN | |
 
-`unique (ticket_id, channel, dedupe_key)` : une même notification n'est jamais doublée. **Plafond SMS** : avant envoi, `send-notifications` compte les SMS `sent` du ticket hors `cancelled_by_salon` et `your_turn` ; à 3, la ligne passe en `skipped` (`sms_cap_reached`) ; `your_turn` et `cancelled_by_salon` partent toujours (E1). **Consentement** : sans `tickets.notifications_consent_at`, seuls `ticket_created` et `your_turn` partent, les autres passent en `skipped` (`no_consent`, K11).
+**Déduplication** : `unique (ticket_id, channel, dedupe_key)` pour les lignes avec ticket ; index unique partiel `(salon_id, channel, dedupe_key)` où `ticket_id is null` pour les e-mails sans ticket (K37). Une même notification n'est jamais doublée.
+
+**Réservation** (K37) : `send-notifications` peut tourner plusieurs fois en même temps (cron et appel après chaque commande). Il réserve ses lignes `pending` dont `scheduled_at` est passé avec `select … for update skip locked`, et vérifie le plafond SMS sous un verrou transactionnel par ticket (`pg_advisory_xact_lock` sur l'identifiant du ticket).
+
+**Consentement et plafond : notifications des clients seulement** (`recipient_member_id` vide, constat 7).
+- **Plafond SMS** : avant envoi, `send-notifications` compte les SMS `sent` du ticket hors `your_turn`, `cancelled_by_salon` et `no_show_warning` ; à 3, la ligne passe en `skipped` (`sms_cap_reached`) ; ces trois modèles partent toujours (E1, E17, E28).
+- **Consentement** : sans `tickets.notifications_consent_at`, les messages d'anticipation (`turn_approaching`, `get_ready`, `estimate_changed`, `end_of_day_risk`) passent en `skipped` (`no_consent`) ; tous les autres modèles partent (E17, remplace la règle K11).
+- **Avertissement d'absences** : au plus un `no_show_warning` par numéro et par période de 30 jours, contrôlé par `private.no_show_warnings` (E28).
 
 ### 4.17 `push_subscriptions`
 
@@ -385,7 +415,7 @@ Mêmes colonnes que `ticket_events`, sans `ticket_id`, avec `type salon_event_ty
 | --- | --- | --- | --- |
 | `id` | uuid | PK | |
 | `profile_id` | uuid | FK → `profiles(id)` on delete cascade | Client connecté |
-| `ticket_id` | uuid | FK → `tickets(id)` on delete cascade | Abonnement lié à un ticket ouvert par lien SMS |
+| `ticket_id` | uuid | FK → `tickets(id)` on delete cascade | Abonnement lié à un ticket ouvert par lien SMS ; supprimé à la clôture du ticket (K40 ; 🟡 moment exact : après l'envoi des dernières notifications du ticket, comme `released_no_show` ou `cancelled_by_salon`, voir §10) |
 | `member_id` | uuid | FK → `salon_members(id)` on delete cascade | Gérant ou coiffeur, pour `appointment_checked_in` (K21) ; supprimé à la révocation des sessions |
 | `endpoint` | text | U, NN | |
 | `p256dh` | text | NN | |
@@ -395,7 +425,7 @@ Mêmes colonnes que `ticket_events`, sans `ticket_id`, avec `type salon_event_ty
 | `last_success_at` | timestamptz | | |
 | `expired_at` | timestamptz | | Le service de push a répondu 404 ou 410 → ligne supprimée par la tâche quotidienne |
 
-Contrainte : exactement un de `profile_id`, `ticket_id`, `member_id` renseigné.
+Contrainte : exactement un de `profile_id`, `ticket_id`, `member_id` renseigné. Aucune écriture directe : création et suppression seulement par l'Edge Function `push-subscribe` (rôle service) ; un client lit les siennes (K33).
 
 ### 4.18 `salon_verifications` — dossiers de validation
 
@@ -420,11 +450,12 @@ Aucune n'est exposée par l'API ; seules les Edge Functions (rôle service) et l
 
 | Table | Colonnes | Rôle |
 | --- | --- | --- |
-| `ticket_contacts` | `ticket_id uuid PK FK`, `phone_e164 text NN`, `phone_hash bytea NN` (HMAC-SHA256 avec `PHONE_HASH_SECRET`), `is_active boolean NN`, `closed_at timestamptz` | Numéro du client pour les SMS de ce ticket, y compris walk-in (ADR-011). Index unique partiel sur `phone_hash` où `is_active` : un ticket actif par numéro. Ligne supprimée 24 h après la clôture du ticket |
+| `ticket_contacts` | `ticket_id uuid PK FK`, `phone_e164 text NN`, `phone_hash bytea NN` (HMAC-SHA256 avec `PHONE_HASH_SECRET`), `is_active boolean NN`, `is_pending_confirmation boolean NN défaut false`, `closed_at timestamptz` | Une ligne pour **chaque ticket dont le numéro est connu** : client connecté (numéro du compte Auth, recopié par `join_queue` et `check_in_appointment`), walk-in, rendez-vous saisi avec téléphone (ADR-011, K28). `is_pending_confirmation` suit le statut `pending_confirmation` du ticket (remis à faux à la confirmation). Index unique partiel sur `phone_hash` où `is_active and not is_pending_confirmation` : un ticket actif par numéro, sans bloquer le signalement d'un rendez-vous déjà saisi (K14, K28). La fusion clôt le contact du ticket signalé annulé (`is_active = false`, `closed_at`) et écrit son numéro sur le contact du ticket saisi, qui survit. Ligne supprimée 24 h après la clôture du ticket |
 | `member_invitations` | `member_id uuid PK FK`, `token_hash bytea U NN`, `expires_at timestamptz NN` (72 h), `used_at timestamptz` | Lien d'invitation à usage unique |
-| `processed_commands` | `command_id uuid PK`, `command text NN`, `salon_id uuid`, `response jsonb NN`, `created_at timestamptz NN` | Idempotence (ADR-004), purge à 7 jours |
+| `processed_commands` | `command_id uuid PK`, `command text NN`, `salon_id uuid`, `response jsonb NN`, `created_at timestamptz NN` | Idempotence (ADR-004), purge à 7 jours (gardée par K40) |
 | `rate_limits` | `bucket text`, `key_hash bytea`, `window_start timestamptz`, `count integer NN` ; PK (`bucket`, `key_hash`, `window_start`) | Plafonds : codes SMS par numéro et par IP, PIN, création de tickets |
-| `no_show_records` | `phone_hash bytea NN`, `ticket_id uuid NN`, `occurred_at timestamptz NN` ; PK (`phone_hash`, `ticket_id`) | Une ligne par absence, tous salons (K8) ; à la 5e en 30 jours glissants, notification `no_show_warning` ; lignes de plus de 30 jours purgées chaque nuit. Le numéro d'un client connecté est haché avec le même secret que celui des walk-ins |
+| `no_show_records` | `phone_hash bytea NN`, `ticket_id uuid NN`, `occurred_at timestamptz NN` ; PK (`phone_hash`, `ticket_id`) | Une ligne par absence, tous salons (K8) ; à la 5e en 30 jours glissants, notification `no_show_warning` si aucun avertissement n'est parti pour ce numéro dans les 30 derniers jours (E28) ; lignes de plus de 30 jours purgées chaque nuit. L'empreinte vient de `ticket_contacts` (K28), même secret pour tous. Jamais lue par un salon : aucun compteur d'absences n'est montré au salon (E28) |
+| `no_show_warnings` | `phone_hash bytea PK`, `warned_at timestamptz NN` | Dernier `no_show_warning` envoyé à ce numéro ; un nouvel avertissement n'est créé que si `warned_at` a plus de 30 jours (E28) ; lignes de plus de 30 jours purgées chaque nuit |
 
 ---
 
@@ -432,10 +463,10 @@ Aucune n'est exposée par l'API ; seules les Edge Functions (rôle service) et l
 
 | Vue | Contenu | Accès |
 | --- | --- | --- |
-| `public_salons` | Salons `published` : `id`, `slug`, `name`, `phone`, adresse, `location`, `queue_status`, `welcome_message`, `photo_paths`, `waiting_count`, `current_wait_minutes`, `estimate_updated_at`, `next_free_slots` | `anon`, `authenticated` |
+| `public_salons` | Salons `published` : `id`, `slug`, `name`, `phone`, adresse, `location`, `queue_status`, `is_full` (K36), `welcome_message`, `photo_paths`, `waiting_count`, `current_wait_minutes`, `estimate_updated_at`, `next_free_slots` | `anon`, `authenticated` |
 | `public_stylists` | Membres actifs qui coiffent aujourd'hui, des salons publiés : `id`, `salon_id`, `first_name`, `photo_path`, spécialités, statut de présence simplifié (`available`, `busy`, `away`) | `anon`, `authenticated` |
 
-Sans `siret`, `qr_token`, e-mails ni noms de famille. `services`, `opening_hours`, `salon_closures` et `specialties` sont lisibles publiquement pour les salons publiés (politiques RLS).
+Les deux vues sont créées avec `security_invoker = false` : elles s'exécutent avec les droits de leur propriétaire, puisque `anon` n'a aucun droit sur `salons`, `salon_members` ni `stylist_presence` ; elles ne renvoient que les colonnes listées et les salons publiés (K32). Sans `siret`, `qr_token`, e-mails ni noms de famille. `services`, `opening_hours`, `salon_closures` et `specialties` sont lisibles publiquement pour les salons publiés (politiques RLS).
 
 ---
 
@@ -456,22 +487,24 @@ L = lecture, É = écriture directe (insert, update, delete). « Serveur » = se
 
 | Table | Public (`anon`) | Client | Gérant (son salon) | Coiffeur (son salon) | Admin |
 | --- | --- | --- | --- | --- | --- |
-| `profiles` | — | L/É sa ligne (sauf `is_guest`) | L prénoms des clients de ses tickets via RPC seulement | — | L (journalisé) |
-| `salons` | via `public_salons` | via `public_salons` | L ; É champs de configuration (nom, téléphone, adresse, photos, message, délais) ; `status`, `queue_status`, compteurs : serveur | L | L ; `status` : serveur |
-| `salon_members` | via `public_stylists` | via `public_stylists` | L ; É champs de profil (nom, photo, spécialités) ; invitation, statut et `is_hairdressing` : serveur | L (prénom, photo, rôle) ; É sa photo | L |
+| `profiles` | — | L sa ligne ; É `first_name`, `last_name` de sa ligne (`grant update`, K32) ; création, `is_guest`, `email`, consentements : serveur (K30, K34) | L prénoms des clients de ses tickets via RPC seulement | — | L (journalisé) |
+| `salons` | via `public_salons` | via `public_salons` | L ; É champs de configuration seulement : `grant update (name, phone, address_line, postal_code, city, city_code, location, welcome_message, photo_paths)` (K32) ; les délais (`reminder_after_minutes`, `auto_release_after_minutes`, `end_of_day_warning_minutes`, `closing_grace_minutes`) sont fixes au pilote (§4.3) et rejoindront cette liste quand ils deviendront réglables ; `status`, `queue_status`, `is_full`, compteurs, `qr_token`, `published_at` : serveur | L | L ; `status` : serveur |
+| `salon_members` | via `public_stylists` | via `public_stylists` | L ; É `first_name`, `last_name`, `photo_path` (droits par colonne, K32) et spécialités ; invitation, statut et `is_hairdressing` : serveur | L (prénom, photo, rôle — 🟡 moyen de limiter les colonnes à fixer, voir la note sous la matrice) ; É sa photo seulement (déclencheur `restrict_member_self_update()`, K32) | L |
 | `member_specialties` | L (salons publiés) | L | L/É | L | L |
 | `specialties` | L | L | L | L | L/É |
 | `opening_hours`, `salon_closures`, `services` | L (salons publiés) | L | L/É | L | L |
 | `stylist_presence` | — | — | L ; serveur | L ; serveur | L |
-| `tickets` | — | L ses tickets ; serveur | L (sans `tracking_token` ni `tracking_short_code`, via RPC) ; serveur | L via RPC `get_stylist_queue` (prénom, prestation, statut d'approche, heure du rendez-vous) ; serveur | L |
+| `tickets` | — | L ses tickets, sans `tracking_token` ni `tracking_short_code` ; serveur | — : lecture par RPC seulement (`get_salon_board`, `get_day_summary`), jamais la table (K32) ; serveur | — : lecture par RPC seulement (`get_stylist_queue`, `get_day_summary`), jamais la table (K32) ; serveur | L |
 | `ticket_events`, `salon_events` | — | L événements de ses tickets (types affichables) | L son salon | L ses actions | L |
 | `notifications` | — | — | — | — | L |
-| `push_subscriptions` | — | L/É les siennes | — | — | — |
-| `salon_verifications` | — | — | L son dossier (sans `siret_check_payload` brut) | — | L ; serveur |
+| `push_subscriptions` | — | L les siennes ; écriture : serveur (`push-subscribe`, K33) | — | — | — |
+| `salon_verifications` | — | — | L son dossier (sans `siret_check_payload` brut — 🟡 moyen à fixer, voir la note) | — | L ; serveur |
 | `platform_admins` | — | — | — | — | L |
 
 Règles transverses :
-- `tracking_token` et `tracking_short_code` ne sont **jamais** renvoyés par une lecture du gérant ou d'un coiffeur (exclus des RPC et des politiques par colonnes).
+- `tracking_token` et `tracking_short_code` ne sont **jamais** renvoyés par une lecture du gérant ou d'un coiffeur : le personnel ne lit `tickets` que par RPC, qui n'en renvoient pas, et `revoke select` de ces deux colonnes pour `authenticated` (en pratique : droit `select` sur `tickets` accordé colonne par colonne, sans elles) (K32).
+- Clients et personnel partagent le rôle `authenticated` : toute restriction par colonne passe par les droits SQL (`grant` par colonne), une RPC ou un déclencheur, jamais par le RLS seul (K32).
+- 🟡 Deux restrictions par colonne n'ont pas encore de moyen fixé par K32 : la lecture des collègues par un coiffeur limitée au prénom, à la photo et au rôle (`salon_members`), et le dossier du gérant sans `siret_check_payload` brut (`salon_verifications`, que l'admin, lui aussi `authenticated`, lit en entier). Proposition : une RPC ou une vue en droits du propriétaire pour chacun. Décision : Koni.
 - Le téléphone saisi pour un rendez-vous ou un walk-in va directement dans `private.ticket_contacts` et n'est jamais relu par le salon.
 - Les tests pgTAP vérifient, pour chaque table, qu'un gérant du salon A ne lit ni n'écrit rien du salon B, qu'un coiffeur désactivé ne lit plus rien, et qu'un client ne lit que ses tickets.
 
@@ -483,18 +516,20 @@ Règles transverses :
 
 | Fonction | Paramètres | Renvoie | Sécurité |
 | --- | --- | --- | --- |
-| `search_salons` | `lat`, `lng`, `radius_m` (défaut 5000, max 20000), `query?` | Salons publiés triés par distance, avec attente et `next_free_slots` | `security invoker` sur `public_salons` |
-| `get_salon_public` | `slug` | Salon, prestations, horaires, coiffeurs | `security invoker` |
+| `search_salons` | `lat`, `lng`, `radius_m` (défaut 5000, max 20000), `query?` | Salons publiés triés par distance, avec attente, `is_full` et `next_free_slots` | `security definer`, `search_path = ''`, limitée aux salons publiés (K32) |
+| `get_salon_public` | `slug` | Salon, prestations, horaires, coiffeurs ; attente « premier disponible » et nombre de clients en attente (E31) | `security definer`, `search_path = ''`, limitée aux salons publiés (K32) |
 | `resolve_qr_token` | `qr_token` | `slug` du salon publié | `security definer` |
 | `my_active_ticket` | — | Ticket actif du client + `salon` + `assigned_stylist_first_name` | `security invoker` |
-| `get_stylist_queue` | — | Pour le coiffeur connecté : ticket en cours, ticket appelé et prochains clients éligibles (qui le demandent ou sans préférence), avec statut d'approche | `security definer`, vérifie `member_id()` |
-| `get_salon_board` | `salon_id` | Coiffeurs avec présence, tickets actifs (dont rendez-vous à confirmer), indicateurs | `security definer`, vérifie `managed_salon_id()` (gérant seulement, K9) |
-| `preview_presence_change` | `member_id`, `status`, `until?` | Clients touchés avec leur heure actuelle et la nouvelle, sans rien écrire (K2) | `security definer`, vérifie `managed_salon_id()` |
+| `get_stylist_queue` | — | Pour le coiffeur connecté : ticket en cours, ticket appelé, rendez-vous à confirmer qui le visent, « Ensuite » = tickets dont il est le coiffeur pressenti (`estimated_member_id`) ou qui le demandent, avec statut d'approche, et ses rendez-vous du jour (F-S10, C-11) ; jamais de jeton ni de numéro | `security definer`, vérifie `member_id()` |
+| `get_salon_board` | `salon_id` | Coiffeurs avec présence, tickets actifs (dont rendez-vous à confirmer), dernier résultat de réaffectation de chaque ticket (`reassignment_resolved`, E27), indicateurs ; aucun compteur d'absences d'un client (E28) ; jamais de jeton ni de numéro | `security definer`, vérifie `managed_salon_id()` (gérant seulement, K9) |
+| `preview_presence_change` | `member_id`, `status`, `break_type?`, `until?`, `shift_end_at?` | Clients touchés avec leur heure actuelle et la nouvelle, sans rien écrire (K2) | `security definer`, vérifie `managed_salon_id()` |
 | `get_audit_log` | `salon_id?`, `from` (défaut : il y a 7 jours), `to`, `type?`, `member_id?` (acteur ou membre concerné), `cursor?` | Événements paginés, avec le prénom du membre qui a agi et le code du ticket, jamais le prénom du client (K25) | Gérant (son salon) ou admin |
 | `get_day_summary` | `salon_id`, `service_date`, `member_id?` | Clients servis, attente annoncée et réelle, absences, annulations | Gérant ; coiffeur connecté pour lui-même |
 
 ### 8.2 Écritures
-Toutes les écritures de file passent par l'Edge Function `queue-command` (TRD §6.2), qui exécute dans **une transaction** : `select pg_advisory_xact_lock(hashtextextended(salon_id::text, 0))` → contrôle d'idempotence (`private.processed_commands`) → lecture de l'état de la file du jour → application du moteur → écritures `tickets`, `stylist_presence`, `salons` (compteurs, `queue_version`), `ticket_events` / `salon_events`, `notifications` → enregistrement de la réponse → validation, puis diffusion temps réel.
+Toutes les écritures de file passent par le module commun `supabase/functions/_shared/queue-transaction` (TRD ADR-003, K38), utilisé par `queue-command` (TRD §6.2), `queue-tick`, `deactivate-member` et `account-delete`. Il exécute dans **une transaction** : `select pg_advisory_xact_lock(hashtextextended(salon_id::text, 0))` → contrôle d'idempotence (`private.processed_commands`, pour les commandes portant un `command_id`) → lecture de l'état de la file du jour → application du moteur → écritures `tickets`, `private.ticket_contacts` (K28), `profiles` au premier passage (K30), `stylist_presence`, `salons` (compteurs, `is_full`, `next_free_slots`, `queue_version`), `ticket_events` / `salon_events`, `notifications` → enregistrement de la réponse → validation, puis diffusion temps réel.
+
+`publish_salon` et `set_notifications_consent` passent aussi par `queue-command` (TRD §6.2, K34, K35).
 
 ### 8.3 Storage
 
@@ -525,12 +560,30 @@ Aucune table n'est ajoutée à la publication `supabase_realtime` (pas de *Postg
 
 | Tâche | Fréquence | Action |
 | --- | --- | --- |
-| `queue-tick` | Chaque minute | Appelle l'Edge Function : T-30, T-10, rappel à 5 min, libération à `release_due_at`, alertes de retard sur rendez-vous, fin des demandes de réaffectation sans réponse, alertes de fin de journée (fenêtre `end_of_day_warning_minutes` avant la dernière fermeture), ouverture et fermeture selon les horaires, annulation des clients restants après `closing_grace_minutes` sans décision du gérant, recalcul des estimations et de `next_free_slots` |
-| `send-notifications` | Chaque minute | Rattrape l'outbox (`pending` dont `scheduled_at` est passé, essais ≤ 3) |
-| `salon-daily-summary` | Toutes les 15 min | Envoie le récapitulatif des salons fermés depuis le dernier passage |
-| `daily-maintenance` | 01:30 UTC | Remise à zéro de `served_today_count` ; suppression des brouillons expirés, des `processed_commands` de plus de 7 jours, des `rate_limits` de plus de 24 h, des `ticket_contacts` clôturés depuis plus de 24 h, des `no_show_records` de plus de 30 jours, des abonnements push expirés ; anonymisation des tickets de plus de 12 mois (durée à confirmer avec un conseil RGPD) |
+| `queue-tick` | Chaque minute | Appelle l'Edge Function, qui écrit par le module `queue-transaction` (K38) : T-30, T-10, rappel à 5 min, libération à `release_due_at`, alertes de retard sur rendez-vous, fin des demandes de réaffectation sans réponse, fin des choix de coiffeur sans réponse (E7), rappel d'un rendez-vous signalé non confirmé (E19), alertes de fin de journée (fenêtre `end_of_day_warning_minutes` avant la dernière fermeture), ouverture et fermeture selon les horaires, annulation des clients restants après `closing_grace_minutes` sans décision du gérant, annulation des rendez-vous encore à confirmer à la dernière fermeture (E19), annulation à minuit (heure de Paris) des tickets encore actifs de la journée écoulée (E24), recalcul des estimations, de `is_full` et de `next_free_slots` |
+| `send-notifications` | Chaque minute | Rattrape l'outbox (`pending` dont `scheduled_at` est passé, essais ≤ 3), lignes réservées par `select … for update skip locked` (K37) |
+| `salon-daily-summary` | Toutes les 15 min | Envoie le récapitulatif des salons fermés depuis le dernier passage ; clé `daily_summary:<date>` (K37) |
+| `daily-maintenance` | 01:30 UTC | Remise à zéro de `served_today_count` ; suppression des brouillons expirés, des `processed_commands` de plus de 7 jours, des `notifications` `sent` ou `skipped` de plus de 30 jours (K40), des `rate_limits` de plus de 24 h, des `ticket_contacts` clôturés depuis plus de 24 h, des `no_show_records` et `no_show_warnings` de plus de 30 jours, des abonnements push expirés ; anonymisation des tickets de plus de 12 mois (durée à confirmer avec un conseil RGPD). Durées de K40 à confirmer par l'avis RGPD |
 
-L'anonymisation vide `display_name`, `client_id` et `removal_note`, en gardant les horodatages et les durées pour les statistiques. Le journal reste intact : il ne contient ni prénom ni texte libre (K10).
+**Idempotence des déclencheurs de `queue-tick`** : chaque déclencheur ne s'applique qu'une fois grâce à une colonne, et la tolérance de ±60 s (K7) ne peut pas le rejouer.
+
+| Déclencheur | Condition | Colonne qui l'empêche de repartir |
+| --- | --- | --- |
+| T-30, T-10 | `estimated_start_at` à 30 ou 10 min | `turn_approaching_sent_at`, `get_ready_sent_at` |
+| Rappel à 5 min | `called_at` + 5 min | `reminder_sent_at` (remis à vide en quittant `called`, K31) |
+| Libération | `release_due_at` | Statut (`no_show`) |
+| Retard sur rendez-vous | Palier de 10 min dépassé | `appointment_delay_warned_steps` |
+| Réaffectation sans réponse | `reassignment_requested_at` + 10 min | Colonnes de réaffectation vidées (`expired`) |
+| Choix de coiffeur sans réponse (E7) | `stylist_change_pending_since` + 10 min | `stylist_change_pending_since` vidé |
+| Rappel d'un rendez-vous à confirmer (E19) | `created_at` + 10 min, statut `pending_confirmation` | `confirmation_reminder_sent_at` |
+| Alerte de fin de journée | Fenêtre avant la dernière fermeture | `end_of_day_warned_at` |
+| Clients restants sans décision | Dernière fermeture + `closing_grace_minutes` | Statut (`cancelled`, `end_of_day`) ou `closing_decision` |
+| Rendez-vous à confirmer à la fermeture (E19) | Dernière fermeture de la journée | Statut (`cancelled`, `end_of_day`) |
+| Fin de journée de service (E24) | Minuit, heure de Paris, pour `service_date` passée | Statut (`cancelled`, `end_of_day`) |
+
+L'anonymisation remplace `display_name` par « Client » (la colonne est non nulle) et vide `client_id` et `removal_note`, en gardant les horodatages et les durées pour les statistiques (K29). Le journal reste intact : il ne contient ni prénom ni texte libre (K10), et `actor_profile_id` n'y a pas de clé étrangère (K29). La suppression d'un compte (`account-delete`) met `tickets.client_id` et `notifications.recipient_profile_id` à `null` par `on delete set null` (K29).
+
+Les abonnements push liés à un ticket sont supprimés à la clôture du ticket (K40). 🟡 Moment exact à confirmer par Koni : la clôture produit souvent une dernière notification (`released_no_show`, `cancelled_by_salon`) qui a besoin de l'abonnement ; proposition : suppression par `send-notifications` quand le ticket est clos et n'a plus de ligne `pending`.
 
 ---
 
@@ -547,12 +600,12 @@ L'anonymisation vide `display_name`, `client_id` et `removal_note`, en gardant l
 
 1. Extensions : `postgis`, `pg_cron`, `pg_net`, `pgcrypto`, `citext`.
 2. Schéma `private`, énumérations (§3), fonction `set_updated_at()`, fonction `prevent_update_delete()`.
-3. `profiles`, `platform_admins`, déclencheur de création de profil à l'inscription Auth.
+3. `profiles`, `platform_admins` ; pas de déclencheur à l'inscription Auth : le profil est créé par `join_queue`, `check_in_appointment`, `salon-signup` ou `activate-invitation` (K30).
 4. `salons`, `specialties`, `salon_members`, `member_specialties`, `opening_hours`, `salon_closures`, `services`.
 5. `stylist_presence`.
 6. `tickets`, `ticket_events`, `salon_events`, `notifications`, `push_subscriptions`, `salon_verifications`.
 7. Tables `private` (§5).
-8. Fonctions d'aide (§7.1), vues (§6), politiques RLS (§7.2), RPC (§8.1).
+8. Fonctions d'aide (§7.1), vues (§6), politiques RLS et droits par colonne (§7.2, K32), déclencheurs `restrict_member_self_update()` et `log_settings_update()`, RPC (§8.1).
 9. Buckets Storage et leurs politiques.
 10. Politiques Realtime Authorization (§9).
 11. Tâches pg_cron (§10).

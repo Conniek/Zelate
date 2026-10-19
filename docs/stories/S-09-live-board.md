@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : H6 (le numéro du client n'est jamais affiché au salon) ; H1 et PRD §5.2 Distribution (coiffeur demandé ou pressenti) ; H10 et PRD §5.2 règles 6 à 8 (rendez-vous) ; PRD §5.2 transition 1b (rendez-vous « à confirmer » visible mais hors calcul) ; le gérant peut clore une prestation oubliée (PRD §5.1, E15) ; isolation par salon (PRD §5.1) ; propagation en moins de 2 s pour 95 % des événements, repli toutes les 10 s côté dashboard (PRD §6)
 - Parcours : F-M6 ; F-M13 (rendez-vous du jour, stories S-18 et S-19) ; événements APP_FLOW §7 (colonne « Dashboard ») ; états communs APP_FLOW §8
-- Commandes et données : RPC `get_salon_board` (gérant seulement, K9) · `complete_service` (panneau ticket, E15) · canal `salon:{salon_id}` (`queue_updated`, `queue_status_changed`, `presence_changed`, `appointment_pending`) · tables lues `tickets` (dont `kind`, `scheduled_at`, `status` = `pending_confirmation`, `reassignment_requested_at`), `stylist_presence`, `salon_members`, `salons` (`waiting_count`, `queue_status`)
+- Commandes et données : RPC `get_salon_board` (gérant seulement, K9 ; le personnel ne lit `tickets` que par RPC, K32) · `complete_service` (panneau ticket, E15) · canal `salon:{salon_id}` (`queue_updated`, `queue_status_changed`, `presence_changed`, `appointment_pending`) · données lues `tickets` (dont `kind`, `scheduled_at`, `status` = `pending_confirmation`, `reassignment_requested_at`), `ticket_events` (`reassignment_resolved`, dernier résultat de réaffectation, E27), `stylist_presence`, `salon_members`, `salons` (`waiting_count`, `queue_status`, `is_full`)
 
 ## Scénarios
 
@@ -30,8 +30,10 @@
 - **Étant donné** un rendez-vous de 14:00 saisi pour Léa
 - **Quand** le gérant regarde la liste globale
 - **Alors** le rendez-vous apparaît avec son heure, 14:00 (F-M6)
-- **Quand** l'heure de passage de ce rendez-vous dépasse 14:10
-- **Alors** le retard est affiché sur le rendez-vous (APP_FLOW §7 « Retard sur un rendez-vous »)
+- **Quand** l'heure de passage de ce rendez-vous atteint 14:05
+- **Alors** aucun retard n'est affiché (moins de 10 min, E30)
+- **Quand** l'heure de passage de ce rendez-vous atteint 14:10
+- **Alors** le retard du salon sur l'heure du rendez-vous est affiché (« 10 min de retard ») (PRD §5.2, E30 ; APP_FLOW §7 « Retard sur un rendez-vous »)
 
 ### 3 ter. Bandeau « Rendez-vous à confirmer »
 - **Étant donné** le dashboard ouvert
@@ -57,7 +59,8 @@
 - **Étant donné** des tickets créés depuis l'app, par le QR et à l'accueil
 - **Quand** le gérant consulte l'en-tête, les colonnes, la liste globale et le panneau détail d'un ticket
 - **Alors** aucun numéro de téléphone n'est affiché
-- **Alors** la réponse de `get_salon_board` ne contient ni numéro de téléphone ni `tracking_token`
+- **Alors** la réponse de `get_salon_board` ne contient ni numéro de téléphone, ni `tracking_token`, ni `tracking_short_code` (K32)
+- **Alors** une lecture directe de la table `tickets` depuis le compte du gérant ne renvoie rien : le personnel ne lit les tickets que par RPC (K32)
 
 ### 7. Isolation par salon
 - **Étant donné** le gérant du salon A
@@ -80,6 +83,9 @@
 - **Alors** le ticket est marqué « en attente de réponse » (F-M10, E9)
 - **Quand** 10 min passent sans réponse du client
 - **Alors** la demande est effacée (`queue-tick`, BACKEND_SCHEMA `reassignment_requested_at`) et le ticket garde son coiffeur et son heure
+- **Alors** le gérant voit le résultat « sans réponse » sur ce ticket (PRD §5.1, E27 ; `get_salon_board`, `reassignment_resolved` = `expired`)
+- **Quand** un autre client refuse la demande
+- **Alors** le gérant voit le résultat « refusé » sur son ticket (E27 ; `refused`)
 
 ### 9. Client à risque de fin de journée
 - **Étant donné** une file à moins de 2 h de la fermeture
@@ -89,7 +95,13 @@
 ### 10. Client appelé qui n'est pas venu
 - **Étant donné** un client appelé qui n'est pas arrivé dans les 10 min
 - **Quand** sa place est libérée automatiquement
-- **Alors** son ticket quitte la liste des tickets actifs du dashboard
+- **Alors** son ticket est marqué « absent » et quitte la liste des tickets actifs du dashboard (APP_FLOW §7)
+
+### 10 bis. Aucun compteur d'absences d'un client (confidentialité)
+- **Étant donné** un client qui compte 5 absences en 30 jours, dans ce salon et dans d'autres
+- **Quand** le gérant consulte son ticket, la liste globale ou le panneau détail
+- **Alors** aucun compteur ni avertissement d'absences de ce client n'est affiché (PRD §5.1, E28)
+- **Alors** la réponse de `get_salon_board` ne contient aucun compteur d'absences du client (BACKEND_SCHEMA §8.1)
 
 ### 11. Accès aux actions depuis la vue
 - **Étant donné** le dashboard ouvert
@@ -121,26 +133,29 @@
 | --- | --- | --- |
 | `pro-manager.board.header.waiting_count` | « {count, plural, =0 {Aucun client en attente} one {# client en attente} other {# clients en attente}} » | Pluriel ICU |
 | `pro-manager.board.header.average_wait` | « Attente moyenne ~{minutes} min » | Durée en minutes |
-| `pro-manager.board.header.synced` | « synchronisé » | Libellé indicatif (APP_FLOW F-M6) |
-| `pro-manager.board.ticket.awaiting_client_answer` | « en attente de réponse » | APP_FLOW §7 ; partagée avec S-13 |
-| `pro-manager.board.pending_appointments.banner` | « Rendez-vous à confirmer » | Libellé indicatif (APP_FLOW F-M6) |
+| `pro-manager.board.header.synced` | « Synchronisé » | Libellé indicatif (APP_FLOW F-M6) |
+| `pro-manager.board.ticket.awaiting_client_answer` | « En attente de réponse » | APP_FLOW §7 ; partagée avec S-13 |
+| Résultat de réaffectation « refusé » / « sans réponse » | _À rédiger_ (aucune clé dans le dictionnaire) | Libellés du PRD §5.1 (E27) ; partagée avec S-13 |
+| `pro-manager.board.pending_appointments.banner` | « {count, plural, one {# rendez-vous à confirmer} other {# rendez-vous à confirmer}} » | Pluriel ICU |
 | `pro-manager.board.appointments` | « Rendez-vous » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.ticket.appointment_time` | « RDV {time} » | Heure du rendez-vous, format fr-FR |
-| `pro-manager.board.ticket.appointment_delay` | « {minutes} min de retard » | Retard en minutes |
+| `pro-manager.board.ticket.appointment_delay` | « {minutes} min de retard » | Retard du salon sur l'heure du rendez-vous, affiché dès 10 min (E30) |
 | `pro-manager.ticket_panel.complete` | « Terminer la prestation » | Libellé indicatif (APP_FLOW F-M6) ; partagée avec C-08 |
 | `pro-manager.board.empty` | « Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct. » | État vide (APP_FLOW §8) |
 | `pro-manager.board.offline_banner` | « Connexion perdue : les actions sont bloquées jusqu'au retour du réseau. » | Partagée avec S-08 |
 | `common.presence_status.<status>` | Voir `common.presence_status.*` dans le dictionnaire (7 textes) | Un libellé par valeur de `presence_status` (`offline`, `available`, `in_service`, `on_break`, `late`, `absent`, `off_duty`) |
 | `common.ticket_status.<status>` | Voir `common.ticket_status.*` dans le dictionnaire (7 textes) | Un libellé par valeur de `ticket_status` |
-| `common.approach_status.<status>` | Voir `common.approach_status.*` dans le dictionnaire (4 textes) | Valeurs à arrêter (voir questions ouvertes) |
+| `common.approach_status.<status>` | Voir `common.approach_status.*` dans le dictionnaire (4 textes) | Confirmé, en retard de X min, sans réponse, arrivé (APP_FLOW F-S4) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** : APP_FLOW F-S4 reprend la liste de BACKEND_SCHEMA (confirmé à T-30, en retard de X min, sans réponse, arrivé). Question d'origine : les valeurs du statut d'approche ne sont pas les mêmes dans les deux documents. APP_FLOW F-S4 dit « pas parti, en route, arrivé, en retard de X min ». BACKEND_SCHEMA §4.13 dit « arrivé, en retard de X min, confirmé, sans réponse ». Sans GPS (H7), « pas parti » et « en route » ne peuvent pas être calculés. Quelle liste garder ?
 - **APP_FLOW** : comment l'« attente moyenne » de l'en-tête est-elle calculée ? Est-ce la moyenne des attentes estimées des tickets en attente, `current_wait_minutes`, ou autre chose ?
 - **APP_FLOW / TRD** : F-M6 parle des « tickets assignés » de chaque coiffeur. Mais d'après ADR-015, un ticket sans préférence n'est attribué qu'au moment de l'appel. La colonne montre-t-elle les tickets pressentis (`estimated_member_id`) ?
-- **APP_FLOW / PRD** : APP_FLOW §7 indique « compteur d'absences » sur le dashboard au moment de la libération. Qu'est-ce qui est affiché ? Les absences sont comptées tous salons confondus (E10, `private.no_show_records`, K8) : afficher ce compte au gérant révélerait les absences du client dans d'autres salons. Est-ce compatible avec l'isolation par salon ?
+- **Résolu le 19/10** (E28, PRD §5.1 ; APP_FLOW v0.6 §7) : le dashboard ne montre aucun compteur d'absences d'un client ; à la libération, le ticket est seulement marqué « absent ».
+- **Résolu le 19/10** (E27, TRD §6.3) : `get_salon_board` renvoie le dernier résultat de réaffectation de chaque ticket ; le gérant voit « refusé » ou « sans réponse ». Le texte de ces deux libellés manque dans le dictionnaire.
+- **Résolu le 19/10** (E30, PRD §5.2) : « en retard de X min » sur un rendez-vous est le retard du salon sur l'heure du rendez-vous, affiché dès 10 min.
 - **Résolu le 18/10** (K9, TRD §6.3) : `get_salon_board` est réservé au gérant (`managed_salon_id()`) ; un coiffeur ne lit pas la vue du salon.
-- **BACKEND_SCHEMA / TRD** : TRD §6.4 liste le message `appointment_pending` sur le canal `salon:{salon_id}`, mais BACKEND_SCHEMA §9 ne le liste pas (seulement `queue_updated`, `queue_status_changed`, `presence_changed`). Il faut aligner les deux.
+- **Résolu le 19/10** (BACKEND_SCHEMA v0.5 §9) : `appointment_pending` est listé sur le canal `salon:{salon_id}` dans les deux documents.
 - **APP_FLOW** : un rendez-vous « à confirmer » apparaît-il aussi dans la liste globale et dans la colonne du coiffeur choisi, ou seulement dans le bandeau ? Compte-t-il dans le nombre de clients en attente de l'en-tête ?
 - **PRD** : le compteur de 10 min d'un client appelé (H4 : visible par le client et le coiffeur) doit-il aussi s'afficher sur le dashboard ?
 - **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

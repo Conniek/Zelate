@@ -3,9 +3,9 @@
 **En tant que** gérant, **je veux** inscrire en 10 s un client présent au salon (prénom, téléphone, prestation, coiffeur optionnel), **afin que** le client sans app ait sa place dans la file et reçoive par SMS une confirmation avec un lien de suivi.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : seul le gérant inscrit un client présent au salon ; la prestation est facultative, 30 min comptées par défaut (PRD §5.1, §11 n° 16 et E12) ; « je ne sais pas encore » est accepté par tous les coiffeurs (PRD §5.1, E12) ; un seul ticket actif par client, tous salons confondus (PRD §5.1) ; H6 (numéro jamais affiché) ; H3 et PRD §5.4 (3 SMS maximum par ticket, hors « votre tour » et annulation par le salon, E1 ; SMS d'inscription si pas de push) ; PRD §5.2 transition 1 ; métrique « temps d'inscription walk-in » médiane ≤ 10 s (PRD §8)
+- Règles appliquées : seul le gérant inscrit un client présent au salon ; la prestation est facultative, 30 min comptées par défaut (PRD §5.1, §11 n° 16 et E12) ; « je ne sais pas encore » est accepté par tous les coiffeurs (PRD §5.1, E12) ; un seul ticket actif par client, tous salons confondus (PRD §5.1) ; H6 (numéro jamais affiché) ; H3 et PRD §5.4 (3 SMS maximum par ticket, hors « votre tour », annulation par le salon et avertissement d'absences, E1, E28 ; SMS d'inscription si pas de push) ; messages indispensables sans « Me prévenir », lien pour l'activer (PRD §5.1, E17) ; PRD §5.2 transition 1 ; métrique « temps d'inscription walk-in » médiane ≤ 10 s (PRD §8)
 - Parcours : F-M7 ; F-M6 (bouton « + Client à l'accueil », raccourci `N`) ; suivi côté client F-C10 (lien SMS `/t/:shortCode`)
-- Commandes et données : `register_walk_in` (`first_name`, `phone`, `service_id?`, `requested_member_id?`) · Edge Function `ticket-public` (lien court) · tables `tickets` (`channel` = `front_desk`, `display_name`, `service_id`, `planned_duration_minutes`, `requested_member_id`, `created_by_member_id`, `tracking_token`, `tracking_short_code`), `private.ticket_contacts` (`phone_e164`, `phone_hash`, `is_active`), `notifications` (`ticket_created`, canal `sms`), `ticket_events` (`created`)
+- Commandes et données : `register_walk_in` (`first_name`, `phone`, `service_id?`, `requested_member_id?`) · Edge Function `ticket-public` (lien court) · tables `tickets` (`channel` = `front_desk`, `display_name`, `service_id`, `planned_duration_minutes`, `requested_member_id`, `created_by_member_id`, `tracking_token`, `tracking_short_code`, `notifications_consent_at` vide à la création), `private.ticket_contacts` (`phone_e164`, `phone_hash`, `is_active` ; une ligne par ticket dont le numéro est connu, K28), `notifications` (`ticket_created`, canal `sms`), `ticket_events` (`created`) · `set_notifications_consent` (activation de « Me prévenir » depuis le lien, K34)
 
 ## Scénarios
 
@@ -43,6 +43,12 @@
 - **Quand** le gérant inscrit le client sans choisir de prestation
 - **Alors** le ticket est créé sans prestation (`service_id` vide), avec une durée de calcul de 30 min (PRD §5.1 et §5.2, E12)
 - **Alors** tout coiffeur présent peut être son coiffeur pressenti et l'appeler (PRD §5.1, E12)
+
+### 5 bis. Coiffeur demandé indisponible
+- **Étant donné** la coiffeuse Léa déclarée absente aujourd'hui
+- **Quand** une commande `register_walk_in` arrive avec Léa comme coiffeur demandé
+- **Alors** elle est refusée avec l'erreur `queue.stylist_unavailable` (TRD v0.5 §6.2)
+- **Alors** aucun ticket n'est créé et aucun SMS n'est envoyé
 
 ### 6. Numéro qui a déjà un ticket actif
 - **Étant donné** un numéro qui a déjà un ticket actif, dans ce salon ou dans un autre
@@ -90,7 +96,23 @@
 - **Étant donné** un ticket walk-in créé, dont le client n'a pas de push actif
 - **Quand** les SMS suivants du ticket partent
 - **Alors** le SMS d'inscription compte comme le SMS 1 sur 3
-- **Alors** aucun SMS au-delà du 3e n'est envoyé, sauf « votre tour » et l'annulation par le salon, qui partent toujours (PRD §5.4, E1)
+- **Alors** aucun SMS au-delà du 3e n'est envoyé (`skipped`, `sms_cap_reached`), sauf « votre tour », l'annulation par le salon et l'avertissement d'absences, qui partent toujours (PRD §5.4, E1, E28)
+
+### 12 ter. Messages indispensables sans « Me prévenir »
+- **Étant donné** un ticket walk-in, dont la case « Me prévenir » n'a jamais été cochée (`notifications_consent_at` vide)
+- **Quand** le client est appelé, puis relancé à 5 min, ou que le salon annule sa place, ou que son coiffeur demandé devient indisponible
+- **Alors** les messages `your_turn`, `arrival_reminder`, `cancelled_by_salon` et `stylist_change_required` partent quand même : ce sont des messages indispensables (PRD §5.1, E17)
+- **Quand** son heure de passage arrive à 10 min ou change de 10 min ou plus
+- **Alors** `get_ready` et `estimate_changed` ne partent pas (`skipped`, `no_consent`) : ce sont des messages d'anticipation (E17)
+
+### 12 quater. Le client active « Me prévenir » depuis le lien du SMS
+- **Étant donné** le client walk-in sur sa page de suivi `/t/:shortCode`
+- **Quand** il active « Me prévenir »
+- **Alors** la commande `set_notifications_consent` (`consent` = vrai) part avec le jeton du ticket (TRD §6.2, K34 ; F-C10)
+- **Alors** `tickets.notifications_consent_at` est renseigné pour ce ticket
+- **Alors** les messages d'anticipation suivants lui sont envoyés (« préparez-vous » par SMS dans le plafond s'il n'a pas de push)
+- **Quand** la commande arrive pour un ticket déjà terminé ou annulé
+- **Alors** elle est refusée avec `queue.invalid_transition` (K34)
 
 ### 12 bis. « Votre tour » part même plafond atteint
 - **Étant donné** un ticket walk-in qui a déjà reçu 3 SMS
@@ -127,8 +149,13 @@
 | `pro-manager.walk_in.title` | « Client à l'accueil » | Libellé indicatif (APP_FLOW F-M7) |
 | `pro-manager.walk_in.first_name` | « Prénom » | 30 caractères maximum |
 | `pro-manager.walk_in.phone` | « Téléphone » | +33 |
-| `pro-manager.walk_in.service` | « Prestation » | — |
-| `pro-manager.walk_in.stylist` | « Coiffeur » | — |
+| `pro-manager.walk_in.phone_hint` | « Le client reçoit son lien de suivi par SMS. Le numéro est masqué dès l'enregistrement. » | H6 |
+| `pro-manager.walk_in.service` | « Prestation (facultative) » | — |
+| `pro-manager.walk_in.service_hint` | « Sans prestation, 30 min sont prévues. » | E12 |
+| `pro-manager.walk_in.stylist` | « Coiffeur (facultatif) » | — |
+| `pro-manager.walk_in.success` | « {first_name} est dans la file. » | — |
+| `legal.consent.tracking_notifications.label` | « Me prévenir quand mon tour approche » | Activation depuis le lien de suivi (F-C10, E17) |
+| `errors.queue.stylist_unavailable` | « Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. » | TRD v0.5 §6.2 |
 | `common.first_available` | « Premier disponible » | Partagée avec l'app client (F-C3) |
 | `pro-manager.walk_in.submit` | « Inscrire » | Libellé indicatif (APP_FLOW F-M7) |
 | `notifications.ticket_created.sms` | « {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} » | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; contient rang, heure, code du ticket, lien de suivi (APP_FLOW §7) |
@@ -146,8 +173,8 @@
 - **Résolu le 18/10** (E12, PRD §5.1) : la prestation d'un walk-in est facultative, 30 min comptées par défaut.
 - **Résolu le 18/10** (K5, TRD §9 et ADR-006) : le SMS porte un lien court `zelate.fr/t/xxxxxxxx` (8 caractères) ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés.
 - **Résolu le 18/10** (K1, TRD §6.2) : un coiffeur qui envoie `register_walk_in` reçoit `queue.forbidden` ; un numéro invalide donne `queue.invalid_phone`, une file en pause `queue.queue_paused`.
-- **PRD / TRD (sujet aggravé par K11)** : `register_walk_in` ne porte aucun consentement aux notifications, et un walk-in n'a pas de profil (`client_id` vide, donc pas de `tracking_consent_at`). Avec K11, sans consentement seuls `ticket_created` et `your_turn` partent (BACKEND_SCHEMA §4.16). Un walk-in ne recevrait donc jamais « préparez-vous », la demande de choix de coiffeur, l'alerte de fin de journée ni l'annulation par le salon. Est-ce voulu ? Sinon, comment son consentement est-il recueilli à l'accueil et enregistré (PRD §6) ?
-- **APP_FLOW** : la boîte propose-t-elle les coiffeurs absents ce jour-là ? Que se passe-t-il si le gérant en choisit un ? Pour un client, F-C3 le prévient et le renvoie vers « premier disponible ». TRD §6.2 ne donne pas `stylist_unavailable` à `register_walk_in` (seulement à `join_queue`).
+- **Résolu le 19/10** (E17, K18, K34 ; PRD §5.1, TRD §6.2, APP_FLOW F-C10) : un walk-in reçoit tous les messages indispensables sans case cochée ; seuls les messages d'anticipation (`turn_approaching`, `get_ready`, `estimate_changed`, `end_of_day_risk`) demandent « Me prévenir », que le client active depuis le lien de suivi (`set_notifications_consent`, consentement porté par le ticket). Avis RGPD encore à obtenir (PRD §9 n° 9).
+- **Résolu en partie le 19/10** (TRD v0.5 §6.2) : `register_walk_in` renvoie `stylist_unavailable` pour un coiffeur indisponible. **Reste ouvert (APP_FLOW)** : la boîte F-M7 propose-t-elle les coiffeurs absents ce jour-là ?
 - **TRD** : le plafond de création de tickets (`rate_limits`) n'a pas de valeur chiffrée. Quel seuil s'applique pour `queue.rate_limited` ?
 - **TRD** : si le client a déjà un compte client avec ce numéro, le ticket walk-in est-il rattaché à son compte (`client_id` est vide pour un walk-in) ? Le client le voit-il dans `/ticket` après s'être connecté par code SMS ?
 - **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).
