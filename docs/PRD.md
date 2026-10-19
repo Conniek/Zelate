@@ -1,6 +1,6 @@
 # PRD — Zelaté
 
-> **Product Requirements Document** · version 1.1 · 18/10/2026 · statut : validé avec Ely (ateliers du 16/10 et du 18/10/2026)
+> **Product Requirements Document** · version 1.2 · 19/10/2026 · statut : validé avec Ely (ateliers du 16/10 et du 18/10, réponses du 19/10/2026)
 > Sources : cahiers des charges Utilisateurs, Salon et Coiffeur ; « Synthèse du cahier des charges & plan d'action » (13/10) ; « Spécification fonctionnelle du MVP » v0.1 (13/10) ; atelier de validation de l'étape 0 (16/10) ; questions à trancher avant les user stories définitives (18/10).
 > Documents liés : [TRD](./TRD.md) · [APP_FLOW](./APP_FLOW.md) · [DESIGN_SYSTEM](./DESIGN_SYSTEM.md) · [BACKEND_SCHEMA](./BACKEND_SCHEMA.md) · [IMPLEMENTATION_PLAN](./IMPLEMENTATION_PLAN.md)
 
@@ -111,21 +111,24 @@ Toutes ces règles sont **validées** (atelier du 16/10/2026).
 
 **Autres règles validées :**
 - Un client n'a **qu'un seul ticket actif** à la fois, tous salons confondus.
-- Changer le coiffeur d'un client ne le fait **jamais reculer**, sauf accord du client : il reçoit une demande « accepter / refuser » ; sans réponse en 10 min, rien ne change.
+- Changer le coiffeur d'un client ne le fait **jamais reculer**, sauf accord du client : il reçoit une demande « accepter / refuser » ; sans réponse en 10 min, rien ne change. Le gérant voit « refusé » ou « sans réponse ». L'accord vaut tant que l'heure ne recule pas de 10 min de plus ; sinon une nouvelle demande part. Les rendez-vous se réaffectent de la même façon (E27).
 - Le client **annule sans pénalité**, même une fois appelé ; ce n'est pas compté comme une absence (un système de pénalité pourra être étudié plus tard).
 - Le client peut déclarer un **retard de 5 à 30 min** ; au-delà, il annule et se réinscrit. Un retard déclaré ne le fait reculer que si le coiffeur choisit « Prendre le suivant » ; une fois appelé, il n'est libéré qu'à l'heure d'arrivée qu'il a annoncée, si elle est plus tardive que les 10 min (E2).
 - Toute variation d'heure de **10 min ou plus** et tout recul sont **expliqués** au client. L'écart se mesure par rapport à la dernière heure annoncée au client, et les petits écarts s'additionnent.
 - La **position** affichée au client est le nombre de clients avant lui chez son coiffeur (demandé ou pressenti).
-- **Absences répétées** : avertissement par notification à la **5e absence en 30 jours**, tous salons confondus.
+- **Absences répétées** : avertissement par notification à la **5e absence en 30 jours**, tous salons confondus, une fois par période de 30 jours, hors plafond de SMS. Le salon ne voit aucun compteur d'absences d'un client (E28).
 - Seul le **gérant** inscrit un client présent au salon (walk-in) ; la prestation est facultative (30 min comptées par défaut).
 - La **spécialité** d'une prestation est facultative ; « je ne sais pas encore » est accepté par tous les coiffeurs.
 - **File en pause** : plus de nouvelles inscriptions, mais les coiffeurs continuent d'appeler les clients déjà inscrits.
 - Le **SMS « votre tour »** part toujours, même si le plafond de 3 SMS est atteint.
-- **Coiffeur indisponible** : un client en prestation est terminé par le gérant ; un client appelé passe en tête et est pris par le premier coiffeur libre. Quand le coiffeur demandé est absent toute la journée ou désactivé, le client ne peut plus « attendre » : il choisit « premier disponible » ou annule. La même règle s'applique quand le gérant coupe « Je coiffe ».
+- **Coiffeur indisponible** : un client en prestation est terminé par le gérant ; un client appelé passe en tête et est pris par le premier coiffeur libre. Quand le coiffeur demandé est absent toute la journée ou désactivé, le client ne peut plus « attendre » : il choisit « premier disponible » ou annule. La même règle s'applique quand le gérant coupe « Je coiffe », et aux clients avec rendez-vous : ils choisissent comme les autres, et le gérant voit les rendez-vous touchés pour les réaffecter s'il le souhaite (E18). Une pause du coiffeur ne déclenche pas ce choix (E25).
 - Le **gérant peut clore une prestation** qu'un coiffeur a oublié de terminer ; l'action est inscrite au journal.
 - Un **changement d'horaires ou de prestations** dans la journée ne modifie pas les tickets déjà en file ; les nouveaux horaires comptent pour la fin de journée.
 - Un **SIRET introuvable ou inactif** n'empêche pas l'envoi du dossier : il part « à vérifier » et l'équipe Zelaté décide.
-- La case **« Me prévenir »** est décochée par défaut. Sans elle, le client reçoit seulement les messages indispensables : l'inscription et « votre tour ».
+- La case **« Me prévenir »** est décochée par défaut. Elle ne règle que les **messages d'anticipation** : votre tour approche, préparez-vous, changement d'heure, risque de fin de journée. Les **messages indispensables** partent toujours : tout ce qui concerne la place du client et lui demande une action ou annonce une fin (inscription, votre tour, rappel, place libérée, annulation, choix de coiffeur, demande de réaffectation, rendez-vous confirmé ou refusé, retard sur un rendez-vous, avertissement d'absences). Un client inscrit à l'accueil ou dont le salon a saisi le rendez-vous reçoit les messages indispensables, avec un lien pour activer « Me prévenir » (E17 ; à faire confirmer par un avis RGPD).
+- Un **client avec rendez-vous** donne le code de son ticket à l'appel, comme les autres (E21). Ses 10 min de priorité se comptent depuis l'heure du rendez-vous, même si le salon confirme tard ; une fois appelé, la règle H4 s'applique (E20).
+- Un **rendez-vous à confirmer** peut être annulé par le client ; le gérant et le coiffeur reçoivent un rappel après 10 min ; il est annulé avec excuses à la fermeture (E19).
+- **Saisir un rendez-vous** : le jour même seulement, dans les horaires du salon ; accepté pour un coiffeur en pause, avec un avertissement s'il est absent (E26). Annuler ou refuser un rendez-vous demande un motif choisi dans une liste, envoyé au client (E29).
 - Chaque salon ne voit que ses propres données (isolation par salon).
 - **Aucune donnée client n'est stockée sur le téléphone du coiffeur** : affichage seulement, rien en cache, déconnexion à distance par le gérant.
 
@@ -168,15 +171,18 @@ T_k = t_0 + R_c + \sum_{i<k} d_i \qquad R_c = \max\left(m,\; D_{\text{en cours}}
 4. **Quand un coiffeur se libère**, son prochain client est le premier ticket éligible de la file : un ticket qui le demande, ou un ticket sans préférence dont il maîtrise la prestation. Les tickets qui demandent un autre coiffeur sont sautés sans perdre leur rang.
 5. **Gérant** : « Je coiffe » activé = coiffeur ordinaire ; désactivé = exclu de la distribution, avec un bouton « Je prends le prochain ».
 6. **Rendez-vous** : un rendez-vous est attribué dès sa saisie au coiffeur choisi et occupe un créneau fixe. Un client sans rendez-vous n'est placé avant lui que si sa prestation finit avant l'heure du rendez-vous (marge de 0 min pour l'instant, à revoir à l'usage).
-7. **Client avec rendez-vous en retard** : il garde sa priorité jusqu'à 10 min après l'heure du rendez-vous ; au-delà, il est pris dès que possible sans retarder les rendez-vous suivants.
+7. **Client avec rendez-vous en retard** : il garde sa priorité jusqu'à 10 min après l'heure du rendez-vous, même si le salon a confirmé tard (E20) ; au-delà, il est pris dès que possible sans retarder les rendez-vous suivants.
 8. **Client avec rendez-vous en avance** : il est pris avant son heure si son coiffeur est libre et que cela ne retarde personne.
 
 **Prochain créneau libre**
+- Un **trou** est un temps libre d'un coiffeur présent, dans ses horaires, hors pauses, y compris après son dernier client (E22).
 - Pour chaque prestation, le moteur cherche le premier trou assez long chez un coiffeur qui la maîtrise : durée de la prestation, sans marge pour l'instant.
-- La fiche et la carte du salon affichent ce « prochain créneau libre à 15h20 » ; seules les prestations qui tiennent dans un trou y apparaissent.
+- La fiche du salon affiche le créneau de chaque prestation qui tient dans un trou ; la liste et la carte affichent le plus tôt, avec le nom de sa prestation. Rien n'est affiché si la file n'est pas ouverte. Ce n'est pas une réservation.
+- Pour qui n'a pas encore choisi, la fiche affiche le nombre de clients en attente au salon et l'attente pour « premier disponible » (E31).
 
 **Prévenir avant de partir (rendez-vous)**
-- Si le salon a saisi le téléphone du client, celui-ci est prévenu dès que son heure de passage dépasse de 10 min l'heure de son rendez-vous (« venez à 14h20 »), puis à chaque nouvel écart de 10 min. Ces messages comptent dans le plafond de 3 SMS.
+- Si le salon a saisi le téléphone du client, celui-ci est prévenu dès que son heure de passage dépasse de 10 min l'heure de son rendez-vous (« venez vers 14h20 »), puis à chaque nouvel écart de 10 min. Un saut de plusieurs paliers donne une seule alerte, avec le retard du moment ; pas d'alerte quand le salon rattrape son retard ; plus d'alerte une fois le client arrivé ou appelé (E23). Ces messages comptent dans le plafond de 3 SMS.
+- Côté salon, « en retard de X min » sur un rendez-vous désigne le retard du salon sur l'heure du rendez-vous, affiché dès 10 min (E30).
 
 **Statuts du coiffeur**
 
@@ -203,7 +209,8 @@ T_k = t_0 + R_c + \sum_{i<k} d_i \qquad R_c = \max\left(m,\; D_{\text{en cours}}
 - À partir de **2 h avant la dernière fermeture de la journée** (valeur par défaut, réglable par salon après le pilote), chaque événement relance le calcul. Tout client dont la fin estimée dépasse l'heure de fermeture reçoit **une seule** alerte : « Vous risquez de ne pas être pris avant la fermeture », avec le choix **« Je reste »** ou **« J'annule »**.
 - Si son heure redevient sûre, il est simplement notifié du changement d'heure (règle des 10 min).
 - À l'heure de fermeture, le gérant voit **tous** les clients restants (qu'ils aient répondu ou non) et choisit, pour chacun ou pour tous : **« Servir »** ou **« Annuler avec excuses »**. Sans action de sa part, ils sont **annulés automatiquement 15 min après la fermeture**, avec un message d'excuse et des salons proches.
-- Un client que le gérant a choisi de « Servir » mais qui n'est pas pris avant la fin de la journée est annulé avec un message d'excuse.
+- Un client que le gérant a choisi de « Servir » mais qui n'est pas pris avant minuit (heure de Paris) est annulé avec un message d'excuse (E24).
+- Les rendez-vous restants à la fermeture sont traités comme les autres clients restants. Une coupure de midi n'annule rien : la file reprend à la plage suivante (E24).
 - Aucun ticket ne passe d'un jour à l'autre.
 
 ### 5.3 Exigences par acteur
@@ -282,24 +289,26 @@ Priorité : **I** = indispensable au MVP, **S** = souhaitable au MVP. Les identi
 
 ### 5.4 Notifications
 
-Le push est le canal par défaut ; le SMS ne part que si le client n'a pas de push actif, sauf « votre tour » qui part toujours par les deux canaux. **Plafond : 3 SMS par ticket**, hors annulation par le salon et hors « votre tour », qui partent toujours. Sans la case « Me prévenir », seuls l'inscription et « votre tour » sont envoyés. Pendant le pilote, les SMS sont **pris en charge par Zelaté** ; le modèle de facturation sera décidé avec le coût réel mesuré.
+Le push est le canal par défaut ; le SMS ne part que si le client n'a pas de push actif, sauf « votre tour » qui part toujours par les deux canaux. **Plafond : 3 SMS par ticket**, hors annulation par le salon, « votre tour » et avertissement d'absences. Sans la case « Me prévenir », seuls les messages indispensables partent (§5.1, E17) ; les messages d'anticipation sont marqués « anticipation » ci-dessous. Pendant le pilote, les SMS sont **pris en charge par Zelaté** ; le modèle de facturation sera décidé avec le coût réel mesuré.
 
 | Événement | Déclencheur | Push | SMS |
 | --- | --- | --- | --- |
 | Inscription | Ticket créé | Oui | Si pas de push (SMS 1) |
-| Votre tour approche | Heure de passage à 30 min ou moins, une fois | Oui, avec trois réponses | Non, la page de suivi porte les réponses |
-| Préparez-vous | Heure de passage à 10 min ou moins | Oui | Si pas de push (SMS 2) |
+| Votre tour approche (anticipation) | Heure de passage à 30 min ou moins, une fois | Oui, avec trois réponses | Non, la page de suivi porte les réponses |
+| Préparez-vous (anticipation) | Heure de passage à 10 min ou moins | Oui | Si pas de push (SMS 2) |
 | Votre tour | Le coiffeur appelle | Oui, priorité haute | Toujours, même plafond atteint |
 | Rappel | 5 min après l'appel sans arrivée | Oui | Non |
 | Place libérée | 10 min après l'appel sans arrivée | Oui | Non |
-| Changement d'heure | Variation de 10 min ou plus | Oui | Non |
+| Changement d'heure (anticipation) | Variation de 10 min ou plus | Oui | Non |
 | Recul | Retard déclaré (H5) | Oui | Non |
 | Choix de coiffeur | Coiffeur demandé indisponible | Oui | Si pas de push, dans la limite du plafond |
-| Risque de fin de journée | H9, une fois | Oui | Si pas de push, dans la limite du plafond |
+| Risque de fin de journée (anticipation) | H9, une fois | Oui | Si pas de push, dans la limite du plafond |
 | Retard sur un rendez-vous | Heure de passage 10 min ou plus après l'heure du rendez-vous, puis tous les 10 min de plus | Oui | Si pas de push, dans la limite du plafond |
 | Demande de réaffectation | Le gérant veut réaffecter le client à un coiffeur plus tardif | Oui, avec « accepter / refuser » | Non |
-| Rendez-vous refusé | Le salon ne confirme pas un rendez-vous signalé | Oui | Non (le client est sur place) |
-| Avertissement d'absences | 5e absence en 30 jours | Oui | Si pas de push |
+| Rendez-vous confirmé | Le salon confirme un rendez-vous signalé | Oui | Non (le client est sur place) |
+| Rendez-vous refusé | Le salon refuse un rendez-vous signalé, avec motif (E29) | Oui | Non (le client est sur place) |
+| Rendez-vous signalé (au salon) | Un client se signale ; rappel après 10 min sans confirmation (E19) | Oui, au gérant et au coiffeur choisi | Non |
+| Avertissement d'absences | 5e absence en 30 jours, une fois par période de 30 jours | Oui | Si pas de push, hors plafond |
 | Annulation par le salon | Retrait, fin de journée (H9) | Oui | Oui, hors plafond |
 
 Le détail de ce que voit chaque écran est dans [APP_FLOW §7](./APP_FLOW.md#7-événements-système-et-notifications).
@@ -392,8 +401,8 @@ L'indicateur principal du pilote, validé le 16/10, est la **précision de l'heu
 6. Lot 2 : nombre de tablettes, calendrier de la location et du financement Innov'Up.
 7. Système de pénalité d'annulation : à étudier après le pilote.
 8. Modèle de facturation des SMS : à fixer avec le coût réel du pilote.
-9. **Rendez-vous saisi par le salon avec le téléphone du client** : le client n'a coché aucune case « Me prévenir ». L'alerte de retard (R5) compte-t-elle parmi les messages indispensables, ou faut-il recueillir son accord (par exemple au premier SMS) ? *À trancher par Ely, avec un avis RGPD (question E17 de [docs/stories/README.md](./stories/README.md)).*
-10. **Questions E18 à E31** (règles métier) relevées pendant l'écriture des stories, listées avec une proposition dans [docs/stories/README.md](./stories/README.md#questions-ouvertes-après-la-v11).
+9. **Avis RGPD** sur la liste des messages indispensables envoyés sans case cochée (E17), notamment aux clients inscrits par le salon.
+10. **Questions E32 et suivantes**, relevées par la revue d'architecture du 19/10 ([docs/reviews/2026-10-19-architect-review.md](./reviews/2026-10-19-architect-review.md)), listées dans [docs/stories/README.md](./stories/README.md).
 
 ### Risques
 
@@ -483,7 +492,7 @@ Questions tranchées le 18/10/2026 (doc « Questions à trancher avant les user 
 | R6 | Qui saisit | Le gérant et chaque coiffeur pour ses clients |
 | R7 | Marge | Aucune pour l'instant, partout (R1 et créneau libre) ; à revoir à l'usage |
 | E1 | SMS « votre tour » | Part toujours, même plafond atteint |
-| E2 | Retard déclaré | Recul seulement par « Prendre le suivant » ; compteur de 10 min à partir de l'heure annoncée |
+| E2 | Retard déclaré | Recul seulement par « Prendre le suivant » ; libéré à l'heure d'arrivée annoncée si elle est plus tardive que les 10 min |
 | E3 | Annulation une fois appelé | Libre, pas d'absence comptée |
 | E4 | File en pause | Les inscrits continuent d'être appelés |
 | E5 | Fin de journée | Dernière plage ; tous les restants ; « Servi » non pris = annulé avec excuses |
@@ -501,3 +510,23 @@ Questions tranchées le 18/10/2026 (doc « Questions à trancher avant les user 
 | K11 | Consentement | Case décochée par défaut ; messages indispensables seulement sans elle |
 | K12 | Écrans sans exigence | Ajout de U-13 (compte client) et S-17 (journal du salon) |
 | K13-K27 | Choix techniques du 19/10 | Acceptés tels que proposés (TRD v0.4) ; ceux qui touchent le client : consentement « Me prévenir » porté par chaque place, export et suppression du compte depuis `/account` |
+
+Questions tranchées par Ely le 19/10/2026 (partie D du doc « Questions à trancher » ; toutes les propositions acceptées).
+
+| N° | Sujet | Décision |
+| --- | --- | --- |
+| E17 | Messages sans « Me prévenir » | Les messages indispensables partent toujours ; la case ne règle que les messages d'anticipation ; walk-in et rendez-vous saisi : lien pour l'activer ; avis RGPD à obtenir |
+| E18 | Rendez-vous d'un coiffeur indisponible | Le client choisit comme les autres ; le gérant peut réaffecter |
+| E19 | Rendez-vous à confirmer non traité | Annulable par le client ; rappel au salon après 10 min ; annulé avec excuses à la fermeture |
+| E20 | Priorité d'un rendez-vous signalé | 10 min depuis l'heure du rendez-vous ; une fois appelé, H4 |
+| E21 | Arrivée d'un client avec rendez-vous | Code du ticket à l'appel |
+| E22 | Prochain créneau libre | Trou = temps libre d'un coiffeur présent, hors pauses, y compris après son dernier client ; liste : le plus tôt avec sa prestation ; file ouverte seulement ; pas une réservation |
+| E23 | Alertes de retard sur rendez-vous | Une alerte avec le retard du moment ; pas d'alerte de rattrapage ; arrêt à l'arrivée ou à l'appel ; « venez vers 14h20 » |
+| E24 | Fin de journée | « Servi » non pris : annulé à minuit ; rendez-vous traités comme les autres ; la coupure de midi n'annule rien |
+| E25 | Pause d'un coiffeur | Ne déclenche pas le choix « attendre / premier disponible » |
+| E26 | Saisie d'un rendez-vous | Jour même, dans les horaires ; accepté si le coiffeur est en pause, avertissement s'il est absent |
+| E27 | Réaffectation | Le gérant voit « refusé » ou « sans réponse » ; l'accord vaut si l'heure ne recule pas de 10 min de plus ; rendez-vous compris |
+| E28 | Avertissement d'absences | Une fois par 30 jours, hors plafond ; aucun compteur visible par le salon |
+| E29 | Annulation ou refus d'un rendez-vous | Motif obligatoire dans une liste, envoyé au client |
+| E30 | « En retard de X min » | Retard du salon sur l'heure du rendez-vous, dès 10 min |
+| E31 | Attente sur la fiche salon | Clients en attente au salon et attente pour « premier disponible » |

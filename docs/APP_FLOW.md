@@ -1,5 +1,6 @@
 # APP FLOW — Zelaté
 
+> version 0.5 · 19/10/2026 · réponses d'Ely E17 à E31 (pause sans choix de coiffeur, aucun compteur d'absences côté salon)
 > version 0.4 · 19/10/2026 · réponses K13 à K27 (consentement par ticket, export et suppression du compte, push au salon pour un rendez-vous signalé)
 > version 0.3 · 18/10/2026 · statut : mis à jour avec le PRD v1.1 (rendez-vous du salon, règles E1 à E16) et le TRD v0.3
 > Documents liés : [PRD](./PRD.md) · [TRD](./TRD.md) · [DESIGN_SYSTEM](./DESIGN_SYSTEM.md) · [BACKEND_SCHEMA](./BACKEND_SCHEMA.md) · [IMPLEMENTATION_PLAN](./IMPLEMENTATION_PLAN.md)
@@ -180,7 +181,7 @@ Le parcours est identique à F-C3, dans le navigateur, sans installation. Le SMS
 | « Itinéraire » | Ouvre l'app de cartes | App externe |
 | « Je serai en retard » | Ouvre le choix 5 à 30 min (même effet que F-C6 « En retard ») | F-C6 |
 | « Annuler ma place » | F-C8 | — |
-| Bandeau « Votre coiffeur n'est plus disponible » (coiffeur demandé en retard, en pause ou partant plus tôt) | Deux boutons : « Attendre *Prénom* » (nouvelle heure affichée) ou « Premier disponible » (heure affichée) → `resolve_stylist_change` | F-C5 avec la nouvelle heure |
+| Bandeau « Votre coiffeur n'est plus disponible » (coiffeur demandé en retard ou partant plus tôt ; pas pour une pause, E25) | Deux boutons : « Attendre *Prénom* » (nouvelle heure affichée) ou « Premier disponible » (heure affichée) → `resolve_stylist_change` | F-C5 avec la nouvelle heure |
 | Même bandeau, coiffeur absent toute la journée, désactivé ou gérant qui ne coiffe plus (E7, E8) | Seulement « Premier disponible » ou « Annuler ma place » | F-C5 ou F-C8 |
 | Bandeau « Le salon propose un autre coiffeur » (E9, U-17) | Nouvelle heure affichée ; « Accepter » ou « Refuser » → `respond_reassignment` ; sans réponse en 10 min, rien ne change | F-C5 |
 | Bandeau « Risque de fin de journée » (U-11) | « Vous risquez de ne pas être pris avant la fermeture » ; « Je reste » ou « J'annule » → `respond_end_of_day` | F-C5, ou écran de fin |
@@ -529,7 +530,7 @@ Ce que le système fait sans clic, et ce que chaque écran voit.
 | Préparez-vous | Heure de passage ≤ 10 min | Push, ou SMS 2 si pas de push : heure, adresse, itinéraire | — | — |
 | Votre tour | `call_ticket` | Push haute priorité **et** SMS, toujours, même plafond atteint (E1) : prénom du coiffeur, adresse, code ; compteur de 10 min | Carte « Appel en cours » | Statut « appelé » |
 | Rappel | 5 min après l'appel sans arrivée | Push « place libérée dans 5 min » | « Rappel envoyé » | — |
-| Libération | 10 min sans arrivée, ou heure d'arrivée annoncée dépassée (E2) | Push avec proposition de se réinscrire ; à la 5e absence en 30 jours, avertissement (E10) | Ticket retiré | Compteur d'absences |
+| Libération | 10 min sans arrivée, ou heure d'arrivée annoncée dépassée (E2) | Push avec proposition de se réinscrire ; à la 5e absence en 30 jours, avertissement une fois par 30 jours (E10, E28) | Ticket retiré | Ticket marqué « absent » ; aucun compteur d'absences du client (E28) |
 | Changement d'heure | Variation ≥ 10 min par rapport à la dernière heure annoncée (E11) | Push avec nouvelle heure et raison | — | — |
 | Retard sur un rendez-vous | Heure de passage ≥ heure du rendez-vous + 10 min, puis tous les 10 min de plus | Push, ou SMS si pas de push, dans le plafond : « venez vers 14h20 » | — | Retard affiché sur le rendez-vous |
 | Rendez-vous signalé | `check_in_appointment` | « Le salon confirme… » | Bandeau « À confirmer » chez le coiffeur choisi | Bandeau « Rendez-vous à confirmer » |
