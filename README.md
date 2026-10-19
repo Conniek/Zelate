@@ -39,6 +39,13 @@ supabase start
 
 ## Déploiement Vercel
 
-Le fichier [`vercel.json`](./vercel.json) configure un seul projet Vercel multi-services. Lors de l'import du dépôt, choisir la racine du dépôt comme répertoire racine du projet (ne pas sélectionner `apps/client` ou `apps/pro`) afin que Vercel lise cette configuration. Le service `client` reçoit `/` et tous les chemins qui ne commencent pas par `/pro`; le service `pro` reçoit `/pro` et `/pro/*`. Les chemins `/pro` et `/pro/` ciblent explicitement son fichier `/index.html` ; pour les autres chemins Pro, le routage interne retire le préfixe pour sélectionner les fichiers du service. L'URL du navigateur conserve `/pro` et le routeur client le reconnaît comme base. Les deux services sont publics, et aucun binding inter-service n'est nécessaire : ces applications ne s'appellent pas entre elles.
+Les deux applications sont déployées comme **deux projets Vercel distincts** sur le même dépôt, conformément au TRD (ADR-002 : deux PWA, deux origines, `zelate.fr` et `pro.zelate.fr`). Deux origines séparent les service workers, le stockage et la portée d'installation des deux PWA.
 
-Les pull requests produisent des déploiements de préversion pour les deux services dans le même projet. Configurer les variables d'environnement Supabase et Sentry dans les environnements Vercel appropriés ; ne jamais ajouter de clé de service ou de secret au dépôt.
+| Projet Vercel   | Root Directory | Framework | Domaine cible   |
+| --------------- | -------------- | --------- | --------------- |
+| `zelate-client` | `apps/client`  | Vite      | `zelate.fr`     |
+| `zelate-pro`    | `apps/pro`     | Vite      | `pro.zelate.fr` |
+
+Pour chaque projet : importer le dépôt `Conniek/Zelate`, choisir le Root Directory ci-dessus, laisser « Include files outside the Root Directory » activé (paquets partagés du monorepo) et garder les commandes détectées (pnpm, `pnpm build`, sortie `dist`). Le fichier `vercel.json` de chaque app assure le repli SPA vers `index.html`. Il n'y a plus de `vercel.json` à la racine.
+
+Chaque pull request produit une préversion dans chacun des deux projets. Configurer les variables d'environnement Supabase et Sentry dans les environnements Vercel appropriés ; ne jamais ajouter de clé de service ou de secret au dépôt.
