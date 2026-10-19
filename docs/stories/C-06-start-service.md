@@ -3,9 +3,9 @@
 **En tant que** coiffeur, **je veux** commencer la prestation en confirmant la prestation et sa durée, **afin que** l'heure de passage des clients suivants se calcule sur ce que je fais vraiment.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H2, H7 ; PRD §5.2 transition 4 et « Calcul de l'heure de passage » ; PRD §5.1 règle des 10 min
+- Règles appliquées : H2, H7 ; PRD §5.2 transition 4 et « Calcul de l'heure de passage » ; PRD §5.1 règle des 10 min et « Me prévenir » (le changement d'heure est un message d'anticipation, E17)
 - Parcours : F-S5 → F-S6 → F-S7 (APP_FLOW §4)
-- Commandes et données : `start_service` · tables `tickets` (`service_id`, `planned_duration_minutes`, `started_at`), `stylist_presence`, `services`, `ticket_events`, `notifications`
+- Commandes et données : `start_service` (code propre `queue.not_assigned_to_you` ; codes communs `queue.invalid_transition`, `queue.invalid_payload`, TRD §6.2) · tables `tickets` (`service_id`, `planned_duration_minutes`, `started_at`, `arrived_at` ; `called_at`, `reminder_sent_at`, `release_due_at` remis à vide en quittant `called`, K31), `stylist_presence`, `services`, `ticket_events`, `notifications` (`estimate_changed`, raison `service_longer`)
 
 ## Scénarios
 
@@ -16,6 +16,7 @@
 - **Quand** Inès touche « Commencer » dans la feuille
 - **Alors** le ticket passe de « Appelé » à « En prestation » (`in_service`, `started_at` renseigné)
 - **Et** la durée prévue enregistrée est de 30 min (`planned_duration_minutes`)
+- **Et** la place de Léa ne peut plus être libérée automatiquement (`release_due_at` remis à vide, K31)
 - **Et** le statut d'Inès devient « En prestation »
 - **Et** la carte « En cours » affiche le prénom Léa, la prestation, le temps écoulé sur 30 min prévues et la fin estimée
 - **Et** l'heure de passage des clients suivants est recalculée
@@ -26,8 +27,9 @@
 - **Étant donné** la feuille « Commencer la prestation » ouverte avec 30 min
 - **Quand** Inès augmente la durée par pas de 5 min jusqu'à 45 min et touche « Commencer »
 - **Alors** la durée prévue enregistrée est de 45 min
-- **Et** chaque client suivant dont l'heure de passage bouge de 15 min reçoit une notification push de changement d'heure, avec la raison
+- **Et** chaque client suivant qui a coché « Me prévenir » et dont l'heure de passage bouge de 15 min reçoit une notification push de changement d'heure, avec la raison `service_longer` (« Une prestation dure plus longtemps que prévu. »)
 - **Et** aucun SMS n'est envoyé pour ce changement d'heure
+- **Et** un client suivant qui n'a pas coché « Me prévenir » ne reçoit rien (ligne `skipped`, `no_consent`, E17) mais voit la nouvelle heure sur son ticket
 
 ### 3. Modifier la prestation
 - **Étant donné** la feuille ouverte avec « Coupe homme »
@@ -74,19 +76,22 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-stylist.start.open` | « Commencer » | Bouton de la carte « Appel en cours », actif quand le client est arrivé |
-| `pro-stylist.start.sheet_title` | « Commencer la prestation » | APP_FLOW F-S6 |
+| `pro-stylist.start.open` | Commencer | Bouton de la carte « Appel en cours », actif quand le client est arrivé |
+| `pro-stylist.start.sheet_title` | Commencer la prestation | APP_FLOW F-S6 |
 | `pro-stylist.start.service_label` | Prestation | Champ prestation |
 | `pro-stylist.start.duration_label` | Durée | Durée modifiable par pas de 5 min |
-| `pro-stylist.start.confirm` | « Commencer » | Bouton de la feuille |
-| `common.presence_status.in_service` | « En prestation » | Voir C-02 |
-| `common.ticket_status.in_service` | « En prestation » | PRD §5.2 |
-| `errors.queue.not_assigned_to_you` | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket. | Aucun texte dans les documents |
+| `pro-stylist.start.duration_decrease` | Retirer 5 min | Bouton du pas de 5 min ; nom accessible |
+| `pro-stylist.start.duration_increase` | Ajouter 5 min | Idem |
+| `pro-stylist.start.confirm` | Commencer | Bouton de la feuille |
+| `common.presence_status.in_service` | En prestation | Voir C-02 |
+| `common.ticket_status.in_service` | En prestation | PRD §5.2 |
+| `common.change_reason.service_longer` | Une prestation dure plus longtemps que prévu. | Raison `{reason}` du changement d'heure (K26) |
+| `errors.queue.not_assigned_to_you` | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket. | Code propre de `start_service` (TRD §6.2) |
 | `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Voir C-04 |
-| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Voir C-02 ; push seulement |
+| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Voir C-02 ; push seulement ; message d'anticipation, seulement avec « Me prévenir » (E17) |
 
 ## Questions ouvertes
-- [PRD / BACKEND_SCHEMA] Bornes de la durée à la feuille « Commencer » : `tickets.planned_duration_minutes` va de 5 à 240 min, `services.duration_minutes` de 15 à 180 min. Le PRD ne dit rien. Lesquelles s'appliquent à la saisie du coiffeur ?
+- [PRD / BACKEND_SCHEMA / TRD] Bornes de la durée à la feuille « Commencer » : `tickets.planned_duration_minutes` va de 5 à 240 min, `services.duration_minutes` de 15 à 180 min ; TRD §6.2 ne donne `duration_limit_reached` (au-delà de 240 min) qu'à `adjust_duration`. Le PRD ne dit rien. Lesquelles s'appliquent à la saisie du coiffeur, et quel code pour une durée hors bornes à `start_service` (`invalid_payload` ?) ?
 - [PRD] Le coiffeur peut-il choisir une prestation dont il ne maîtrise pas la spécialité requise ?
 - [APP_FLOW] Quand le coiffeur change de prestation, la durée est-elle remplacée par la durée prédéfinie de la nouvelle prestation, même s'il l'avait déjà modifiée ?
 - [PRD / APP_FLOW] Client déjà arrivé et en tête : « l'appel et le début s'enchaînent ». Faut-il deux gestes (« Appeler » puis « Commencer ») ou un seul ? La transition 4 ne part que de « Appelé ».

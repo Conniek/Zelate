@@ -91,7 +91,7 @@
 - **Et** la date et l'heure de mon consentement aux notifications de suivi sont enregistrées sur ce ticket (`tickets.notifications_consent_at`, K18)
 - **Et** mon dernier choix est recopié sur mon profil pour information (`profiles.tracking_consent_at`), sans servir à l'envoi
 
-### 11 ter. Case décochée à chaque inscription (K18)
+### 11 bis b. Case décochée à chaque inscription (K18)
 - **Étant donné** que j'avais coché « Me prévenir » pour mon ticket précédent, aujourd'hui terminé
 - **Quand** j'arrive au récapitulatif d'une nouvelle inscription
 - **Alors** la case est de nouveau décochée
@@ -99,14 +99,21 @@
 - **Alors** le nouveau ticket n'a pas de consentement (`notifications_consent_at` vide)
 - **Et** le consentement de mon ticket précédent ne s'applique pas au nouveau
 
-### 11 bis. Case laissée décochée : seulement les messages indispensables
+### 11 bis. Case laissée décochée : seulement les messages indispensables (E17)
 - **Étant donné** que je n'ai jamais donné mon consentement et que je laisse la case « Me prévenir quand mon tour approche » décochée
 - **Quand** je confirme ma place
 - **Alors** le ticket est créé comme au scénario 1
 - **Et** aucun consentement n'est enregistré (`tickets.notifications_consent_at` reste vide)
 - **Et** la notification d'inscription (`ticket_created`) m'est envoyée
-- **Et** plus tard, la notification « votre tour » (`your_turn`) m'est envoyée quand un coiffeur m'appelle
-- **Et** les autres notifications de suivi de ce ticket (« votre tour approche », « préparez-vous », changement d'heure…) ne partent pas : elles sont enregistrées `skipped` avec le motif `no_consent`
+- **Et** plus tard, les messages indispensables de ce ticket me sont envoyés comme à un client qui a coché la case : « votre tour » (`your_turn`), le rappel (`arrival_reminder`), la place libérée (`released_no_show`), le recul (`postponed`), le choix de coiffeur, la demande de réaffectation, l'annulation par le salon (`cancelled_by_salon`)
+- **Et** les autres notifications de suivi de ce ticket (« votre tour approche », « préparez-vous », changement d'heure…) ne partent pas : seuls ces quatre messages d'anticipation (`turn_approaching`, `get_ready`, `estimate_changed`, `end_of_day_risk`) sont enregistrés `skipped` avec le motif `no_consent`
+
+### 11 quater. Premier passage : prénom obligatoire, profil créé (K30)
+- **Étant donné** que mon compte vient d'être créé par le code SMS et n'a pas encore de profil
+- **Quand** je confirme ma place avec mon prénom
+- **Alors** mon profil est créé avec ce prénom (`is_guest = true`) en même temps que le ticket
+- **Quand** la commande `join_queue` arrive sans `first_name`
+- **Alors** elle est refusée avec `queue.invalid_payload` et aucun ticket n'est créé
 
 ### 12. Étape d'identification sautée si je suis déjà connecté
 - **Étant donné** que je suis déjà connecté
@@ -186,17 +193,17 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `client.join.progress` | « {step}/{total} » (exemple APP_FLOW : « 1/5 ») | — |
+| `client.join.progress` | Étape {step} sur {total} | APP_FLOW F-C3 écrit « 1/5 » (indicatif) |
 | `common.actions.next` | « Suivant » | — |
 | `client.join.service.unknown` | « Je ne sais pas encore » | — |
 | `client.join.stylist.first_available` | « Premier disponible » | Présélectionné |
 | `client.join.stylist.estimated_time` | Passage vers {time} | Variable `time` |
-| `client.join.stylist.absent_today` | {first_name} ne travaille pas aujourd'hui. Nous avons choisi « Premier disponible » pour vous. | Variable `firstName` |
+| `client.join.stylist.absent_today` | {first_name} ne travaille pas aujourd'hui. Nous avons choisi « Premier disponible » pour vous. | Variable `first_name` |
 | `client.join.arrival.asap` | « Dès que possible » | Présélectionné |
 | `client.join.arrival.around` | « J'arrive vers… » | Pas de 5 min |
-| `client.join.summary.call_rule` | « une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min » | Chiffres fixés par H4 |
-| `legal.consent.tracking_notifications.label` | « Me prévenir quand mon tour approche » | Case décochée par défaut (K11) |
-| `legal.consent.tracking_notifications.explanation` | Nous vous prévenons 30 min et 10 min avant votre tour, si votre heure change ou si la fermeture approche. Sans cette case, vous recevez seulement les messages indispensables, comme « C'est votre tour ». (APP_FLOW F-C3, indicatif : « sans elle, vous recevez seulement l'inscription et « votre tour » ») | — |
+| `client.join.summary.call_rule` | Une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min. | Chiffres fixés par H4 |
+| `legal.consent.tracking_notifications.label` | « Me prévenir quand mon tour approche » | Case décochée par défaut, à chaque inscription (K11, K18) |
+| `legal.consent.tracking_notifications.explanation` | Nous vous prévenons 30 min et 10 min avant votre tour, si votre heure change ou si la fermeture approche. Sans cette case, vous recevez seulement les messages indispensables, comme « C'est votre tour ». | Conforme à E17 |
 | `client.join.confirm` | « Confirmer ma place » | — |
 | `client.join.guard.already_has_ticket` | « Vous avez déjà une place » | — |
 | `client.join.view_my_ticket` | « Voir ma place » | — |
@@ -208,22 +215,23 @@
 | `errors.queue.service_unavailable` | Cette prestation n'est plus proposée pour le moment. Choisissez-en une autre, puis réessayez. | — |
 | `errors.queue.stylist_unavailable` | Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. | — |
 | `errors.queue.rate_limited` | Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez. | Partagé avec P-03 |
-| `notifications.ticket_created.push` | Voir `notifications.ticket_created.push.*` dans le dictionnaire (2 textes) | Variables : rang, heure, code ; message indispensable (part sans consentement, K11) |
+| `notifications.ticket_created.push` | Voir `notifications.ticket_created.push.*` dans le dictionnaire (2 textes) | Variables : rang, heure, code ; message indispensable (part sans consentement, E17) |
+| `errors.queue.invalid_payload` | Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. | Prénom absent au premier passage (K30) |
 | `notifications.ticket_created.sms` | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} | SMS : 160 caractères GSM-7 au plus, avec rang, heure, code et lien court `zelate.fr/t/xxxxxxxx` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés (K5) |
 
 ## Questions ouvertes
-- **Résolu le 18/10** (K11) — Case de consentement : décochée par défaut ; sans elle, seuls `ticket_created` et `your_turn` partent, les autres notifications passent en `skipped` (`no_consent`) ; voir scénarios 10, 11 et 11 bis.
-- **BACKEND_SCHEMA §4.1 et §4.16 / TRD §6.2 / APP_FLOW F-C3** : le consentement est porté par le profil (`tickets.notifications_consent_at`, K18) alors que la case est présentée, décochée, à chaque inscription (`notifications_consent` dans `join_queue`). Un client qui a consenti pour un ticket précédent voit-il la case décochée au ticket suivant ? S'il la laisse décochée, son consentement est-il retiré, ou reste-t-il valable (et toutes les notifications partent) ?
-- **PRD §5.4 / BACKEND_SCHEMA §4.16** : sans consentement, la notification « Annulation par le salon » (`cancelled_by_salon`) n'est pas dans les messages indispensables : un client retiré par le salon ou annulé en fin de journée ne serait donc prévenu ni par push ni par SMS. Est-ce voulu ? (même question dans U-11)
+- **Résolu le 19/10** (E17, remplace K11) — Case de consentement : décochée par défaut ; elle ne règle que les quatre messages d'anticipation ; tous les autres messages au client partent ; voir scénarios 10, 11 et 11 bis.
+- **Résolu le 19/10** (K18, K34 ; TRD §8) — Consentement porté par chaque ticket : case décochée à chaque inscription ; le consentement d'un ticket précédent ne vaut pas pour le suivant ; `profiles.tracking_consent_at` sert seulement d'information ; voir scénarios 11 et 11 bis b.
+- **Résolu le 19/10** (E17) — Annulation par le salon sans consentement : message indispensable, il part toujours (push et SMS, hors plafond, E28).
 - **TRD §6.2** : que recouvre exactement `queue.service_unavailable` (prestation désactivée, aucun coiffeur présent qui la maîtrise, autre) ? Et après cette erreur ou `queue.stylist_unavailable`, le client revient-il à l'étape 1 ou 2 ? APP_FLOW F-C3 ne prévoit de suite que pour `already_has_active_ticket`, `queue_closed`, `queue_paused` et `queue_full`.
 - **PRD §5.2 règle 1 / APP_FLOW F-C3** : le PRD dit que le client « est prévenu avant validation et peut choisir “premier disponible” » ; APP_FLOW repasse automatiquement sur « premier disponible ». Lequel des deux s'applique ?
 - **PRD §5.2 / BACKEND_SCHEMA** : aucune table ne dit si un coiffeur « travaille ce jour-là » (pas de planning par coiffeur). La présence vaut `offline` en début de journée pour tout le monde. « Absent ce jour-là » veut-il dire seulement le statut `absent` déclaré par le gérant ?
 - **PRD §5.2 règle 4** : la liste des coiffeurs de l'étape 2 est-elle filtrée selon la spécialité requise par la prestation (quand elle en a une, E12) ? Un client peut-il demander un coiffeur qui ne maîtrise pas cette prestation ?
 - **Résolu le 18/10** (E12) — « Je ne sais pas encore » : accepté par tous les coiffeurs ; voir scénario 4.
-- **BACKEND_SCHEMA §4.13 / TRD ADR-015 et §6.2** : le schéma remplit `assigned_member_id` dès la création si un coiffeur est demandé ; TRD et PRD (transition 2) fixent l'attribution à l'appel. Laquelle des deux règles tester ?
-- **PRD §5.2 « Complète »** : la file complète se calcule-t-elle pour tout le salon ou pour le coiffeur demandé ? L'heure d'arrivée déclarée entre-t-elle dans le calcul ? Peut-on déclarer une arrivée dont la prestation finirait après la fermeture ?
+- **Résolu le 19/10** (K39) — `assigned_member_id` : fixé à l'appel, même avec un coiffeur demandé (qui reste dans `requested_member_id`) ; voir scénarios 1 et 6.
+- **PRD §5.2 « Complète »** : `is_full` est calculé pour le salon par le moteur (K36). Restent ouverts : l'heure d'arrivée déclarée entre-t-elle dans le calcul ? Peut-on déclarer une arrivée dont la prestation finirait après la fermeture ? Un coiffeur demandé dont la journée est pleine donne-t-il `queue_full` ou `stylist_unavailable` ?
 - **Résolu le 18/10** (K1) — File en pause : code `queue.queue_paused` (TRD §6.2), même suite que `queue_closed` (« Salons proches ») ; voir scénario 17.
 - **BACKEND_SCHEMA §5 / PRD P-03** : `private.rate_limits` prévoit un plafond de « création de tickets », absent du PRD. Quelle valeur, et sur quelle clé (compte, IP) ?
-- **PRD H8 / APP_FLOW F-S5** : comment valide-t-on l'arrivée d'un client qui n'est pas encore appelé ? APP_FLOW ne place la saisie du code que dans la carte « Appel en cours ».
+- **Rattachée à E34** (en attente d'Ely) — PRD H8 / APP_FLOW F-S5 : « dès son arrivée » désigne-t-il l'arrivée physique ou l'heure déclarée ? Si c'est l'arrivée physique, comment valide-t-on l'arrivée d'un client qui n'est pas encore appelé ? APP_FLOW ne place la saisie du code que dans la carte « Appel en cours » ; voir scénario 9.
 - **Résolu le 18/10** (K5) — Place du lien dans le SMS : lien court `zelate.fr/t/xxxxxxxx` (8 caractères) résolu par `ticket-public` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés ; voir scénario 21.
-- **Textes** : le message d'absence du coiffeur, l'explication du consentement (APP_FLOW n'en donne qu'un libellé indicatif), les messages des erreurs et les modèles push et SMS d'inscription ne figurent dans aucun document.
+- **Résolu le 19/10** (dictionnaire `client.json`, `legal.json`, `errors.json`, `notifications.json`) — Textes : message d'absence du coiffeur, explication du consentement (alignée sur E17), erreurs et modèles d'inscription rédigés.

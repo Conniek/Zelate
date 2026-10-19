@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : H2 ; PRD §5.2 transition 5 (« Coiffeur, ou gérant si le coiffeur a oublié ») ; PRD §5.1 « Le gérant peut clore une prestation qu'un coiffeur a oublié de terminer ; l'action est inscrite au journal » (E15), règle des 10 min ; PRD §7.1 principe 2 (les gestes critiques refusent le double déclenchement)
 - Parcours : F-S7 → F-S4 (APP_FLOW §4) ; F-M6 « Panneau ticket : Terminer la prestation » (dashboard) ; F-C5 (écran de fin côté client)
-- Commandes et données : `complete_service` (coiffeur attribué ; gérant, E15 ; code propre `queue.not_assigned_to_you`, code commun `queue.invalid_transition`, TRD §6.2) · tables `tickets` (`completed_at`, `actual_duration_minutes`), `stylist_presence`, `ticket_events` (`completed`, `actor_type` = `manager` quand c'est le gérant), `notifications` (et peut-être `salon_members.served_today_count`, voir questions)
+- Commandes et données : `complete_service` (coiffeur attribué ; gérant, E15 ; code propre `queue.not_assigned_to_you`, code commun `queue.invalid_transition`, TRD §6.2) · tables `tickets` (`completed_at`, `actual_duration_minutes`), `stylist_presence`, `ticket_events` (`completed`, `actor_type` = `manager` quand c'est le gérant), `notifications` (`estimate_changed`, raison `service_shorter`), `salons.setup_test_passed_at` (ticket `is_test`, K35) (et peut-être `salon_members.served_today_count`, voir questions)
 
 ## Scénarios
 
@@ -17,7 +17,7 @@
 - **Et** le statut d'Inès redevient « Disponible »
 - **Et** Inès revient sur « Ma file », avec son prochain client en haut
 - **Et** l'heure de passage des clients suivants est recalculée
-- **Et** Léa voit l'écran de fin avec la raison et « Rejoindre une autre file »
+- **Et** Léa voit l'écran de fin « Merci de votre visite » avec « Rejoindre une autre file »
 - **Et** le journal du ticket enregistre un événement `completed`
 - **Et** le dashboard affiche Inès « Disponible » en moins de 2 s
 
@@ -37,8 +37,9 @@
 - **Quand** elle termine à 14h25
 - **Alors** la durée réelle enregistrée est de 25 min
 - **Et** l'heure de passage des clients suivants avance
-- **Et** chaque client dont l'heure avance de 20 min reçoit une notification push de changement d'heure, avec la raison
+- **Et** chaque client qui a coché « Me prévenir » et dont l'heure avance de 20 min reçoit une notification push de changement d'heure, avec la raison `service_shorter` (« Une prestation a été plus courte que prévu. »)
 - **Et** aucun SMS n'est envoyé pour ce changement d'heure
+- **Et** un client qui n'a pas coché « Me prévenir » ne reçoit rien (ligne `skipped`, `no_consent`, E17) mais voit la nouvelle heure sur son ticket
 
 ### 5. Le prochain client n'est pas appelé automatiquement
 - **Étant donné** Inès qui vient de terminer, avec un ticket éligible dans sa file
@@ -93,23 +94,34 @@
 - **Et** la durée réelle enregistrée par Inès ne change pas
 - **Et** le journal ne contient qu'un seul événement `completed`, avec Inès comme actrice
 
+### 13. Fin du ticket de test (S-07, K35)
+- **Étant donné** un salon validé mais non publié, et Inès en prestation avec le client fictif « Test » (`is_test`)
+- **Quand** Inès termine la prestation
+- **Alors** le ticket de test passe à « Terminé »
+- **Et** le test du salon est noté réussi (`salons.setup_test_passed_at` renseigné)
+- **Et** la case « Test réussi » est cochée dans la configuration du gérant (APP_FLOW F-M3)
+
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-stylist.service.complete` | « Terminer » | Appui long de 600 ms avec remplissage progressif (DESIGN_SYSTEM `HoldButton`) |
+| `pro-stylist.service.complete` | Terminer | Appui long de 600 ms avec remplissage progressif (DESIGN_SYSTEM `HoldButton`) |
 | `pro-stylist.service.complete_hint` | Maintenez pour terminer | Indication « maintenir pour terminer » pour l'utilisateur et le lecteur d'écran |
 | `pro-stylist.service.complete_confirm` | Terminer la prestation de {first_name} ? | Confirmation après Entrée (alternative clavier) |
-| `common.ticket_status.completed` | « Terminé » | PRD §5.2 |
-| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Push seulement ; raison : prestation précédente terminée plus tôt |
+| `common.ticket_status.completed` | Terminé | PRD §5.2 |
+| `client.ticket.end.title.completed` | Merci de votre visite | Écran de fin du client (F-C5) |
+| `client.ticket.end.reason.completed` | Votre passage chez {salon_name} est terminé. À bientôt ! | Idem |
+| `client.ticket.end.rejoin` | Rejoindre une autre file | Idem |
+| `common.change_reason.service_shorter` | Une prestation a été plus courte que prévu. | Raison `{reason}` (K26) |
+| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Push seulement ; message d'anticipation, seulement avec « Me prévenir » (E17) |
 | `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Voir C-04 |
 | `errors.queue.not_assigned_to_you` | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket. | Voir C-06 |
-| `pro-manager.ticket_panel.complete` | « Terminer la prestation » | APP_FLOW F-M6, panneau ticket (E15) |
+| `pro-manager.ticket_panel.complete` | Terminer la prestation | APP_FLOW F-M6, panneau ticket (E15) |
 | `pro-manager.ticket_panel.complete_confirm` | Terminer la prestation pour {first_name} ? L'action sera inscrite au journal à votre nom. | Confirmation avant `complete_service` au nom du gérant |
 
 ## Questions ouvertes
 - [APP_FLOW / DESIGN_SYSTEM] APP_FLOW F-S7 : « appui long 600 ms, ou appui + confirmation » ; DESIGN_SYSTEM : la confirmation est l'alternative clavier (Entrée puis confirmation). Un appui bref au doigt ouvre-t-il une confirmation, ou ne fait-il rien ?
 - [BACKEND_SCHEMA] Quand `salon_members.served_today_count` (critère d'égalité de la distribution, H1) augmente-t-il : à « Terminer », à « Commencer », à l'appel ? Comment `actual_duration_minutes` est-il arrondi (minute inférieure, supérieure) ?
-- [PRD] Si l'heure de fin de journée du coiffeur (`shift_end_at`) passe pendant la prestation, son statut après « Terminer » est-il « Fin de journée » ou « Disponible » ?
+- [PRD] Si l'heure de fin de journée du coiffeur (`shift_end_at`) passe pendant la prestation, son statut après « Terminer » est-il « Fin de journée » ou « Disponible » ? Lié à **E32 (en attente d'Ely)** : passage automatique de statut à `shift_end_at`.
 - **Résolu le 18/10 (E15)** : le gérant peut clore une prestation oubliée depuis le dashboard, avec trace au journal (PRD §5.1, transition 5 ; TRD §6.2 `complete_service` ; APP_FLOW F-M6). Question d'origine : le gérant peut-il terminer à la place du coiffeur ?
 - [PRD / BACKEND_SCHEMA] Prestation close tard par le gérant : la durée réelle enregistrée (`actual_duration_minutes`) est celle jusqu'à son geste, donc faussée, et fausse aussi les moyennes du bilan (C-10). Faut-il la marquer, l'exclure des statistiques, ou laisser le gérant corriger l'heure de fin ?
 - [TRD §6.2] Un coiffeur qui n'est pas celui du ticket reçoit `not_assigned_to_you` ; un gérant d'un autre salon reçoit-il le code commun `forbidden` ? (`complete_service` n'a pas `ticket_other_salon`, contrairement à `remove_ticket`.)

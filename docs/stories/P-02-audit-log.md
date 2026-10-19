@@ -5,15 +5,16 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : H5 (recul tracé au journal d'audit), H6 (aucun numéro de client affiché) (PRD §5.1) ; retrait et réorganisation toujours justifiés (PRD §5.1, décisions d'Ely) ; journal d'audit inaltérable (PRD §6 « Sécurité ») ; le journal ne contient ni prénom, ni téléphone, ni jeton, ni texte libre ; la précision d'un retrait est rangée dans `tickets.removal_note`, jamais dans le journal (K10, TRD §6.2 et §7) ; le gérant peut clore une prestation, l'action est inscrite au journal (E15, PRD §5.1) ; persona « Admin plateforme » : tracer les incidents (PRD §3)
 - Parcours : F-A2 (`/admin/audit`) (APP_FLOW §6) ; garde « sans droit admin » (APP_FLOW §2.3)
-- Commandes et données : RPC `get_audit_log(salon_id?, from, to, type?, cursor?)` (BACKEND_SCHEMA §8.1 ; voir questions ouvertes) · tables `ticket_events` (`reason_code`, `before`, `after`, `actor_type`), `salon_events` (dont `admin_viewed_client_data`), `platform_admins` · `remove_ticket` (`reason_code`, `note?` rangée dans `tickets.removal_note`), `take_next`, `complete_service`
+- Commandes et données : RPC `get_audit_log(salon_id?, from, to, type?, member_id?, cursor?)` (7 derniers jours par défaut ; prénom du membre qui a agi et code du ticket, jamais le prénom du client, K25 ; TRD §6.3, BACKEND_SCHEMA §8.1) · tables `ticket_events` (`reason_code`, `before`, `after`, `actor_type`), `salon_events` (dont `admin_viewed_client_data`), `platform_admins` · `remove_ticket` (`reason_code`, `note?` rangée dans `tickets.removal_note`), `take_next`, `complete_service`
 
 ## Scénarios
 
 ### 1. Consulter le journal global
 - **Étant donné** que je suis connecté comme administrateur
 - **Quand** j'ouvre `/admin/audit`
-- **Alors** je vois les événements de tous les salons
-- **Et** chaque événement indique qui a agi (type d'acteur et identité), quand, quoi (type d'action) et le motif s'il y en a un
+- **Alors** je vois les événements de tous les salons des 7 derniers jours (période par défaut, K25)
+- **Et** chaque événement indique qui a agi (type d'acteur, et prénom du membre quand c'est un gérant ou un coiffeur), quand, quoi (type d'action), le code du ticket concerné et le motif s'il y en a un
+- **Et** aucun événement n'affiche le prénom d'un client (K25)
 
 ### 2. Filtrer par salon
 - **Étant donné** que le journal contient des événements de plusieurs salons
@@ -43,6 +44,13 @@
 - **Quand** je consulte cet événement
 - **Alors** il apparaît comme un événement `completed` dont l'acteur est de type gérant (`actor_type` = `manager`)
 
+### 4 ter bis. Motifs des rendez-vous et des réaffectations (E27, E29)
+- **Étant donné** un rendez-vous annulé par un coiffeur avec le motif `client_request`, un rendez-vous signalé refusé avec le motif `other`, et une demande de réaffectation restée sans réponse
+- **Quand** je consulte ces événements
+- **Alors** l'annulation (`cancelled`) affiche son motif `client_request`
+- **Et** le refus (`appointment_rejected`) affiche son motif `other`
+- **Et** la fin de la demande (`reassignment_resolved`) affiche le résultat `expired`
+
 ### 4 quater. Anonymisation à 12 mois sans toucher au journal (K10)
 - **Étant donné** un ticket de plus de 12 mois, anonymisé par la tâche quotidienne (prénom, client et précision du retrait effacés)
 - **Quand** je consulte les événements de ce ticket
@@ -63,6 +71,7 @@
 - **Étant donné** que je suis administrateur
 - **Quand** je consulte une donnée d'un client
 - **Alors** un événement `admin_viewed_client_data` est ajouté au journal avec mon identité et l'heure
+- **Et** l'événement porte le ticket consulté (`salon_events.ticket_id`, BACKEND_SCHEMA §4.15)
 
 ### 8. Confidentialité : ni numéro ni jeton
 - **Étant donné** des événements de tickets créés depuis l'app, par QR et à l'accueil
@@ -79,24 +88,24 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.admin.audit.columns.actor` | « Qui » | — |
-| `pro-manager.admin.audit.columns.date` | « Quand » | Format fr-FR |
-| `pro-manager.admin.audit.columns.action` | « Quoi » | — |
-| `pro-manager.admin.audit.columns.reason` | « Motif » | — |
-| `pro-manager.admin.audit.filters.salon` | « Salon » | — |
-| `pro-manager.admin.audit.filters.period` | « Période » | — |
-| `pro-manager.admin.audit.filters.type` | « Type d'action » | — |
-| `pro-manager.admin.audit.filters.actor` | « Acteur » | — |
-| `pro-manager.audit.event_type.<type>` | Voir `pro-manager.audit.event_type.*` dans le dictionnaire (42 textes) | Une clé par valeur de `ticket_event_type` et de `salon_event_type` |
-| `pro-manager.audit.actor_type.<type>` | Voir `pro-manager.audit.actor_type.*` dans le dictionnaire (5 textes) | Une clé par valeur de `actor_type` |
-| `pro-manager.admin.audit.empty` | Aucun événement pour ces filtres. Élargissez la période ou retirez un filtre. | — |
+| `pro-manager.admin.audit.title` | Journal global | Titre de `/admin/audit` |
+| `pro-manager.admin.audit.columns.*` | Salon · Qui · Quand · Quoi · Motif | Colonnes ; « Quand » au format fr-FR |
+| `pro-manager.admin.audit.filters.salon` / `.all_salons` | Salon / Tous les salons | — |
+| `pro-manager.admin.audit.filters.period` | Période | 7 derniers jours par défaut (K25) |
+| `pro-manager.admin.audit.filters.type` | Type d'action | — |
+| `pro-manager.admin.audit.filters.actor` / `.all_actors` | Acteur / Tous les acteurs | Voir questions (paramètre de la RPC) |
+| `pro-manager.audit.event_type.<type>` | Exemples : `completed` « Prestation terminée », `postponed` « Client reculé dans la file », `admin_viewed_client_data` « Données client consultées par l'équipe Zelaté » (42 textes au dictionnaire) | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; **manque `appointment_merged`** (43 valeurs dans les enums) |
+| `pro-manager.audit.actor_type.<type>` | Client · Coiffeur · Gérant · Zelaté (automatique) · Équipe Zelaté | Une clé par valeur de `actor_type` |
+| `pro-manager.audit.reason.<code>` | `client_cancelled` « Annulé par le client » · `removed_by_salon` « Retiré par le salon » · `stylist_unavailable` « Coiffeur indisponible » · `end_of_day` « Fin de journée » · `appointment_rejected` « Rendez-vous refusé par le salon » · `take_next` « Retard déclaré : le coiffeur a pris le suivant » | Motifs affichés ; textes des valeurs de `removal_reason` et de `reassignment_choice` absents (voir questions) |
+| `pro-manager.audit.postponed_places` | {count, plural, one {Reculé de # place} other {Reculé de # places}} | Recul (H5) |
+| `pro-manager.audit.load_more` | Afficher plus | Pagination |
+| `pro-manager.admin.audit.empty` | Aucun événement pour ces filtres. Élargissez la période ou retirez un filtre. | État vide |
 
 ## Questions ouvertes
-- **APP_FLOW F-A2 / BACKEND_SCHEMA §8.1** : APP_FLOW prévoit un filtre « acteur », mais `get_audit_log` n'a pas de paramètre d'acteur (`salon_id?`, `from`, `to`, `type?`, `cursor?`).
-- **TRD §6.3 / BACKEND_SCHEMA §8.1** : le TRD décrit `get_audit_log(salon_id?, from, to, cursor)`, sans `type?` ni `cursor` facultatif ; le schéma a `type?` et `cursor?`. Le filtre « type d'action » (APP_FLOW F-A2, scénario 3) est-il fait par la RPC ?
+- **Résolu le 19/10 (TRD §6.3 et BACKEND_SCHEMA §8.1 v0.5)** en partie : `get_audit_log(salon_id?, from, to, type?, member_id?, cursor?)` dans les deux documents ; `type?` porte le filtre « Type d'action », `member_id?` (acteur ou membre concerné) le filtre par membre. Reste [APP_FLOW F-A2 / BACKEND_SCHEMA §8.1] : le filtre « Acteur » de l'admin vise-t-il aussi un type d'acteur (client, système, équipe Zelaté), que la RPC ne sait pas filtrer ?
 - **Résolu le 18/10** (K10) — Journal inaltérable et anonymisation à 12 mois : le journal ne contient ni prénom ni texte libre, l'anonymisation porte seulement sur `tickets` (prénom, client, `removal_note`) ; voir scénarios 4, 4 bis et 4 quater.
 - **APP_FLOW F-A2 / BACKEND_SCHEMA §3** : qu'est-ce qu'une « consultation d'une donnée client » qui déclenche `admin_viewed_client_data` : afficher un prénom dans le journal, ouvrir le détail d'un ticket, autre chose ?
-- **APP_FLOW F-A2 / BACKEND_SCHEMA §4.14** : pour « qui », quelle identité affiche-t-on selon le type d'acteur ? Le journal ne garde que `actor_member_id` ou `actor_profile_id` (K10) : l'écran affiche-t-il le nom d'un membre et le prénom d'un client lus dans `salon_members` et `profiles` (et alors, chaque affichage d'un prénom client déclenche-t-il `admin_viewed_client_data`) ? Que montre-t-il pour un client dont le compte est supprimé ou le ticket anonymisé ?
-- **APP_FLOW F-A2** : quelle période est affichée par défaut ? Combien d'événements par page ?
+- **Résolu le 19/10 (K25, TRD §6.3)** : chaque ligne porte le prénom du membre qui a agi et le code du ticket, jamais le prénom du client (scénario 1) ; un client apparaît comme « Client », le système comme « Zelaté (automatique) ». Question d'origine : pour « qui », quelle identité affiche-t-on selon le type d'acteur ? Le journal ne garde que `actor_member_id` ou `actor_profile_id` (K10) : l'écran affiche-t-il le nom d'un membre et le prénom d'un client lus dans `salon_members` et `profiles` (et alors, chaque affichage d'un prénom client déclenche-t-il `admin_viewed_client_data`) ? Que montre-t-il pour un client dont le compte est supprimé ou le ticket anonymisé ?
+- **Résolu le 19/10 (K25)** en partie : 7 derniers jours par défaut. Reste [APP_FLOW F-A2] : combien d'événements par page (« Afficher plus ») ?
 - **Résolu le 18/10** (K12) — Journal du salon côté gérant : exigence S-17 ajoutée au PRD (`/dashboard/audit`, filtres par date, coiffeur et type) ; voir la story S-17.
-- **Textes** : les libellés des types d'événements et d'acteurs et l'état vide ne figurent dans aucun document.
+- **Résolu le 19/10 (dictionnaire `pro-manager.json`)** en partie : types d'événements, types d'acteurs, motifs d'annulation et état vide ont leur texte. Reste [dictionnaire] : `pro-manager.audit.event_type.appointment_merged` manque, ainsi que les libellés des motifs de retrait (`removal_reason`, scénario 4) et des résultats de réaffectation (`reassignment_choice`, scénario 4 ter bis) dans `pro-manager.audit.reason`.
