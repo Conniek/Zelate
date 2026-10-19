@@ -170,7 +170,7 @@ Fuseau horaire implicite `Europe/Paris` (marché France uniquement) ; pas de col
 | `profile_id` | uuid | FK → `profiles(id)` | Compte du membre ; rempli à l'activation de l'invitation (obligatoire si `status = 'active'`) |
 | `role` | `member_role` | NN | |
 | `status` | `member_status` | NN, défaut `invited` | |
-| `first_name` | text | NN | |
+| `first_name` | text | NN, 1 à 30 caractères | Limite des SMS (K20) |
 | `last_name` | text | NN | |
 | `email` | citext | NN | Adresse d'invitation |
 | `photo_path` | text | | Bucket `member-photos` |
@@ -282,7 +282,7 @@ Les tables `salon_devices` et `stylist_sessions` ne sont créées qu'au lot 2 (t
 | `confirmed_at` | timestamptz | | Rendez-vous signalé confirmé par le salon |
 | `confirmed_by_member_id` | uuid | FK → `salon_members(id)` | Gérant ou coiffeur qui confirme |
 | `confirmation_reminder_sent_at` | timestamptz | | Rappel au gérant et au coiffeur envoyé 10 min après un rendez-vous signalé non confirmé (une seule fois, E19) |
-| `appointment_delay_warned_steps` | smallint | NN, défaut 0 | Nombre d'alertes de retard envoyées (10, 20, 30 min… de retard), dans le plafond SMS (R5) |
+| `appointment_delay_warned_steps` | smallint | NN, défaut 0 | Dernier palier de retard signalé (1 = 10 min, 2 = 20 min…) ; un saut de plusieurs paliers ne donne qu'une alerte (E23) ; dans le plafond SMS (R5) |
 | `client_id` | uuid | FK → `profiles(id)` on delete set null (K29) | Vide pour un walk-in, et après la suppression du compte |
 | `display_name` | text | NN, ≤ 30 caractères | Prénom affiché ; « Client » après anonymisation (K29) |
 | `channel` | `ticket_channel` | NN | |

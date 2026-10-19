@@ -121,6 +121,14 @@
     },
     "actions": {
       "join_queue": "Rejoindre la file"
+    },
+    "reason": {
+      "emergency": "urgence au salon",
+      "client_request": "à votre demande",
+      "duplicate": "inscription en double",
+      "inappropriate_behaviour": "décision du salon",
+      "other": "imprévu au salon",
+      "stylist_unavailable": "aucun coiffeur disponible"
     }
   },
   "appointment_delay": {

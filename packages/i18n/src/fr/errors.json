@@ -25,7 +25,7 @@
     "postpone_limit_reached": "Ce client a déjà reculé de 2 places, le maximum. Attendez son arrivée : sa place sera libérée à la fin du délai.",
     "reassignment_pending": "Une demande de changement de coiffeur attend déjà la réponse du client. Patientez 10 min au plus.",
     "salon_not_published": "Votre salon n'est pas encore publié : la file ne peut pas être ouverte. Publiez-le d'abord.",
-    "salon_already_published": "Votre salon est déjà publié : les tickets de test ne sont plus possibles.",
+    "salon_already_published": "Votre salon est déjà publié.",
     "appointment_not_today": "Un rendez-vous ne peut être saisi que pour aujourd'hui.",
     "member_required": "Choisissez le coiffeur de ce rendez-vous pour le confirmer.",
     "invalid_merge_target": "Ce rendez-vous ne peut plus être regroupé. Confirmez le signalement seul ou choisissez un autre rendez-vous.",

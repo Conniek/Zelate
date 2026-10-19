@@ -189,7 +189,10 @@
     "ticket": {
       "appointment_time": "RDV {time}",
       "appointment_delay": "{minutes} min de retard",
-      "awaiting_client_answer": "En attente de réponse"
+      "awaiting_client_answer": "En attente de réponse",
+      "reassignment_waiting": "Réaffectation : en attente du client",
+      "reassignment_refused": "Réaffectation refusée par le client",
+      "reassignment_expired": "Réaffectation sans réponse du client"
     },
     "empty": "Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct."
   },
@@ -328,7 +331,8 @@
       "unknown_stylist": "Coiffeur non précisé par le client",
       "merge_suggestion": "Rapprocher du rendez-vous déjà saisi : {first_name}, {time}, avec {stylist_name}",
       "reminder": "Signalé il y a plus de 10 min : confirmez ou refusez."
-    }
+    },
+    "warning_stylist_absent": "{stylist_name} est déclaré absent aujourd'hui. Le rendez-vous est enregistré, pensez à le réaffecter."
   },
   "summary": {
     "title": "Récapitulatif du jour",
@@ -398,7 +402,8 @@
       "member_sessions_revoked": "Appareils d'un coiffeur déconnectés",
       "qr_regenerated": "QR code régénéré",
       "settings_updated": "Réglages du salon modifiés",
-      "admin_viewed_client_data": "Données client consultées par l'équipe Zelaté"
+      "admin_viewed_client_data": "Données client consultées par l'équipe Zelaté",
+      "appointment_merged": "Rendez-vous regroupé"
     },
     "actor_type": {
       "client": "Client",
@@ -413,7 +418,11 @@
       "stylist_unavailable": "Coiffeur indisponible",
       "end_of_day": "Fin de journée",
       "appointment_rejected": "Rendez-vous refusé par le salon",
-      "take_next": "Retard déclaré : le coiffeur a pris le suivant"
+      "take_next": "Retard déclaré : le coiffeur a pris le suivant",
+      "merged": "Regroupé avec le rendez-vous saisi",
+      "accepted": "Accepté par le client",
+      "refused": "Refusé par le client",
+      "expired": "Sans réponse du client"
     },
     "postponed_places": "{count, plural, one {Reculé de # place} other {Reculé de # places}}",
     "load_more": "Afficher plus",
