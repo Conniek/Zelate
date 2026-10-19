@@ -3,9 +3,9 @@
 **En tant que** client, **je veux** rejoindre la file d'un salon en choisissant ma prestation, mon coiffeur (ou le premier disponible) et mon heure d'arrivée, **afin d'**obtenir une place et une heure de passage sans attendre sur place.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H1 (file unique, coiffeur demandé en option), H2 (attente simulée coiffeur par coiffeur), H4 (règle des 10 min rappelée au récapitulatif), H6 (numéro jamais affiché au salon), H8 (heure d'arrivée déclarée) (PRD §5.1) ; un seul ticket actif tous salons confondus ; spécialité facultative, « je ne sais pas encore » accepté par tous les coiffeurs (E12) ; case « Me prévenir » décochée par défaut, sans elle seuls l'inscription et « votre tour » sont envoyés (K11) (PRD §5.1 « Autres règles ») ; transition 1, calcul de l'heure de passage, distribution règles 1 à 4, états de la file (PRD §5.2) ; notification « Inscription » (PRD §5.4) ; SMS en 160 caractères GSM-7 : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (K5, TRD §9)
+- Règles appliquées : H1 (file unique, coiffeur demandé en option), H2 (attente simulée coiffeur par coiffeur), H4 (règle des 10 min rappelée au récapitulatif), H6 (numéro jamais affiché au salon), H8 (heure d'arrivée déclarée) (PRD §5.1) ; un seul ticket actif tous salons confondus ; spécialité facultative, « je ne sais pas encore » accepté par tous les coiffeurs (E12) ; case « Me prévenir » décochée par défaut, à chaque inscription ; elle ne règle que les messages d'anticipation (votre tour approche, préparez-vous, changement d'heure, risque de fin de journée) ; les messages indispensables partent toujours (E17, remplace K11 ; consentement porté par le ticket, K18) (PRD §5.1 « Autres règles ») ; profil créé au premier passage par `join_queue` (K30) ; contact privé pour chaque ticket dont le numéro est connu (K28) ; coiffeur attribué seulement à l'appel (K39) ; transition 1, calcul de l'heure de passage, distribution règles 1 à 4, états de la file (PRD §5.2) ; notification « Inscription » (PRD §5.4) ; SMS en 160 caractères GSM-7 : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (K5, TRD §9)
 - Parcours : F-C2 → F-C3 (étapes 1 à 5) → F-C5 et F-C9 (APP_FLOW §3) ; garde « ticket actif » (APP_FLOW §2.3) ; événement « Ticket créé » (APP_FLOW §7)
-- Commandes et données : `join_queue` (`salon_id`, `service_id` ou `unknown_service`, `requested_member_id?`, `declared_arrival_at?`, `channel` = `app`, `notifications_consent` faux par défaut) · codes `queue.queue_closed`, `queue.queue_paused`, `queue.queue_full`, `queue.already_has_active_ticket`, `queue.service_unavailable`, `queue.stylist_unavailable` et codes communs (TRD §6.2) · tables `tickets` (`short_code`, `tracking_token`, `tracking_short_code`, `queue_rank`, `requested_member_id`, `estimated_member_id`, `planned_duration_minutes`, `declared_arrival_at`, `estimated_start_at`, `initial_estimated_start_at`, `channel`, `status`), `ticket_events` (`created`), `notifications` (`ticket_created`, `status` = `skipped`, `skip_reason` = `no_consent`), `profiles` (`tracking_consent_at`), `private.ticket_contacts`, `private.processed_commands`
+- Commandes et données : `join_queue` (`salon_id`, `service_id` ou `unknown_service`, `requested_member_id?`, `declared_arrival_at?`, `channel` = `app`, `notifications_consent` faux par défaut, `first_name?` obligatoire si le compte n'a pas encore de profil) · codes `queue.queue_closed`, `queue.queue_paused`, `queue.queue_full`, `queue.already_has_active_ticket`, `queue.service_unavailable`, `queue.stylist_unavailable` et codes communs (TRD §6.2) · tables `tickets` (`short_code`, `tracking_token`, `tracking_short_code`, `queue_rank`, `requested_member_id`, `estimated_member_id`, `assigned_member_id` (vide jusqu'à l'appel), `notifications_consent_at`, `planned_duration_minutes`, `declared_arrival_at`, `estimated_start_at`, `initial_estimated_start_at`, `channel`, `status`), `ticket_events` (`created`), `notifications` (`ticket_created` ; `status` = `skipped`, `skip_reason` = `no_consent` pour les seuls messages d'anticipation), `profiles` (création au premier passage, `is_guest` ; `tracking_consent_at` pour information), `private.ticket_contacts` (numéro du compte Auth, empreinte `phone_hash`), `private.processed_commands`
 
 ## Scénarios
 
@@ -14,6 +14,8 @@
 - **Quand** je choisis une prestation, je garde « Premier disponible » et « Dès que possible », je coche « Me prévenir quand mon tour approche » et je touche « Confirmer ma place »
 - **Alors** un ticket au statut « En attente » est créé avec le canal `app`
 - **Et** le ticket a un code de 5 caractères, un rang, un coiffeur pressenti et une heure de passage estimée
+- **Et** aucun coiffeur ne lui est encore attribué (`assigned_member_id` vide jusqu'à l'appel, K39)
+- **Et** mon numéro est rangé dans le contact privé du ticket (`private.ticket_contacts`, K28), jamais dans `tickets`
 - **Et** l'heure annoncée à l'inscription est enregistrée (`initial_estimated_start_at`)
 - **Et** un événement `created` est ajouté au journal du ticket
 - **Et** l'écran « Mon ticket » s'ouvre (F-C5), avec la proposition d'installer l'app (F-C9)
@@ -50,6 +52,7 @@
 - **Étant donné** qu'un coiffeur travaille aujourd'hui dans ce salon
 - **Quand** je le choisis à l'étape 2 et que je confirme ma place
 - **Alors** le ticket est réservé à ce coiffeur (`requested_member_id`)
+- **Et** `assigned_member_id` reste vide jusqu'à l'appel (K39)
 - **Et** mon ticket affiche le prénom de ce coiffeur
 - **Et** dans l'espace de ce coiffeur, le ticket porte la mention « vous a demandé »
 
@@ -66,26 +69,35 @@
 - **Et** l'heure déclarée est enregistrée sur le ticket (`declared_arrival_at`)
 - **Et** l'attente affichée est calculée à partir de l'heure la plus tardive entre mon heure de passage simulée et 15h00, arrondie aux 5 min supérieures
 
-### 9. Tour arrivé avant l'heure déclarée (H8)
+### 9. Tour arrivé avant l'heure déclarée (H8 ; dernier « Alors » en attente de E34)
 - **Étant donné** que j'ai déclaré arriver vers 15h00 et que mon rang me ferait passer avant 15h00
 - **Quand** un coiffeur se libère avant mon arrivée
 - **Alors** le ticket éligible suivant est appelé à ma place
 - **Et** je garde mon rang d'inscription
-- **Et** je redeviens le premier ticket éligible dès que mon arrivée est validée par le code de mon ticket
+- **Et** je reprends la tête de file « dès mon arrivée » (PRD H8) : arrivée physique ou heure déclarée, à trancher par Ely (E34)
 
 ### 10. Récapitulatif avec la règle des 10 min
 - **Étant donné** que j'ai terminé les étapes 1 à 4
 - **Quand** l'étape 5 « Récapitulatif » s'affiche
 - **Alors** je vois le salon, la prestation, le coiffeur (ou « Premier disponible ») et l'heure estimée
 - **Et** je vois la règle d'appel « une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min »
-- **Et** la case « Me prévenir quand mon tour approche » est **décochée** (K11)
-- **Et** une explication indique que, sans elle, je reçois seulement l'inscription et « votre tour »
+- **Et** la case « Me prévenir quand mon tour approche » est **décochée** (K11, E17)
+- **Et** une explication indique que, sans elle, je reçois seulement les messages indispensables et pas les messages d'anticipation (APP_FLOW F-C3, E17)
 
 ### 11. Consentement aux notifications enregistré
 - **Étant donné** que j'ai coché la case « Me prévenir quand mon tour approche »
 - **Quand** je confirme ma place
 - **Alors** la commande `join_queue` part avec `notifications_consent` vrai
-- **Et** la date et l'heure de mon consentement aux notifications de suivi sont enregistrées (`tickets.notifications_consent_at`, K18)
+- **Et** la date et l'heure de mon consentement aux notifications de suivi sont enregistrées sur ce ticket (`tickets.notifications_consent_at`, K18)
+- **Et** mon dernier choix est recopié sur mon profil pour information (`profiles.tracking_consent_at`), sans servir à l'envoi
+
+### 11 ter. Case décochée à chaque inscription (K18)
+- **Étant donné** que j'avais coché « Me prévenir » pour mon ticket précédent, aujourd'hui terminé
+- **Quand** j'arrive au récapitulatif d'une nouvelle inscription
+- **Alors** la case est de nouveau décochée
+- **Quand** je la laisse décochée et que je confirme ma place
+- **Alors** le nouveau ticket n'a pas de consentement (`notifications_consent_at` vide)
+- **Et** le consentement de mon ticket précédent ne s'applique pas au nouveau
 
 ### 11 bis. Case laissée décochée : seulement les messages indispensables
 - **Étant donné** que je n'ai jamais donné mon consentement et que je laisse la case « Me prévenir quand mon tour approche » décochée

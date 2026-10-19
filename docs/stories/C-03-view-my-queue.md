@@ -3,9 +3,9 @@
 **En tant que** coiffeur, **je veux** voir sur mon téléphone mes prochains clients, avec le prochain en haut, **afin de** savoir qui je prends ensuite sans interrompre ma prestation.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H1, H5 (aucune réorganisation libre), H6, H8, H10 ; PRD §5.2 transition 1b, « Distribution » règles 3, 4 et 6 à 8, « Calcul de l'heure de passage » (un rendez-vous ne commence jamais avant son heure, sauf coiffeur libre sans retarder personne) ; PRD §5.1 « La spécialité d'une prestation est facultative ; « je ne sais pas encore » est accepté par tous les coiffeurs » (E12), « Un rendez-vous est confirmé par le salon », « Aucune donnée client n'est stockée sur le téléphone du coiffeur » et isolation par salon ; PRD §6 (perte de connexion, repli 10 s)
+- Règles appliquées : H1, H5 (aucune réorganisation libre), H6, H8, H10 ; PRD §5.2 transition 1b, « Distribution » règles 3, 4 et 6 à 8, « Calcul de l'heure de passage » (un rendez-vous ne commence jamais avant son heure, sauf coiffeur libre sans retarder personne) ; PRD §5.1 « La spécialité d'une prestation est facultative ; « je ne sais pas encore » est accepté par tous les coiffeurs » (E12), « Un rendez-vous est confirmé par le salon », « Aucune donnée client n'est stockée sur le téléphone du coiffeur » et isolation par salon ; PRD §5.1 « Me prévenir » (rendez-vous confirmé ou refusé = messages indispensables, E17), priorité d'un rendez-vous (E20, E21), annuler ou refuser un rendez-vous avec un motif (E29) ; PRD §5.2 « Prévenir avant de partir » (« en retard de X min » = retard du salon, dès 10 min, E30) ; PRD §6 (perte de connexion, repli 10 s)
 - Parcours : F-S4 (APP_FLOW §4) ; F-C12 côté client ; événements « Ticket créé », « Votre tour approche », « Rendez-vous signalé », « Rendez-vous confirmé ou refusé » (APP_FLOW §7)
-- Commandes et données : RPC `get_stylist_queue` (inclut les rendez-vous à confirmer, TRD §6.3) ; `confirm_appointment` (codes `queue.already_resolved`, `queue.ticket_other_salon`) · tables `tickets` (`kind`, `scheduled_at`, `appointment_source`, `confirmed_at`, `confirmed_by_member_id`), `services`, `member_specialties`, `stylist_presence`, `notifications` (`appointment_confirmed`, `appointment_rejected`) · canal `salon:{salon_id}` (`queue_updated`, `appointment_pending`) · composants `AppointmentBadge`, `PendingConfirmationCard` (DESIGN_SYSTEM)
+- Commandes et données : RPC `get_stylist_queue` (ticket en cours, ticket appelé, rendez-vous à confirmer qui le visent, « Ensuite » = tickets dont il est le coiffeur pressenti `estimated_member_id` ou qui le demandent, ses rendez-vous du jour ; TRD §6.3) ; `confirm_appointment` (`decision`, `reason_code` obligatoire si `reject`, E29 ; codes `queue.already_resolved`, `queue.ticket_other_salon`, `queue.member_required`, `queue.invalid_merge_target`, `queue.appointment_overlap` ; `reject` sans motif : `queue.invalid_payload`) · tables `tickets` (`kind`, `scheduled_at`, `appointment_source`, `confirmed_at`, `confirmed_by_member_id`, `removal_reason`), `services`, `member_specialties`, `stylist_presence`, `notifications` (`appointment_checked_in`, `appointment_confirmed`, `appointment_rejected`) · canal `salon:{salon_id}` (`queue_updated`, `appointment_pending`) · composants `AppointmentBadge`, `PendingConfirmationCard` (DESIGN_SYSTEM)
 
 ## Scénarios
 
@@ -15,7 +15,7 @@
 - **Quand** Inès ouvre « Ma file » (`/stylist/queue`)
 - **Alors** la carte « Prochain client » en haut de l'écran affiche le prénom Léa, la prestation et la durée de 30 min
 - **Et** la carte affiche le statut d'approche et la réponse T-30 de Léa
-- **Et** la carte porte la mention « vous a demandé »
+- **Et** la carte porte la mention « Vous demande »
 - **Et** le bouton « Appeler » de la barre du bas est actif
 
 ### 2. Tickets non éligibles sautés sans perdre leur rang
@@ -50,7 +50,7 @@
 ### 4. Réponse T-30 affichée en temps réel
 - **Étant donné** Inès qui regarde « Ma file », où figure Léa
 - **Quand** Léa répond « En retard de 15 min » à « votre tour approche »
-- **Alors** en moins de 2 s, la carte ou la ligne de Léa indique un retard déclaré de 15 min
+- **Alors** en moins de 2 s, la carte ou la ligne de Léa indique « En retard de 15 min »
 
 ### 5. Nouveau ticket
 - **Étant donné** Inès qui regarde « Ma file »
@@ -66,7 +66,7 @@
 ### 7. Aucun client
 - **Étant donné** Inès « Disponible » et aucun ticket éligible pour elle
 - **Quand** elle ouvre « Ma file »
-- **Alors** l'écran affiche « Aucun client pour l'instant »
+- **Alors** l'écran affiche « Aucun client pour l'instant. Les prochains s'afficheront ici. »
 - **Et** le bouton « Appeler » est désactivé
 
 ### 8. Appeler désactivé hors disponibilité
@@ -77,7 +77,7 @@
 ### 9. Connexion perdue
 - **Étant donné** Inès qui regarde « Ma file »
 - **Quand** son téléphone perd la connexion au serveur
-- **Alors** un bandeau rouge « Connexion perdue » s'affiche
+- **Alors** un bandeau rouge « Connexion perdue. Reconnexion en cours… » s'affiche
 - **Et** toutes les actions de l'espace coiffeur sont désactivées
 - **Et** la reconnexion est tentée automatiquement
 
@@ -85,6 +85,7 @@
 - **Étant donné** Inès dont l'écran affiche « Connexion perdue »
 - **Quand** la connexion revient
 - **Alors** le bandeau rouge disparaît
+- **Et** le message « Connexion rétablie » s'affiche
 - **Et** la file affichée est relue et à jour
 - **Et** les actions redeviennent disponibles
 
@@ -159,11 +160,24 @@
 - **Quand** Inès ouvre « Ma file »
 - **Alors** la carte « Prochain client » affiche Marc avec le badge « RDV 14h30 »
 
+### 21 bis. Retard du salon sur un rendez-vous affiché dès 10 min (E30)
+- **Étant donné** Marc, rendez-vous à 14h30 avec Inès, dont l'heure de passage est 14h35
+- **Quand** Inès regarde « Ma file »
+- **Alors** la ligne de Marc porte le badge « RDV 14h30 », sans retard affiché
+- **Quand** l'heure de passage de Marc devient 14h40
+- **Alors** la ligne de Marc porte le badge « RDV 14h30 · +10 min » (retard du salon sur l'heure du rendez-vous)
+
+### 21 ter. Priorité d'un rendez-vous confirmé tard (E20)
+- **Étant donné** Paul, qui s'est signalé pour un rendez-vous à 14h30 avec Inès, confirmé par Inès à 14h35, et Léa, sans préférence, éligible pour Inès, inscrite avant
+- **Quand** Inès se libère à 14h38
+- **Alors** la carte « Prochain client » affiche Paul avec le badge « RDV 14h30 » (10 min de priorité comptées depuis 14h30, pas depuis la confirmation)
+
 ### 22. Bandeau « Rendez-vous à confirmer »
 - **Étant donné** Inès qui regarde « Ma file »
 - **Quand** Paul se signale au salon pour un rendez-vous à 15h00 avec Inès (F-C12, `check_in_appointment`)
-- **Alors** en moins de 2 s, le bandeau « Rendez-vous à confirmer » affiche le prénom Paul et l'heure annoncée 15h00
+- **Alors** en moins de 2 s, le bandeau « Rendez-vous à confirmer » affiche « Paul dit avoir rendez-vous à 15h00 »
 - **Et** le bandeau propose « Confirmer » et « Refuser »
+- **Et** une notification push `appointment_checked_in` « Rendez-vous à confirmer » est créée pour Inès, coiffeuse choisie (clé `appointment_checked_in:<member_id>`, K21)
 - **Et** le ticket de Paul (`pending_confirmation`) n'apparaît ni dans « Prochain client » ni dans « Ensuite »
 - **Et** l'heure de passage des autres clients d'Inès ne change pas (ticket hors calcul, transition 1b)
 
@@ -175,19 +189,28 @@
 - **Et** le rendez-vous entre dans la file d'Inès avec le badge « RDV 15h00 »
 - **Et** l'heure de passage des clients d'Inès est recalculée
 - **Et** Paul voit son heure de passage sur son ticket (F-C5)
+- **Et** Paul reçoit la notification push `appointment_confirmed`, qu'il ait coché « Me prévenir » ou non (message indispensable, E17)
 - **Et** le journal du ticket enregistre un événement `appointment_confirmed` avec Inès comme actrice
 
 ### 24. Refuser un rendez-vous signalé
 - **Étant donné** le bandeau « Rendez-vous à confirmer » de Paul chez Inès, qui ne trouve pas ce rendez-vous
-- **Quand** Inès touche « Refuser »
+- **Quand** Inès touche « Refuser », choisit un motif dans la liste (par exemple `other`) et valide
 - **Alors** le ticket de Paul passe à « Annulé » (`cancel_reason` = `appointment_rejected`)
+- **Et** le motif choisi est enregistré (`removal_reason`)
 - **Et** le bandeau disparaît
-- **Et** Paul est prévenu du refus avec « Rejoindre la file » (notification `appointment_rejected`, push seulement)
-- **Et** le journal du ticket enregistre un événement `appointment_rejected`
+- **Et** Paul reçoit la notification push `appointment_rejected` avec le motif et « Rejoindre la file », sans SMS, même sans « Me prévenir » (E17, E29)
+- **Et** le journal du ticket enregistre un événement `appointment_rejected` avec le motif (`reason_code`)
+
+### 24 bis. Refus sans motif (E29)
+- **Étant donné** le bandeau « Rendez-vous à confirmer » de Paul chez Inès
+- **Quand** une commande `confirm_appointment` est envoyée avec `decision` = `reject` sans `reason_code`
+- **Alors** la commande est refusée avec `queue.invalid_payload`
+- **Et** le ticket de Paul reste « À confirmer »
+- **Et** aucune notification n'est créée pour Paul
 
 ### 25. Rendez-vous déjà traité par le gérant
 - **Étant donné** le rendez-vous signalé de Paul, déjà confirmé par le gérant depuis le dashboard, et le bandeau encore affiché chez Inès
-- **Quand** Inès touche « Refuser »
+- **Quand** Inès touche « Refuser » et valide un motif
 - **Alors** la commande est refusée avec `queue.already_resolved`
 - **Et** un message du dictionnaire `errors` s'affiche
 - **Et** le ticket de Paul reste « En attente »
@@ -207,40 +230,48 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-stylist.queue.title` | « Ma file » | Titre de page (APP_FLOW §2.2) |
-| `pro-stylist.queue.next_client` | « Prochain client » | Libellé indicatif (APP_FLOW F-S4) |
-| `pro-stylist.queue.requested_you` | « vous a demandé » | APP_FLOW F-S4 |
-| `pro-stylist.queue.up_next` | « Ensuite » | APP_FLOW F-S4 |
-| `pro-stylist.queue.empty` | « Aucun client pour l'instant » | État vide (APP_FLOW F-S4) |
-| `pro-stylist.queue.call` | « Appeler » | Bouton `xl` de la barre du bas (voir C-04) |
-| `pro-stylist.connection.lost` | « Connexion perdue » | Bandeau rouge, bloque les actions |
-| `common.approach_status.arrived` | « arrivé » | APP_FLOW F-S4, BACKEND_SCHEMA §4.13 |
-| `common.approach_status.late` | « en retard de {minutes} min » | APP_FLOW F-S4, BACKEND_SCHEMA §4.13 |
-| `common.approach_status.confirmed` | « confirmé » | APP_FLOW F-S4 (« confirmé à T-30 »), BACKEND_SCHEMA §4.13 |
-| `common.approach_status.no_response` | « sans réponse » | APP_FLOW F-S4, BACKEND_SCHEMA §4.13 |
-| `common.appointment.badge` | « RDV {time} » | `AppointmentBadge` (DESIGN_SYSTEM) ; exemple « RDV 14h30 » ; heure au format Europe/Paris |
-| `common.appointment.badge_late` | « RDV {time} · +{minutes} min » | DESIGN_SYSTEM §2.4, affiché quand le retard dépasse 10 min (sens du retard : voir questions) |
-| `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 |
-| `pro-stylist.queue.pending_appointment.title` | « Rendez-vous à confirmer » | Bandeau APP_FLOW F-S4 ; `PendingConfirmationCard`, annoncé par `aria-live="polite"` |
-| `pro-stylist.queue.pending_appointment.confirm` | « Confirmer » | APP_FLOW F-S4 |
-| `pro-stylist.queue.pending_appointment.reject` | « Refuser » | APP_FLOW F-S4 |
-| `notifications.appointment_confirmed.push.title` / `.body` |Titre : Rendez-vous confirmé<br>Corps : {salon_name} confirme votre rendez-vous. Passage prévu vers {time}.| Heure de passage ; push seulement |
-| `notifications.appointment_rejected.push.title` / `.body` |Titre : Rendez-vous non confirmé<br>Corps : {salon_name} n'a pas pu confirmer votre rendez-vous. Vous pouvez rejoindre la file.| Refus avec « Rejoindre la file » ; push seulement, pas de SMS (client sur place) |
+| `pro-stylist.queue.title` | Ma file | Titre de page (APP_FLOW §2.2) |
+| `pro-stylist.queue.next_client` | Prochain client | APP_FLOW F-S4 |
+| `pro-stylist.queue.requested_you` | Vous demande | APP_FLOW F-S4 (« vous a demandé ») |
+| `pro-stylist.queue.up_next` | Ensuite | APP_FLOW F-S4 |
+| `pro-stylist.queue.empty` | Aucun client pour l'instant. Les prochains s'afficheront ici. | État vide (APP_FLOW F-S4) |
+| `pro-stylist.queue.call` | Appeler | Bouton `xl` de la barre du bas (voir C-04) |
+| `pro-stylist.connection.lost` | Connexion perdue. Reconnexion en cours… | Bandeau rouge, bloque les actions |
+| `pro-stylist.connection.restored` | Connexion rétablie | Retour de la connexion |
+| `common.approach_status.arrived` | Arrivé | APP_FLOW F-S4, BACKEND_SCHEMA §4.13 |
+| `common.approach_status.late` | En retard de {minutes} min | APP_FLOW F-S4, BACKEND_SCHEMA §4.13 |
+| `common.approach_status.confirmed` | Confirmé | APP_FLOW F-S4 (« confirmé à T-30 »), BACKEND_SCHEMA §4.13 |
+| `common.approach_status.no_response` | Sans réponse | APP_FLOW F-S4, BACKEND_SCHEMA §4.13 |
+| `common.appointment.badge` | RDV {time} | `AppointmentBadge` (DESIGN_SYSTEM) ; exemple « RDV 14h30 » ; heure au format Europe/Paris |
+| `common.appointment.badge_late` | RDV {time} · +{minutes} min | Retard du salon sur l'heure du rendez-vous, affiché dès 10 min (E30) |
+| `common.ticket_status.pending_confirmation` | À confirmer | DESIGN_SYSTEM §2.4 |
+| `pro-stylist.queue.pending_appointment.title` | Rendez-vous à confirmer | Bandeau APP_FLOW F-S4 ; `PendingConfirmationCard`, annoncé par `aria-live="polite"` |
+| `pro-stylist.queue.pending_appointment.banner` | {first_name} dit avoir rendez-vous à {time} | Prénom et heure annoncée |
+| `pro-stylist.queue.pending_appointment.confirm` | Confirmer | APP_FLOW F-S4 |
+| `pro-stylist.queue.pending_appointment.reject` | Refuser | APP_FLOW F-S4 |
+| Liste des motifs de refus dans l'espace coiffeur | _À rédiger (clé absente)_ | E29 ; valeurs de `removal_reason` en attendant une liste dédiée 🟡 (TRD §6.2) ; le dashboard a `pro-manager.remove.reason.*` |
+| `notifications.appointment_checked_in.push.title` / `.body` | Titre : Rendez-vous à confirmer<br>Corps : {first_name} dit avoir rendez-vous à {time}. Confirmez ou refusez. | Push au gérant et au coiffeur choisi (K21) ; hors consentement et hors plafond (personnel) |
+| `notifications.appointment_confirmed.push.title` / `.body` |Titre : Rendez-vous confirmé<br>Corps : {salon_name} confirme votre rendez-vous. Passage prévu vers {time}.| Heure de passage ; push seulement ; message indispensable, part sans « Me prévenir » (E17) |
+| `notifications.appointment_rejected.push.title` / `.body` |Titre : Rendez-vous non confirmé<br>Corps : {salon_name} : {reason}. Vous pouvez rejoindre la file. | Refus avec le motif (E29) ; push seulement, pas de SMS (client sur place) ; message indispensable (E17) |
+| `notifications.appointment_rejected.actions.join_queue` | Rejoindre la file | Bouton du push |
+| `notifications.appointment_rejected.reason.<code>` | _À rédiger (clés absentes)_ | Texte `{reason}` de chaque motif de refus (TRD §9, E29) |
 | `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Rendez-vous déjà confirmé ou refusé |
 | `errors.queue.ticket_other_salon` | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. | Voir C-05 |
+| `errors.queue.invalid_payload` | Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. | Refus sans motif (E29) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** : APP_FLOW F-S4 reprend la liste de BACKEND_SCHEMA (confirmé à T-30, en retard de X min, sans réponse, arrivé). Question d'origine : les valeurs du statut d'approche différaient : APP_FLOW F-S4 « pas parti, en route, arrivé, en retard de X min » ; BACKEND_SCHEMA §4.13 « arrivé, en retard de X min, confirmé, sans réponse », calculées depuis `arrived_at`, `eta_response`, `declared_delay_minutes`. « Pas parti » et « en route » ne se calculent pas sans GPS (H7). Quelle liste retenir ?
-- [APP_FLOW / PRD / TRD] Contenu de la liste « Ensuite » : APP_FLOW §7 dit qu'un nouveau ticket apparaît chez le coiffeur « demandé ou pressenti » (`estimated_member_id`) ; PRD C-03 et ADR-015 parlent de tous les tickets « sans préférence » éligibles (un même ticket apparaîtrait chez plusieurs coiffeurs). Laquelle ?
+- **Résolu le 19/10 (TRD §6.3 et BACKEND_SCHEMA §8.1 v0.5, constat 19)** : « Ensuite » = tickets dont le coiffeur est le coiffeur pressenti (`estimated_member_id`) ou qui le demandent ; `get_stylist_queue` renvoie aussi ses rendez-vous du jour et les rendez-vous à confirmer qui le visent. Question d'origine : « Ensuite » contient-il tous les tickets sans préférence éligibles, ou seulement ceux du coiffeur pressenti ?
 - [APP_FLOW] Nombre de clients affichés dans « Ensuite », et affiche-t-on l'heure estimée de chacun ?
-- [PRD] H8 : le client « reprend la tête de file dès son arrivée ». L'arrivée est-elle l'heure déclarée atteinte, ou l'arrivée validée par le code du ticket (C-05) ?
+- [PRD] **E34 (en attente d'Ely)** : H8, le client « reprend la tête de file dès son arrivée ». L'arrivée est-elle l'heure déclarée atteinte, ou l'arrivée validée par le code du ticket (C-05) ? Le scénario 3 en dépend.
 - **Résolu le 18/10 (E12)** : prestation et spécialité facultatives ; « je ne sais pas encore » est accepté par tous les coiffeurs (PRD §5.1). Question d'origine : un ticket « je ne sais pas encore » est-il éligible pour tous les coiffeurs ?
 - [APP_FLOW] Un coiffeur « Hors ligne » ou « Fin de journée » voit-il encore sa liste « Ensuite » ?
 - [APP_FLOW / PRD] Règle 6 : PRD §5.2 applique la condition « finit avant l'heure du rendez-vous » à tout client sans rendez-vous ; APP_FLOW F-S4 ne l'écrit que pour un client sans préférence (« un client qui me demande » est listé sans condition). Un client qui demande Inès passe-t-il avant le rendez-vous d'Inès s'il finirait après ?
 - [PRD] Règle 6 avec une marge de 0 min : un client dont la prestation finirait exactement à l'heure du rendez-vous (14h00 + 30 min pour un rendez-vous à 14h30) passe-t-il avant ?
-- [PRD / APP_FLOW] Règles 7 et 8 : comment le moteur sait-il qu'un client avec rendez-vous est en retard ou en avance ? L'arrivée n'est horodatée que par le code du ticket (H7), saisi sur la carte « Appel en cours » (F-S5), donc après l'appel. Un rendez-vous pris en avance (scénario 21) est-il appelé même si le client n'est pas au salon ?
+- **Résolu le 19/10 (E20, E21)** en partie : les 10 min de priorité se comptent depuis l'heure du rendez-vous, même confirmé tard (scénario 21 ter) ; le client avec rendez-vous donne son code à l'appel ; une fois appelé, H4 s'applique. Reste [PRD] : un rendez-vous pris en avance (règle 8, scénario 21) est-il appelé même si le client n'est pas encore au salon ? Et si un rendez-vous appelé à son heure est libéré à 10 min (H4), dans quel cas la règle 7 « au-delà de 10 min, pris dès que possible » s'applique-t-elle ?
 - [PRD] Règle 7 : « pris dès que possible sans retarder les rendez-vous suivants » une fois les 10 min passées : il reprend son rang d'inscription, passe derrière tous les clients présents, ou reste en tête dès qu'un trou assez long se présente ?
-- [DESIGN_SYSTEM / APP_FLOW] Badge « RDV 14h30 · +20 min » : le retard affiché est-il celui du salon (heure de passage après l'heure du rendez-vous, « Prévenir avant de partir ») ou celui du client (pas encore arrivé) ? APP_FLOW F-S10 et F-M13 affichent aussi « en retard de X min » sur un rendez-vous.
-- [APP_FLOW] Un client qui se signale avec « Je ne sais plus » (F-C12 étape 2) : le bandeau « Rendez-vous à confirmer » s'affiche-t-il chez tous les coiffeurs, chez aucun (dashboard seulement), ou chez le coiffeur rapproché ?
+- **Résolu le 19/10 (E30)** : « en retard de X min » sur un rendez-vous est le retard du salon sur l'heure du rendez-vous, affiché dès 10 min (PRD §5.2). Voir scénario 21 bis. Question d'origine : retard du salon ou du client ?
+- [APP_FLOW / TRD] Un client qui se signale avec « Je ne sais plus » (F-C12 étape 2) : le bandeau « Rendez-vous à confirmer » s'affiche-t-il chez tous les coiffeurs, chez aucun (dashboard seulement), ou chez le coiffeur rapproché ? TRD §6.2 exige alors `member_id` (sinon `member_required`) : un coiffeur qui confirme devient-il d'office le coiffeur du rendez-vous ?
 - [APP_FLOW] Fusion avec un rendez-vous déjà saisi (`merge_into_ticket_id`) : F-S10 la propose (« Confirmer (avec fusion si je l'avais déjà saisi) »), le bandeau de F-S4 ne propose que « Confirmer » ou « Refuser ». Le bandeau de « Ma file » propose-t-il aussi la fusion ?
-- [PRD §5.4 / K11] La confirmation d'un rendez-vous (`appointment_confirmed`) n'est pas un message indispensable : sans « Me prévenir », le client sur place n'est pas notifié et doit regarder son ticket. Est-ce voulu ? Même question pour `appointment_rejected`.
+- **Résolu le 19/10 (E17)** : rendez-vous confirmé ou refusé sont des messages indispensables, envoyés sans « Me prévenir » (scénarios 23 et 24). Question d'origine : sans consentement, le client n'était pas notifié de la confirmation ni du refus.
+- **Résolu le 19/10 (E29)** : refuser un rendez-vous signalé demande un motif choisi dans une liste, envoyé au client ; sans motif, `invalid_payload` (TRD §6.2). Voir scénarios 24 et 24 bis. Reste [dictionnaire] : la liste des motifs côté espace coiffeur et les textes `notifications.appointment_rejected.reason.<code>` n'existent pas encore.

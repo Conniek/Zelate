@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : H2 (l'attente se calcule à partir des durées prédéfinies des prestations) ; H1 (la spécialité requise détermine les coiffeurs qui maîtrisent la prestation) ; la spécialité d'une prestation est facultative et « je ne sais pas encore » est accepté par tous les coiffeurs (PRD §5.1, §11 E12) ; un changement de prestations dans la journée ne modifie pas les tickets déjà en file (PRD §5.1, §11 E16) ; PRD §11 n° 2
 - Parcours : F-M2 « Prestations », F-M11 `/dashboard/services` ; usages F-C2 (fiche salon), F-C3 étape 1, F-S6 (durée pré-remplie)
-- Commandes et données : écriture directe du gérant sous RLS (TRD §6.3, tables de configuration) · tables `services` (`name`, `duration_minutes`, `price_cents`, `required_specialty_code`, `is_active`, `sort_order`), `specialties`
+- Commandes et données : écriture directe du gérant sous RLS, limitée par colonne (TRD §6.3, tables de configuration, K32) · tables `services` (`name`, `duration_minutes`, `price_cents`, `required_specialty_code`, `is_active`, `sort_order`), `specialties`, `salon_events` (`settings_updated`, déclencheur `log_settings_update()`, BACKEND_SCHEMA §4.15)
 
 ## Scénarios
 
@@ -93,6 +93,12 @@
 - **Alors** les tickets déjà en file gardent la prestation « Couleur » (PRD §5.1, E16)
 - **Alors** « Couleur » n'est plus proposée aux nouveaux clients
 
+### 11 quater. Modification inscrite au journal, sans valeur
+- **Étant donné** le gérant qui renomme une prestation ou change sa durée
+- **Quand** l'enregistrement réussit
+- **Alors** l'événement `settings_updated` est inscrit au journal du salon, avec le gérant comme acteur (BACKEND_SCHEMA §4.15)
+- **Alors** l'événement ne porte que le nom de la table et des colonnes modifiées, sans l'ancien ni le nouveau nom (K10)
+
 ### 12. Isolation par salon
 - **Étant donné** le gérant du salon A
 - **Quand** il essaie de modifier une prestation du salon B (par l'API)
@@ -104,7 +110,10 @@
 | `pro-manager.services.title` | « Prestations » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.services.add` | « Ajouter » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.services.suggestions.<id>` | Voir `pro-manager.services.suggestions.*` dans le dictionnaire (10 textes) | Nom de 2 à 60 caractères |
+| `pro-manager.services.suggestions_intro` | « Cochez les prestations que vous proposez, puis ajustez la durée et le prix. » | — |
 | `pro-manager.services.field.duration` | « Durée (min) » | Unité « min » ; 15 à 180 |
+| `pro-manager.services.field.duration_hint` | « De 15 à 180 min, par pas de 5 min » | — |
+| `pro-manager.services.field.specialty_none` | « Aucune » | Spécialité facultative (E12) |
 | `pro-manager.services.field.price` | « Prix (€) » | Format fr-FR en euros |
 | `pro-manager.services.field.specialty` | « Spécialité requise » | Liste `common.specialties.<code>` |
 | `errors.validation.service_duration` | « La durée doit être comprise entre 15 et 180 min, par pas de 5 min. » | Rappelle 15 à 180 min, multiple de 5 |

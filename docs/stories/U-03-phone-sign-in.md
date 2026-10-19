@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : code à 6 chiffres, valable 5 min, 3 essais, renvoi après 30 s (PRD §5.3 U-03) ; numéros +33 uniquement (PRD §6, PRD §9 « Fraude au trafic SMS ») ; plafonds de codes SMS : 5 par heure et par numéro, 20 par heure et par IP (PRD §5.3 P-03, TRD §7)
 - Parcours : F-C3 étape 4 (APP_FLOW §3) ; écran `/signin` (APP_FLOW §2.1) ; garde `/signin?next=/ticket` (APP_FLOW §2.3) ; lien « Créer mon compte » de F-C10
-- Commandes et données : `signInWithOtp` (Supabase Auth) · Edge Function `auth-send-sms` (erreur `auth.otp_rate_limited`, TRD §6.2) · tables `profiles` (`first_name`, `is_guest`), `private.rate_limits` · numéro dans `auth.users.phone`
+- Commandes et données : `signInWithOtp` (Supabase Auth) · Edge Function `auth-send-sms` (erreur `auth.otp_rate_limited`, TRD §6.2) · `join_queue` ou `check_in_appointment` avec `first_name?` (obligatoire si le compte n'a pas encore de profil, sinon `queue.invalid_payload`) : le profil naît de l'action qui demande le prénom, pas de l'inscription Auth (K30, TRD ADR-005) · tables `profiles` (`first_name`, `is_guest`), `private.rate_limits` · numéro dans `auth.users.phone`
 
 ## Scénarios
 
@@ -27,7 +27,15 @@
 - **Quand** mon code est validé
 - **Alors** le champ prénom est demandé et je ne peux pas continuer sans le remplir
 - **Et** le prénom est limité à 30 caractères
-- **Et** mon compte est créé comme compte invité (`profiles.is_guest = true`) avec ce prénom
+- **Et** aucun profil n'existe encore pour mon compte à ce stade (K30)
+- **Quand** je confirme ensuite ma place (`join_queue`) ou mon signalement (`check_in_appointment`)
+- **Alors** mon profil est créé avec ce prénom, comme compte invité (`profiles.is_guest = true`, K30)
+
+### 3 bis. Prénom manquant au premier passage : `queue.invalid_payload`
+- **Étant donné** que mon compte Auth n'a pas encore de profil
+- **Quand** une commande `join_queue` ou `check_in_appointment` arrive sans `first_name`
+- **Alors** elle est refusée avec `queue.invalid_payload`
+- **Et** aucun profil ni aucun ticket n'est créé
 
 ### 4. Client connu : pas de prénom demandé
 - **Étant donné** que mon numéro a déjà un compte avec un prénom
@@ -99,12 +107,16 @@
 ### 14. Le SMS de code tient en un seul SMS
 - **Étant donné** le modèle de SMS du code de connexion
 - **Quand** il est rempli avec un code à 6 chiffres
-- **Alors** le texte fait 160 caractères GSM-7 au plus
+- **Alors** le texte fait 160 caractères GSM-7 au plus, dernière ligne `@zelate.fr #123456` comprise (K27, TRD §7)
 
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
 | `client.signin.phone.label` | Numéro de téléphone mobile | — |
+| `client.signin.title` | Recevez un code par SMS | — |
+| `client.signin.phone.hint` | Le salon ne voit jamais votre numéro. | H6 |
+| `client.signin.first_name.hint` | Le salon voit seulement votre prénom. | H6 |
+| `errors.queue.invalid_payload` | Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. | Prénom absent au premier passage (K30) |
 | `client.signin.phone.prefix` | « +33 » | Fixé, non modifiable |
 | `client.signin.send_code` | « Recevoir le code » | — |
 | `client.signin.code.label` | Code à 6 chiffres reçu par SMS | 6 cases |
@@ -126,6 +138,7 @@
 - **Résolu le 18/10** (PRD v1.1 P-03) — Valeurs des plafonds de codes SMS : 5 par heure et par numéro, 20 par heure et par IP, désormais dans le PRD.
 - **Résolu le 18/10** (K1) — Code d'erreur de `auth-send-sms` : `auth.otp_rate_limited` (TRD §6.2, hors `queue-command`), clé `errors.auth.otp_rate_limited`.
 - **PRD P-03 / BACKEND_SCHEMA §5** : la fenêtre d'une heure est-elle glissante ou fixe (`private.rate_limits.window_start` laisse penser à une fenêtre fixe) ? Les scénarios 11 et 11 bis en dépendent à la minute près.
-- **PRD §5.4** : le SMS de code de connexion compte-t-il dans le plafond de 3 SMS par ticket ? Il est envoyé avant la création du ticket et n'est pas une ligne de `notifications`.
-- **TRD** : quelle est la durée de session d'un client ? Elle n'est fixée que pour les coiffeurs (30 jours).
-- **Textes** : aucun texte de cet écran n'est écrit, sauf les libellés de boutons d'APP_FLOW. Le texte du SMS de code manque aussi.
+- **Résolu le 19/10** (TRD v0.5 §9, BACKEND_SCHEMA v0.5 §4.16) — SMS de code et plafond : le code de connexion est hors outbox (`notifications.auth.otp_code`, envoyé par `auth-send-sms`) ; le plafond compte seulement les SMS `sent` du ticket dans `notifications` : le code n'y entre pas.
+- **Résolu le 19/10** (K30) — Création du compte au premier passage : le profil (`is_guest = true`) naît de `join_queue` ou `check_in_appointment` avec le prénom, pas à l'inscription Auth ; voir scénarios 3 et 3 bis.
+- **TRD** : quelle est la durée de session d'un client ? Elle n'est fixée que pour les coiffeurs (30 jours) ; les jetons d'accès de 15 min (ADR-019) ne disent pas la durée de la session.
+- **Résolu le 19/10** (dictionnaire `client.json`, `errors.json`, `notifications.json`) — Textes de l'écran et du SMS de code rédigés.

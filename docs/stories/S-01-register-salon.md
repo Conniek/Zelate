@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : aucune règle H ; validation des salons à la main au pilote (PRD §4, §11 n° 20) ; un SIRET introuvable ou inactif n'empêche pas l'envoi du dossier, qui part « à vérifier » (PRD §5.1, §11 E14) ; brouillon sauvegardé en continu et conservé 7 jours (PRD §5.3 S-01)
 - Parcours : F-M1 (APP_FLOW §5) ; gardes de navigation (APP_FLOW §2.3)
-- Commandes et données : `salon-signup` · `verify-siret` · tables `profiles`, `salons` (`name`, `phone`, `address_line`, `postal_code`, `city`, `city_code`, `location`, `siret`, `naf_code`, `status`, `draft_expires_at`), `salon_members` (`role` = `manager`), `salon_verifications` (`siret_check_result`, `decision`), `salon_events` (`submitted`)
+- Commandes et données : `salon-signup` · `verify-siret` · tables `profiles` (créé par `salon-signup`, `is_guest` = faux, K30), `salons` (`name`, `phone`, `address_line`, `postal_code`, `city`, `city_code`, `location`, `siret`, `naf_code`, `status`, `draft_expires_at`), `salon_members` (`role` = `manager`), `salon_verifications` (`siret_check_result`, `decision`), `salon_events` (`submitted`)
 
 ## Scénarios
 
@@ -86,6 +86,7 @@
 - **Quand** il clique sur « Envoyer mon dossier »
 - **Alors** le bouton affiche un état de chargement et se désactive pendant l'envoi
 - **Alors** le salon passe au statut `pending_review`
+- **Alors** le profil du gérant existe, avec son prénom et `is_guest` = faux (TRD §6.1 `salon-signup`, K30)
 - **Alors** un dossier de validation est créé avec le résultat SIRET et la décision `pending`
 - **Alors** l'événement `submitted` est inscrit au journal du salon
 - **Alors** le gérant arrive sur `/signup/pending`
@@ -112,20 +113,22 @@
 | `pro-manager.signup.account.title` | « Votre compte » | Étape 1 « Compte » |
 | `pro-manager.signup.salon.title` | « Salon » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.salon.siret_valid` | « SIRET vérifié : établissement actif, activité de coiffure » | Accessible au lecteur d'écran (RGAA AA) |
-| `pro-manager.signup.salon.siret_to_verify` | « à vérifier » | Libellé indicatif (APP_FLOW F-M1), avec ⚠ |
+| `pro-manager.signup.salon.siret_to_verify` | « À vérifier » | Avec ⚠ (APP_FLOW F-M1) |
+| `pro-manager.signup.salon.siret_to_verify_hint` | « Vous pouvez continuer : l'équipe Zelaté vérifiera votre dossier. » | Dossier « à vérifier » (E14) |
 | `pro-manager.signup.hairdressing.title` | « Vous et la coiffure » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.hairdressing.label` | « Je coiffe aussi » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.submit` | « Envoyer mon dossier » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.pending.title` | « Dossier envoyé » | Écran `/signup/pending` |
 | `errors.validation.siret_format` | « Le SIRET compte 14 chiffres. Vérifiez votre saisie. » | SIRET de 14 chiffres |
-| `notifications.signup_resume.email` | Voir `notifications.signup_resume.email.*` dans le dictionnaire (2 textes) | E-mail de reprise du brouillon, lien valable 7 jours |
+| `notifications.signup_resume.email` | Voir `notifications.signup_resume.email.*` dans le dictionnaire (2 textes) | E-mail de reprise du brouillon, envoyé par Brevo hors outbox (TRD §3, §9) ; brouillon conservé 7 jours |
+| E-mail de confirmation de l'étape 1 | _À rédiger_ (clé `notifications.auth.<modèle>.email.*` prévue par TRD §9, absente du dictionnaire) | E-mail de Supabase Auth, texte recopié dans ses modèles au déploiement (🟡 DEV-3) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E14, PRD §5.1) : un SIRET introuvable ou inactif n'empêche pas l'envoi ; le dossier part « à vérifier » et l'équipe Zelaté décide.
 - **PRD** : E14 ne couvre pas le cas où le service Recherche d'entreprises est indisponible (`siret_check_result` = `error`). Le dossier part-il aussi « à vérifier », ou le gérant doit-il réessayer plus tard ?
 - **APP_FLOW** : quel e-mail contient le lien de reprise du brouillon ? Est-ce l'e-mail de confirmation de l'étape 1 ou un autre ? Les 7 jours se comptent-ils depuis la création du brouillon ou depuis la dernière saisie ? Les saisies de l'étape 1 sont-elles gardées avant que le compte soit créé ?
 - **APP_FLOW** : que voit le gérant qui ouvre un lien de reprise après 7 jours ?
-- **BACKEND_SCHEMA** : l'e-mail de confirmation et l'e-mail de reprise n'ont pas de modèle dans `notification_template`. Sont-ils envoyés par Supabase Auth, par Brevo, ou faut-il ajouter des modèles ?
+- **Résolu le 19/10** (constat 32 de la revue, TRD v0.5 §3 et §9) : l'e-mail de reprise `signup_resume` et les e-mails de Supabase Auth restent hors outbox (pas de modèle dans `notification_template`) ; `signup_resume` part par Brevo, les e-mails Auth par le SMTP Brevo de Supabase Auth (🟡 à confirmer au lot DEV-3) ; leurs textes vivent dans `notifications.json`. Reste ouvert : le texte de l'e-mail de confirmation (`notifications.auth.<modèle>.email.*`) n'existe pas encore dans le dictionnaire.
 - **TRD** : d'après APP_FLOW F-M1, `verify-siret` est appelé quand le gérant quitte le champ, mais TRD §6.1 dit que seuls `salon-signup` et l'admin l'appellent. Qui l'appelle à la saisie ?
 - **TRD** : la longueur minimale du mot de passe gérant (12 caractères) se trouve au TRD §7, qui n'est pas dans les sources de cette story. Faut-il l'ajouter comme scénario limite ?
 - **APP_FLOW / BACKEND_SCHEMA** : au MVP, un gérant ne gère qu'un salon (index unique sur `salon_members.profile_id`). Que voit un gérant déjà inscrit qui commence une deuxième inscription ?

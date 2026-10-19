@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : PRD §5.2 États de la file (Fermée, Ouverte, En pause, Complète) ; PRD §5.2 transition 1 (création seulement si la file est ouverte et non complète, sauf rendez-vous) ; file en pause : plus de nouvelles inscriptions, mais les coiffeurs continuent d'appeler les clients déjà inscrits (PRD §5.1, §11 E4) ; « Fermer la file » n'annule aucun ticket, seule la fin de journée (H9) annule ; propagation en moins de 2 s pour 95 % des événements, repli toutes les 30 s côté client et 10 s côté dashboard (PRD §6)
 - Parcours : F-M5 ; F-M12 « Fermer la file maintenant » ; effets côté client F-C1 (filtre « Ouvert maintenant »), F-C2, F-C3 (erreurs) ; espace coiffeur F-S4 (« Appeler » actif aussi file en pause)
-- Commandes et données : `set_queue_status` · `join_queue` et `register_walk_in` (refus) · `call_ticket` (file en pause) · tables `salons` (`queue_status`), `salon_events` (`queue_opened`, `queue_paused`, `queue_closed`) · messages temps réel `queue_status_changed` (canal `salon:{salon_id}`) et `salon_updated` (canal public `salon-public:{salon_id}`, ADR-018, K6)
+- Commandes et données : `set_queue_status` · `join_queue` et `register_walk_in` (refus) · `call_ticket` (file en pause) · tables `salons` (`queue_status`, `is_full` calculé par le moteur, K36 ; `next_free_slots` vidé quand la file n'est pas ouverte, E22), `salon_events` (`queue_opened`, `queue_paused`, `queue_closed`) · messages temps réel `queue_status_changed` (canal `salon:{salon_id}`) et `salon_updated` (canal public `salon-public:{salon_id}`, ADR-018, K6)
 
 ## Scénarios
 
@@ -31,6 +31,7 @@
 - **Alors** les tickets déjà en attente restent dans la file
 - **Alors** la fiche salon affiche le bouton désactivé « File en pause, réessayez dans quelques minutes »
 - **Alors** le salon disparaît de la liste quand le filtre « Ouvert maintenant » est activé
+- **Alors** aucun prochain créneau libre n'est plus affiché pour ce salon (`next_free_slots` vide, PRD §5.2, E22)
 - **Alors** l'événement `queue_paused` est inscrit au journal du salon
 
 ### 2 bis. Les coiffeurs continuent d'appeler pendant la pause
@@ -52,6 +53,7 @@
 - **Quand** il confirme
 - **Alors** la commande `set_queue_status` (`closed`) est envoyée
 - **Alors** aucun nouveau ticket n'est accepté
+- **Alors** les coiffeurs continuent d'appeler les clients déjà inscrits, jusqu'à la fin de journée (F-M5, F-M12)
 - **Alors** aucun ticket en file n'est annulé : les clients en attente restent (PRD §5.2, BACKEND_SCHEMA `cancel_reason`)
 - **Alors** la fiche salon affiche « Fermé » avec la prochaine ouverture
 - **Alors** l'événement `queue_closed` est inscrit au journal du salon
@@ -75,14 +77,18 @@
 
 ### 7. File complète (état automatique)
 - **Étant donné** une file ouverte dont la prochaine prestation finirait après la fermeture
+- **Quand** le moteur recalcule la file
+- **Alors** `salons.is_full` passe à vrai, sans action du gérant (K36)
 - **Quand** un client envoie `join_queue`
 - **Alors** la commande est refusée avec l'erreur `queue.queue_full`
-- **Alors** la fiche salon affiche le bouton désactivé « Complet pour aujourd'hui » et le lien « Salons proches »
+- **Alors** la fiche salon affiche le bouton désactivé « Complet pour aujourd'hui » et le lien « Salons proches », d'après `is_full` lu dans `public_salons`, sans recalcul dans le navigateur (K36)
 
 ### 7 bis. Rendez-vous saisi avec la file fermée ou en pause
 - **Étant donné** une file fermée ou en pause pendant les horaires d'ouverture
 - **Quand** le gérant saisit un rendez-vous (`create_appointment`)
 - **Alors** le rendez-vous est accepté : la condition « file ouverte et non complète » ne s'applique pas aux rendez-vous (PRD §5.2 transition 1 ; TRD §6.2 : ni `queue_closed` ni `queue_paused` pour `create_appointment`)
+- **Quand** l'heure du rendez-vous tombe hors des horaires du salon
+- **Alors** il est refusé avec `queue.outside_opening_hours` (E26 ; détail dans S-18)
 
 ### 8. Repli sans temps réel
 - **Étant donné** un client dont la page n'est pas mise à jour en temps réel
@@ -112,7 +118,10 @@
 | `pro-manager.queue_status.open` | « Ouvrir » | Libellé indicatif (APP_FLOW F-M5) |
 | `pro-manager.queue_status.pause` | « Pause » | Libellé indicatif (APP_FLOW F-M5) |
 | `pro-manager.queue_status.close` | « Fermer » | Libellé indicatif (APP_FLOW F-M5) |
-| `pro-manager.queue_status.close_confirm` | « Les {count} clients en attente seront servis jusqu'à la fin de journée » | APP_FLOW F-M5 ; pluriel ICU (0, 1, plusieurs) |
+| `pro-manager.queue_status.pause_hint` | « Plus de nouveaux clients ; les inscrits restent et continuent d'être appelés. » | E4 |
+| `pro-manager.queue_status.close_confirm_title` | « Fermer la file ? » | — |
+| `pro-manager.queue_status.close_confirm` | « Aucun nouveau client ne pourra rejoindre la file. {count, plural, =0 {Aucun client n'attend en ce moment.} one {Le client en attente sera servi jusqu'à la fin de journée.} other {Les # clients en attente seront servis jusqu'à la fin de journée.}} » | APP_FLOW F-M5 ; pluriel ICU (0, 1, plusieurs) |
+| `pro-manager.queue_status.close_confirm_submit` | « Fermer la file » | — |
 | `common.queue_status.closed` | « Fermée » | PRD §5.2 |
 | `common.queue_status.open` | « Ouverte » | PRD §5.2 |
 | `common.queue_status.paused` | « En pause » | PRD §5.2 |
@@ -129,9 +138,11 @@
 - **Résolu le 18/10** (E4, PRD §5.1) : pendant une pause de la file, les coiffeurs continuent d'appeler les clients déjà inscrits ; seules les nouvelles inscriptions sont bloquées.
 - **Résolu le 18/10** (K1, TRD §6.2) : `join_queue` et `register_walk_in` sur une file en pause renvoient `queue.queue_paused` ; un compte sans droit reçoit `queue.forbidden`.
 - **Résolu le 18/10** (K6, TRD ADR-018) : la fiche salon des visiteurs sans compte se met à jour par le canal public `salon-public:{salon_id}`, sans donnée personnelle.
-- **PRD (contradiction interne)** : le tableau « États de la file » du PRD §5.2 dit toujours « En pause : les tickets en cours restent et sont traités à la reprise », alors que PRD §5.1 et E4 disent que les coiffeurs continuent d'appeler pendant la pause. Il faut corriger le tableau.
-- **PRD / TRD** : PRD §5.2 transition 1 dit « File ouverte et non complète (sauf rendez-vous) ». Le scénario 7 bis lit l'exception comme valant aussi pour une file fermée ou en pause, ce que confirme l'absence de `queue_closed` et `queue_paused` pour `create_appointment` (TRD §6.2). Est-ce bien voulu ? `check_in_appointment`, lui, renvoie `queue_closed` mais pas `queue_paused` : un client peut-il se signaler pour son rendez-vous pendant une pause ?
+- **Résolu le 19/10** (E4, PRD v1.2 §5.2) : le tableau « États de la file » est corrigé : « En pause : aucun nouveau ticket ; les tickets en cours restent et les coiffeurs continuent de les appeler ».
+- **Résolu le 19/10** (K36, TRD ADR-017) : « File complète » est calculée par le moteur et stockée dans `salons.is_full`, exposée dans `public_salons` ; l'interface ne la recalcule pas.
+- **PRD / TRD** : PRD §5.2 transition 1 dit « File ouverte et non complète (sauf rendez-vous) ». Le scénario 7 bis lit l'exception comme valant aussi pour une file fermée ou en pause, ce que confirme l'absence de `queue_closed` et `queue_paused` pour `create_appointment` (TRD §6.2). Est-ce bien voulu ?
+- **En attente de E35 (Ely)** : `check_in_appointment` renvoie `queue_closed` mais pas `queue_paused` : un client peut-il se signaler pour son rendez-vous pendant une pause (transition 1b) ?
 - **PRD / APP_FLOW** : le PRD promet « en un clic », mais APP_FLOW F-M5 demande une confirmation pour « Fermer ». Faut-il accepter deux clics pour la fermeture ?
-- **PRD / BACKEND_SCHEMA** : BACKEND_SCHEMA §10 dit que `queue-tick` ouvre et ferme la file « selon les horaires ». Le PRD et APP_FLOW ne décrivent qu'une action du gérant. La file s'ouvre-t-elle toute seule à l'heure d'ouverture ? Le gérant peut-il l'ouvrir hors des horaires ou pendant une fermeture exceptionnelle ?
+- **En attente de E32 (Ely)** : BACKEND_SCHEMA §10 dit que `queue-tick` ouvre et ferme la file « selon les horaires » ; TRD §6.1 (liste des déclencheurs de `queue-tick`), le PRD et APP_FLOW ne décrivent qu'une action du gérant. La file s'ouvre-t-elle toute seule à l'heure d'ouverture ? Le gérant peut-il l'ouvrir hors des horaires ou pendant une fermeture exceptionnelle ? Une file fermée à la main peut-elle être rouverte par la tâche ?
 - **PRD** : les clients déjà en attente sont-ils prévenus quand la file passe en pause ou se ferme ? PRD §5.4 n'en dit rien.
 - **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

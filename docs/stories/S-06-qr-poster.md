@@ -5,7 +5,7 @@
 - Priorité : I (PRD §5.3)
 - Règles appliquées : H7 (l'arrivée se valide par le code du ticket ; le QR de l'affiche ne sert qu'à rejoindre la file) ; PRD §11 n° 7 ; objectif « Servir les clients sans app » (PRD §2)
 - Parcours : F-M2 « QR code », F-M11 `/dashboard/salon` ; scan côté client F-C4 (stories U-05 et U-14)
-- Commandes et données : `regenerate-qr` (Edge Function, TRD §6.1, K3) · RPC `resolve_qr_token` · tables `salons` (`qr_token`), `salon_events` (`qr_regenerated`) · bucket `qr-posters`
+- Commandes et données : `regenerate-qr` (Edge Function, TRD §6.1, K3) · RPC `resolve_qr_token` · `check_in_appointment` (vérifie `qr_token`, constat 31) · tables `salons` (`qr_token`), `salon_events` (`qr_regenerated`) · bucket `qr-posters`
 
 ## Scénarios
 
@@ -51,6 +51,12 @@
 - **Alors** il voit le message « Ce QR code n'est plus valide, demandez à l'accueil » (texte de F-C4, story U-05)
 - **Alors** aucun ticket n'est créé
 
+### 5 bis. Signalement de rendez-vous avec un ancien QR
+- **Étant donné** un QR régénéré, et un client qui avait ouvert le parcours « J'ai rendez-vous » depuis l'ancienne affiche
+- **Quand** la commande `check_in_appointment` part avec l'ancien `qr_token`
+- **Alors** elle est refusée avec l'erreur `queue.invalid_qr_token` (TRD §6.2, constat 31)
+- **Alors** aucun ticket n'est créé et le gérant n'est pas prévenu
+
 ### 6. Scan avant la publication du salon
 - **Étant donné** un salon qui n'est pas encore publié
 - **Quand** un client scanne son affiche
@@ -66,7 +72,7 @@
 ### 8. Seul le gérant régénère le QR
 - **Étant donné** un coiffeur connecté du salon
 - **Quand** `regenerate-qr` est appelée depuis son compte
-- **Alors** l'appel est refusé et le `qr_token` ne change pas (TRD §6.1 : appelée par le dashboard ; BACKEND_SCHEMA §8.3 : `qr-posters` en lecture et écriture gérant)
+- **Alors** l'appel est refusé avec l'erreur `queue.forbidden` (code commun hors `queue-command`, TRD §6.2) et le `qr_token` ne change pas (TRD §6.1 : appelée par le dashboard ; BACKEND_SCHEMA §8.3 : `qr-posters` en lecture et écriture gérant)
 
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
@@ -75,13 +81,19 @@
 | `pro-manager.qr.download` | « Télécharger le PDF A4 » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.qr.regenerate.label` | « Régénérer » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.qr.regenerate.confirm` | « L'ancien QR code cessera de fonctionner : les clients qui le scanneront ne pourront plus rejoindre la file. Imprimez la nouvelle affiche et remplacez l'ancienne. » | Doit dire que l'ancien QR cesse de fonctionner (APP_FLOW F-M2) |
-| `pro-manager.qr.poster.<element>` | Voir `pro-manager.qr.poster.*` dans le dictionnaire (7 textes) | Textes imprimés sur l'affiche A4 |
+| `pro-manager.qr.regenerate.confirm_submit` | « Régénérer le QR code » | Bouton de la boîte de confirmation |
+| `pro-manager.qr.poster.<element>` | Voir `pro-manager.qr.poster.*` dans le dictionnaire (7 textes) | Textes imprimés sur l'affiche A4, dont l'usage « J'ai rendez-vous » (`pro-manager.qr.poster.appointment`) |
+| `client.qr.invalid` | « Ce QR code n'est plus valide, demandez à l'accueil » | APP_FLOW F-C4 ; partagée avec U-05 |
+| `errors.queue.invalid_qr_token` | « Ce QR code n'est plus valide. Demandez à l'accueil. » | Refus de `check_in_appointment` (TRD §6.2) |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun hors `queue-command` (TRD §6.2) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (K3, TRD §6.1) : l'Edge Function `regenerate-qr` écrit le nouveau `qr_token` et génère le PDF A4 dans `qr-posters`.
-- **TRD** : `regenerate-qr` produit le PDF après une régénération. Qui produit le premier PDF, avant toute régénération (étape « QR code » du wizard) ? Les codes d'erreur de `regenerate-qr` ne sont pas listés (TRD §6.2 ne couvre que `queue-command`).
-- **APP_FLOW** : F-C4 propose maintenant « Rejoindre la file » et « J'ai rendez-vous ». L'affiche A4 doit-elle mentionner les deux usages ?
-- **APP_FLOW / DESIGN_SYSTEM** : le contenu de l'affiche A4 (nom du salon, phrase d'appel, consignes, charte graphique) n'est décrit nulle part.
+- **TRD** : `regenerate-qr` produit le PDF après une régénération. Qui produit le premier PDF, avant toute régénération (étape « QR code » du wizard) ?
+- **Résolu le 19/10** (constat 22, TRD v0.5 §6.2 « Hors `queue-command` ») : `regenerate-qr` n'a aucun code propre, seulement les codes communs (`queue.forbidden`, `queue.invalid_payload`, `queue.rate_limited`, `generic.unexpected`).
+- **Résolu le 19/10** (dictionnaire REQ-3, `pro-manager.qr.poster.appointment`, brouillon à relire par Ely) : l'affiche mentionne les deux usages, dont « J'ai rendez-vous ».
+- **Résolu en partie le 19/10** (dictionnaire REQ-3) : les textes de l'affiche existent (`pro-manager.qr.poster.*`). **Reste ouvert (DESIGN_SYSTEM)** : la mise en page et la charte graphique de l'affiche A4.
+- **Résolu le 19/10** (constat 31, TRD v0.5 §6.2) : `check_in_appointment` reçoit le `qr_token` et le vérifie contre `salons.qr_token` ; un ancien QR donne `queue.invalid_qr_token`.
 - **APP_FLOW** : que voit un client qui scanne l'affiche d'un salon pas encore publié ? Le même message que pour un QR régénéré ?
 - **PRD** : la régénération est-elle sans effet sur les tickets déjà créés avec l'ancien QR ? Cela semble aller de soi, mais n'est écrit nulle part.
 - **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

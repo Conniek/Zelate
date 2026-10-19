@@ -3,9 +3,9 @@
 **En tant que** coiffeur, **je veux** appeler en un geste le prochain client éligible, **afin qu'**il soit prévenu tout de suite et arrive pendant que je me libère.
 
 - Priorité : I (PRD §5.3)
-- Règles appliquées : H1, H3, H4, H6, H10 ; PRD §5.2 transitions 1b et 2, « Distribution » règles 4 et 6 à 8 ; PRD §5.1 « Le SMS « votre tour » part toujours, même si le plafond de 3 SMS est atteint » (E1), « File en pause : plus de nouvelles inscriptions, mais les coiffeurs continuent d'appeler les clients déjà inscrits » (E4) ; PRD §5.4 « Votre tour » ; PRD §7.1 principe 2 (refus du double déclenchement)
+- Règles appliquées : H1, H3, H4, H6, H10 ; PRD §5.2 transitions 1b et 2, « Distribution » règles 4 et 6 à 8 ; PRD §5.1 « Le SMS « votre tour » part toujours, même si le plafond de 3 SMS est atteint » (E1), « File en pause : plus de nouvelles inscriptions, mais les coiffeurs continuent d'appeler les clients déjà inscrits » (E4) ; PRD §5.4 « Votre tour » (message indispensable, hors plafond, E17, E28) ; PRD §7.1 principe 2 (refus du double déclenchement)
 - Parcours : F-S4 → F-S5 (APP_FLOW §4) ; événement « Votre tour » (APP_FLOW §7)
-- Commandes et données : `call_ticket` (codes `queue.no_eligible_ticket`, `queue.call_already_in_progress`, TRD §6.2) · tables `tickets` (`assigned_member_id`, `called_at`, `release_due_at`), `ticket_events`, `notifications` (`dedupe_key` `your_turn:<n>`), `private.processed_commands` · canaux `salon:{salon_id}`, `ticket:{ticket_id}`, `ticket-token:{token_key}`
+- Commandes et données : `call_ticket` (codes `queue.no_eligible_ticket`, `queue.call_already_in_progress`, TRD §6.2 ; verrou par salon du module `queue-transaction`, ADR-003, K38) · tables `tickets` (`assigned_member_id` fixé à l'appel, K39 ; `call_count`, K31 ; `called_at`, `release_due_at`, `declared_arrival_at`), `ticket_events`, `notifications` (`dedupe_key` `your_turn:<call_count>`), `private.processed_commands` · canaux `salon:{salon_id}`, `ticket:{ticket_id}`, `ticket-token:{token_key}`
 
 ## Scénarios
 
@@ -14,8 +14,9 @@
 - **Et** le premier ticket éligible pour elle est celui de Léa (code AF2K9), sans préférence
 - **Quand** Inès touche « Appeler »
 - **Alors** le ticket de Léa passe de « En attente » à « Appelé » (`status` = `called`, `called_at` renseigné)
-- **Et** le ticket est attribué définitivement à Inès (`assigned_member_id`)
-- **Et** l'heure de libération est fixée à l'appel + 10 min (`release_due_at`), Léa n'ayant déclaré aucun retard (cas du retard : C-09)
+- **Et** le ticket est attribué définitivement à Inès (`assigned_member_id`, K39)
+- **Et** le nombre d'appels du ticket passe à 1 (`call_count`, K31)
+- **Et** l'heure de libération est fixée à l'appel + 10 min (`release_due_at`), Léa n'ayant déclaré aucune heure d'arrivée plus tardive (`declared_arrival_at` vide ; cas du retard : C-09)
 - **Et** la carte « Appel en cours » affiche le prénom Léa et un compteur de 10 min
 - **Et** la notification « Votre tour » part en moins de 5 s
 - **Et** Léa voit l'écran plein « C'est votre tour ! » avec le compteur de 10 min (F-C5)
@@ -33,12 +34,12 @@
 - **Étant donné** Léa, dont le ticket a déjà reçu 3 SMS (par exemple inscription, « Préparez-vous », « choix de coiffeur »)
 - **Quand** Inès l'appelle
 - **Alors** le SMS « Votre tour » part quand même
-- **Et** ce SMS ne compte pas dans le plafond de 3 SMS (BACKEND_SCHEMA §4.16)
+- **Et** ce SMS ne compte pas dans le plafond de 3 SMS (BACKEND_SCHEMA §4.16, E28)
 
 ### 2 ter. Client sans « Me prévenir »
 - **Étant donné** Léa, qui n'a pas coché « Me prévenir »
 - **Quand** Inès l'appelle
-- **Alors** Léa reçoit quand même le SMS « Votre tour » (message indispensable, PRD §5.4, K11)
+- **Alors** Léa reçoit quand même le SMS « Votre tour » (message indispensable, PRD §5.1, E17)
 - **Et** elle reçoit aussi la notification push « Votre tour » si elle a le push actif
 
 ### 3. Le serveur choisit le client
@@ -67,12 +68,19 @@
 - **Alors** la commande est refusée avec `queue.call_already_in_progress`
 - **Et** aucun ticket n'est appelé
 
-### 6. Deux coiffeurs appellent au même moment
+### 6. Deux coiffeurs appellent au même moment, un seul ticket éligible
 - **Étant donné** Inès et Karim, tous deux « Disponibles », pour qui le même ticket est le seul éligible
 - **Quand** ils touchent « Appeler » au même instant
 - **Alors** le ticket est appelé par un seul des deux
-- **Et** l'autre voit un message d'erreur du dictionnaire `errors` (TRD §14 attend `queue.invalid_transition` ; à confirmer, voir questions)
+- **Et** la commande de l'autre est refusée avec `queue.no_eligible_ticket`, jamais avec `queue.invalid_transition` (TRD §14)
 - **Et** aucun ticket n'est appelé pour l'autre
+
+### 6 bis. Deux coiffeurs appellent au même moment, deux tickets éligibles
+- **Étant donné** Inès et Karim, tous deux « Disponibles », et les tickets de Léa puis de Paul, éligibles pour les deux
+- **Quand** ils touchent « Appeler » au même instant
+- **Alors** le ticket de Léa est appelé par l'un des deux
+- **Et** le ticket de Paul est appelé par l'autre (ticket éligible suivant, TRD §14)
+- **Et** aucun ticket n'est appelé deux fois
 
 ### 7. Plus aucun ticket éligible
 - **Étant donné** Inès dont l'écran affiche encore un prochain client, déjà appelé par un autre coiffeur
