@@ -1,4 +1,13 @@
 {
+  "brand": {
+    "client_name": "Zelaté",
+    "pro_name": "Zelaté Pro"
+  },
+  "app_metadata": {
+    "client_description": "Trouvez un salon et suivez votre attente en temps réel.",
+    "pro_description": "Pilotez votre file et suivez votre activité avec Zelaté Pro."
+  },
+  "notifications_region": "Notifications ({hotkey})",
   "actions": {
     "confirm": "Confirmer",
     "reject": "Refuser",

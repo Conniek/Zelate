@@ -8,13 +8,15 @@ These rules mirror `CLAUDE.md`. If the two files disagree, `CLAUDE.md` wins and 
 
 - **Phase 2 is closed (19/10/2026).** All business and technical questions are decided: E1-E39 (Ely) and K1-K45 (Koni). For E32-E39 and K42-K45 the written proposals are the default decisions (`docs/stories/README.md`); Ely may still revise one, nothing waits for her.
 - **Next: lot DEV-0 (foundations), then DEV-2 (queue engine).** The pilot is built in two steps: first the core loop (a client joins, a stylist calls, starts and finishes, every wait is recalculated: PRD §2 goal 1), then salon appointments (H10). Figma mockups (DES-1, DES-2) go on in parallel and do not block the code.
-- No application code exists yet.
+- DEV-0 is in progress on `feat/dev-0-foundations`: pnpm workspace, shared config, typed i18n, base UI components, and minimal client/Pro apps.
+- Supabase local is running and its API, Studio and Mailpit endpoints respond. Some ports bind to `0.0.0.0`; Studio, pgMeta and analytics have no authentication. Keep the stack on a trusted local network only; never use its shared default keys in production or share `supabase status` output.
 
 ## Read before working
 
 Start with the domain map `.claude/skills/zelate-domain/SKILL.md` (vocabulary, ticket lifecycle, rules, invariants, where each decision lives), then:
 
 In this order, only the parts the task needs:
+
 1. `docs/PRD.md`: business rules (§5.1, §5.2), requirements by ID (§5.3), notifications (§5.4), open questions (§9), decisions log (§11). **Source of truth for business rules.**
 2. `docs/APP_FLOW.md`: routes, screens, what each click does.
 3. `docs/BACKEND_SCHEMA.md`: tables, columns, enums, access rights.

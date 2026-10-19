@@ -1,0 +1,44 @@
+{
+  "name": "zelate",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "scripts": {
+    "build": "corepack pnpm --recursive --if-present build",
+    "dev": "corepack pnpm --parallel --filter @zelate/client --filter @zelate/pro dev",
+    "dev:client": "corepack pnpm --filter @zelate/client dev",
+    "dev:pro": "corepack pnpm --filter @zelate/pro dev",
+    "format": "prettier --write \"apps/**/*.{css,html,js,json,ts,tsx}\" \"packages/config/**/*.{js,json,ts}\" \"packages/ui/**/*.{css,js,json,ts,tsx}\" \"packages/i18n/src/**/*.{json,ts}\" \"packages/i18n/*.json\" \".github/workflows/*.yml\" \"*.{js,json,yaml,yml}\"",
+    "format:check": "prettier --check \"apps/**/*.{css,html,js,json,ts,tsx}\" \"packages/config/**/*.{js,json,ts}\" \"packages/ui/**/*.{css,js,json,ts,tsx}\" \"packages/i18n/src/**/*.{json,ts}\" \"packages/i18n/*.json\" \".github/workflows/*.yml\" \"*.{js,json,yaml,yml}\"",
+    "lint": "eslint .",
+    "prepare": "husky",
+    "test": "corepack pnpm --recursive --if-present test",
+    "typecheck": "corepack pnpm --recursive --if-present typecheck"
+  },
+  "lint-staged": {
+    "*.{css,html,json,md,yaml,yml}": "prettier --write",
+    "*.{js,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  },
+  "devDependencies": {
+    "@zelate/config": "workspace:*",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@eslint/js": "^9.28.0",
+    "eslint": "^9.28.0",
+    "eslint-plugin-i18next": "^6.1.3",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "globals": "^16.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.35.1",
+    "vitest": "^3.2.4"
+  }
+}

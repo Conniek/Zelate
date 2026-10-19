@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(corepack pnpm lint)",
+      "Bash(corepack pnpm test)",
+      "Bash(corepack pnpm typecheck)",
+      "Bash(corepack pnpm build)",
+      "Bash(supabase start)",
+      "Bash(supabase test db)"
+    ],
+    "deny": [
+      "Bash(git push --force)",
+      "Bash(git reset --hard)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "corepack pnpm lint && corepack pnpm test"
+          }
+        ]
+      }
+    ]
+  }
+}

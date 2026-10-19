@@ -1,0 +1,7 @@
+{
+  "extends": "@zelate/config/tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
+}

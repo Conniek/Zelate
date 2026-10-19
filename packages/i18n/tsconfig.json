@@ -1,0 +1,4 @@
+{
+  "extends": "@zelate/config/tsconfig.base.json",
+  "include": ["src/**/*.ts", "src/**/*.json"]
+}

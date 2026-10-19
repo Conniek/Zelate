@@ -1,0 +1,92 @@
+@import 'tailwindcss';
+
+@source "./components";
+
+@theme {
+  --color-ink-900: #1c1831;
+  --color-ink-700: #3a3550;
+  --color-ink-500: #5f5a73;
+  --color-ink-400: #8c879c;
+  --color-ink-200: #d9d6e0;
+  --color-ink-100: #e7e5df;
+  --color-cream-50: #f8f7f3;
+  --color-white: #ffffff;
+  --color-violet-50: #efeafd;
+  --color-violet-100: #ddd3fb;
+  --color-violet-500: #7146e8;
+  --color-violet-600: #5b36c9;
+  --color-violet-700: #4a2ba6;
+  --color-green-50: #e6f4ee;
+  --color-green-600: #13795b;
+  --color-green-700: #0f5e46;
+  --color-amber-50: #fef3c7;
+  --color-amber-700: #b54708;
+  --color-amber-800: #92400e;
+  --color-red-50: #fdecea;
+  --color-red-700: #b42318;
+  --color-blue-700: #1d5fa8;
+  --color-bg: var(--color-cream-50);
+  --color-surface: var(--color-white);
+  --color-surface-muted: var(--color-cream-50);
+  --color-text: var(--color-ink-900);
+  --color-text-muted: var(--color-ink-500);
+  --color-text-on-primary: var(--color-white);
+  --color-border: var(--color-ink-100);
+  --color-border-strong: var(--color-ink-400);
+  --color-primary: var(--color-violet-500);
+  --color-primary-hover: var(--color-violet-600);
+  --color-primary-active: var(--color-violet-700);
+  --color-primary-subtle: var(--color-violet-50);
+  --color-link: var(--color-violet-600);
+  --color-success: var(--color-green-600);
+  --color-success-subtle: var(--color-green-50);
+  --color-success-text: var(--color-green-700);
+  --color-warning: var(--color-amber-700);
+  --color-warning-subtle: var(--color-amber-50);
+  --color-warning-text: var(--color-amber-800);
+  --color-danger: var(--color-red-700);
+  --color-danger-subtle: var(--color-red-50);
+  --color-danger-text: var(--color-red-700);
+  --color-info: var(--color-blue-700);
+  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --text-display: 2.5rem;
+  --text-display--line-height: 2.75rem;
+  --text-h1: 1.875rem;
+  --text-h1--line-height: 2.25rem;
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 1.875rem;
+  --text-h3: 1.25rem;
+  --text-h3--line-height: 1.625rem;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.625rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --shadow-sm: 0 1px 2px rgb(28 24 49 / 0.06);
+  --shadow-md: 0 4px 12px rgb(28 24 49 / 0.08);
+  --shadow-lg: 0 12px 32px rgb(28 24 49 / 0.12);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-bg text-text font-sans text-body antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+}

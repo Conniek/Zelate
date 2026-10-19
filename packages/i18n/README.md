@@ -1,18 +1,18 @@
 # packages/i18n — dictionnaire de textes
 
-Brouillon du lot **REQ-3** (18/10/2026). Tous les textes affichés par Zelaté et Zelaté Pro vivent ici, jamais dans les composants ([TRD §9](../../docs/TRD.md#9-dictionnaire-de-textes-i18n)). La configuration i18next, les types des clés et les tests arrivent au lot DEV-0.
+Brouillon du lot **REQ-3** (18/10/2026). Tous les textes affichés par Zelaté et Zelaté Pro vivent ici, jamais dans les composants ([TRD §9](../../docs/TRD.md#9-dictionnaire-de-textes-i18n)). DEV-0 ajoute i18next avec formatage ICU, types des clés et tests de ressources.
 
 ## Fichiers
 
-| Fichier | Contenu | Chargé par |
-| --- | --- | --- |
-| `src/fr/common.json` | Boutons, statuts, unités, jours, formats | Les deux apps |
-| `src/fr/client.json` | Écrans de l'app Zelaté | App client |
-| `src/fr/pro-stylist.json` | Espace coiffeur | App Pro |
-| `src/fr/pro-manager.json` | Dashboard gérant et admin | App Pro |
-| `src/fr/notifications.json` | Push, SMS et e-mails | Edge Functions (`send-notifications`) |
-| `src/fr/errors.json` | Erreurs métier (`queue.<code>`, `auth.<code>`) et de validation | Les deux apps |
-| `src/fr/legal.json` | Libellés courts des consentements et liens juridiques ; les textes complets viennent de REQ-4 | Les deux apps |
+| Fichier                     | Contenu                                                                                       | Chargé par                            |
+| --------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `src/fr/common.json`        | Boutons, statuts, unités, jours, formats                                                      | Les deux apps                         |
+| `src/fr/client.json`        | Écrans de l'app Zelaté                                                                        | App client                            |
+| `src/fr/pro-stylist.json`   | Espace coiffeur                                                                               | App Pro                               |
+| `src/fr/pro-manager.json`   | Dashboard gérant et admin                                                                     | App Pro                               |
+| `src/fr/notifications.json` | Push, SMS et e-mails                                                                          | Edge Functions (`send-notifications`) |
+| `src/fr/errors.json`        | Erreurs métier (`queue.<code>`, `auth.<code>`) et de validation                               | Les deux apps                         |
+| `src/fr/legal.json`         | Libellés courts des consentements et liens juridiques ; les textes complets viennent de REQ-4 | Les deux apps                         |
 
 ## Conventions
 

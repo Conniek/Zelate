@@ -1,0 +1,35 @@
+{
+  "name": "@zelate/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./src/theme.css",
+    "./fonts.css": "./src/fonts.css"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fontsource/dm-sans": "^5.2.6",
+    "@fontsource/manrope": "^5.2.6",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-toast": "^1.2.14",
+    "lucide-react": "^0.525.0",
+    "react": "^19.1.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.1.8",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
