@@ -117,12 +117,12 @@
 | `common.queue_status.open` | « Ouverte » | PRD §5.2 |
 | `common.queue_status.paused` | « En pause » | PRD §5.2 |
 | `common.queue_status.full` | « Complète » | PRD §5.2 |
-| `pro-manager.board.offline_banner` | — (à rédiger) | Commun aux écrans du dashboard (APP_FLOW §8) |
-| `errors.queue.queue_closed` | — (à rédiger) | — |
-| `errors.queue.queue_paused` | — (à rédiger) | TRD §6.2 |
-| `errors.queue.queue_full` | — (à rédiger) | — |
-| `errors.queue.salon_not_published` | — (à rédiger) | TRD §6.2 |
-| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
+| `pro-manager.board.offline_banner` | « Connexion perdue : les actions sont bloquées jusqu'au retour du réseau. » | Commun aux écrans du dashboard (APP_FLOW §8) |
+| `errors.queue.queue_closed` | « La file est fermée : aucune nouvelle inscription n'est possible pour le moment. » | — |
+| `errors.queue.queue_paused` | « La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise. » | TRD §6.2 |
+| `errors.queue.queue_full` | « La file est complète pour aujourd'hui : les prochaines prestations finiraient après la fermeture. » | — |
+| `errors.queue.salon_not_published` | « Votre salon n'est pas encore publié : la file ne peut pas être ouverte. Publiez-le d'abord. » | TRD §6.2 |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** : « Fermer la file » n'annule aucun ticket ; seule la fin de journée (H9) annule. PRD (transition 6, §5.4) et BACKEND_SCHEMA (`cancel_reason`) sont corrigés. Question d'origine : selon PRD §5.2 (transition 6), §5.4 (« Annulation par le salon : retrait, fermeture, fin de journée ») et `cancel_reason` = `queue_closed`, la fermeture annule les tickets en attente. Selon APP_FLOW F-M5 et F-M12, les clients en attente « seront servis » et « restent ». Lequel est juste ?
@@ -134,4 +134,4 @@
 - **PRD / APP_FLOW** : le PRD promet « en un clic », mais APP_FLOW F-M5 demande une confirmation pour « Fermer ». Faut-il accepter deux clics pour la fermeture ?
 - **PRD / BACKEND_SCHEMA** : BACKEND_SCHEMA §10 dit que `queue-tick` ouvre et ferme la file « selon les horaires ». Le PRD et APP_FLOW ne décrivent qu'une action du gérant. La file s'ouvre-t-elle toute seule à l'heure d'ouverture ? Le gérant peut-il l'ouvrir hors des horaires ou pendant une fermeture exceptionnelle ?
 - **PRD** : les clients déjà en attente sont-ils prévenus quand la file passe en pause ou se ferme ? PRD §5.4 n'en dit rien.
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

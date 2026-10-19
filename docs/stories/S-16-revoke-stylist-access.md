@@ -102,14 +102,14 @@
 | --- | --- | --- |
 | `pro-manager.team.menu.revoke_sessions` | « Déconnecter ses appareils » | Libellé indicatif (APP_FLOW F-M4) |
 | `pro-manager.team.menu.deactivate` | « Désactiver » | Libellé indicatif (APP_FLOW F-M4) |
-| `pro-manager.team.revoke_sessions.confirm` | — (à rédiger) | Rappelle que le coiffeur pourra se reconnecter par lien magique |
-| `pro-manager.team.deactivate.confirm` | — (à rédiger) | Rappelle que l'accès est retiré et que les clients qui le demandaient devront choisir |
-| `pro-manager.team.status.deactivated` | — (à rédiger) | Valeur `deactivated` |
+| `pro-manager.team.revoke_sessions.confirm` | « Toutes les sessions de ce compte seront coupées, par exemple sur un téléphone perdu ou changé. {stylist_name} pourra se reconnecter avec un lien reçu par e-mail. » | Rappelle que le coiffeur pourra se reconnecter par lien magique |
+| `pro-manager.team.deactivate.confirm` | « L'accès sera retiré en 15 min au plus. {count, plural, =0 {Aucun client en attente ne demande ce coiffeur.} one {# client qui demandait {stylist_name} devra choisir « Premier disponible » ou annuler.} other {# clients qui demandaient {stylist_name} devront choisir « Premier disponible » ou annuler.}} Ses rendez-vous restants seront à réaffecter. » | Rappelle que l'accès est retiré et que les clients qui le demandaient devront choisir |
+| `pro-manager.team.status.deactivated` | « Désactivé » | Valeur `deactivated` |
 | `pro-stylist.signin.sessions_revoked` | « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » | APP_FLOW §2.3 et F-S2 ; sessions coupées, coiffeur toujours actif |
 | `pro-stylist.signin.access_revoked` | « Votre accès a été retiré, contactez votre gérant » | APP_FLOW §2.3 et F-S2 ; coiffeur désactivé |
-| `notifications.stylist_change_required.push` | — (à rédiger) | Partagée avec S-11 ; sans « attendre » pour un coiffeur désactivé (E7) |
-| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) : commande d'un membre révoqué |
-| `errors.team.last_manager` | — (à rédiger) | Au moins un gérant par salon |
+| `notifications.stylist_change_required.push` | Voir `notifications.stylist_change_required.push.*` dans le dictionnaire (2 textes) | Partagée avec S-11 ; sans « attendre » pour un coiffeur désactivé (E7) |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) : commande d'un membre révoqué |
+| `errors.team.last_manager` | « Le salon doit garder au moins un gérant : ce compte ne peut pas être désactivé. » | Au moins un gérant par salon |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (correction APP_FLOW §2.3 et F-S2) : deux messages distincts, « Vous avez été déconnecté, reconnectez-vous avec votre e-mail » après une déconnexion, « Votre accès a été retiré, contactez votre gérant » après une désactivation.
@@ -123,4 +123,4 @@
 - **PRD** : une simple déconnexion (sessions coupées, coiffeur toujours actif) a-t-elle un effet sur ses clients en attente ou sur son client appelé ? Rien ne le dit ; on suppose que non.
 - **APP_FLOW** : peut-on réactiver un coiffeur désactivé ? Un coiffeur désactivé compte-t-il dans la limite de 20 (S-04) ?
 - **TRD** : les codes d'erreur de `revoke-member-sessions` et de `deactivate-member` ne sont pas listés (TRD §6.2 ne couvre que `queue-command`), dont le refus « dernier gérant du salon ».
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

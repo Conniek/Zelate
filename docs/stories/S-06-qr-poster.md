@@ -74,8 +74,8 @@
 | `pro-manager.qr.title` | « QR code » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.qr.download` | « Télécharger le PDF A4 » | Libellé indicatif (APP_FLOW F-M2) |
 | `pro-manager.qr.regenerate.label` | « Régénérer » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.qr.regenerate.confirm` | — (à rédiger) | Doit dire que l'ancien QR cesse de fonctionner (APP_FLOW F-M2) |
-| `pro-manager.qr.poster.<element>` | — (à rédiger) | Textes imprimés sur l'affiche A4 |
+| `pro-manager.qr.regenerate.confirm` | « L'ancien QR code cessera de fonctionner : les clients qui le scanneront ne pourront plus rejoindre la file. Imprimez la nouvelle affiche et remplacez l'ancienne. » | Doit dire que l'ancien QR cesse de fonctionner (APP_FLOW F-M2) |
+| `pro-manager.qr.poster.<element>` | Voir `pro-manager.qr.poster.*` dans le dictionnaire (7 textes) | Textes imprimés sur l'affiche A4 |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (K3, TRD §6.1) : l'Edge Function `regenerate-qr` écrit le nouveau `qr_token` et génère le PDF A4 dans `qr-posters`.
@@ -84,4 +84,4 @@
 - **APP_FLOW / DESIGN_SYSTEM** : le contenu de l'affiche A4 (nom du salon, phrase d'appel, consignes, charte graphique) n'est décrit nulle part.
 - **APP_FLOW** : que voit un client qui scanne l'affiche d'un salon pas encore publié ? Le même message que pour un QR régénéré ?
 - **PRD** : la régénération est-elle sans effet sur les tickets déjà créés avec l'ancien QR ? Cela semble aller de soi, mais n'est écrit nulle part.
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

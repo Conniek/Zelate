@@ -87,8 +87,8 @@
 | `pro-manager.admin.audit.filters.period` | « Période » | — |
 | `pro-manager.admin.audit.filters.type` | « Type d'action » | — |
 | `pro-manager.admin.audit.filters.actor` | « Acteur » | — |
-| `pro-manager.audit.event_type.<type>` | _À rédiger (clé absente du dictionnaire)_ | Une clé par valeur de `ticket_event_type` et de `salon_event_type` |
-| `pro-manager.audit.actor_type.<type>` | _À rédiger (clé absente du dictionnaire)_ | Une clé par valeur de `actor_type` |
+| `pro-manager.audit.event_type.<type>` | Voir `pro-manager.audit.event_type.*` dans le dictionnaire (42 textes) | Une clé par valeur de `ticket_event_type` et de `salon_event_type` |
+| `pro-manager.audit.actor_type.<type>` | Voir `pro-manager.audit.actor_type.*` dans le dictionnaire (5 textes) | Une clé par valeur de `actor_type` |
 | `pro-manager.admin.audit.empty` | Aucun événement pour ces filtres. Élargissez la période ou retirez un filtre. | — |
 
 ## Questions ouvertes

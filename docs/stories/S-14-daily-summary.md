@@ -41,14 +41,14 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.summary.title` | — (à rédiger) | Page `/dashboard/summary` |
-| `pro-manager.summary.served` | — (à rédiger) | Pluriel ICU |
-| `pro-manager.summary.announced_wait` | — (à rédiger) | Minutes |
-| `pro-manager.summary.actual_wait` | — (à rédiger) | Minutes |
-| `pro-manager.summary.no_shows` | — (à rédiger) | Pluriel ICU |
-| `pro-manager.summary.cancellations` | — (à rédiger) | Pluriel ICU |
-| `notifications.daily_summary.email.subject` | — (à rédiger) | E-mail |
-| `notifications.daily_summary.email.body` | — (à rédiger) | Mêmes indicateurs que la page |
+| `pro-manager.summary.title` | « Récapitulatif du jour » | Page `/dashboard/summary` |
+| `pro-manager.summary.served` | « {count, plural, =0 {Aucun client servi} one {# client servi} other {# clients servis}} » | Pluriel ICU |
+| `pro-manager.summary.announced_wait` | « Attente annoncée : ~{minutes} min » | Minutes |
+| `pro-manager.summary.actual_wait` | « Attente réelle : ~{minutes} min » | Minutes |
+| `pro-manager.summary.no_shows` | « {count, plural, =0 {Aucune absence} one {# absence} other {# absences}} » | Pluriel ICU |
+| `pro-manager.summary.cancellations` | « {count, plural, =0 {Aucune annulation} one {# annulation} other {# annulations}} » | Pluriel ICU |
+| `notifications.daily_summary.email.subject` | « Récapitulatif de votre journée du {date} » | E-mail |
+| `notifications.daily_summary.email.body` | « Bonjour {first_name}, ↵  ↵ Voici la journée du {date} chez {salon_name}. ↵  ↵ Clients servis : {served_count} ↵ Attente annoncée : {announced_wait_minutes} min en moyenne ↵ Attente réelle : {actual_wait_minutes} min en moyenne ↵ Absences : {no_show_count} ↵ Annulations : {cancellation_count} ↵  ↵ Le détail est sur votre tableau de bord : ↵ {link} ↵  ↵ L'équipe Zelaté » | Mêmes indicateurs que la page |
 
 ## Questions ouvertes
 - **TRD / BACKEND_SCHEMA** : quand la journée est-elle « terminée » ? TRD §6.1 dit « à la fermeture », BACKEND_SCHEMA §10 dit « salons fermés depuis le dernier passage » (passage toutes les 15 min). Est-ce à l'heure de la dernière fermeture des horaires (E5), au passage de la file à `closed`, après l'annulation automatique 15 min après la fermeture, ou quand le dernier client servi a terminé ? Des clients « servis » après la fermeture (S-15) peuvent encore être en prestation, et ceux qui ne sont pas pris sont annulés seulement à la fin de la journée (E5).
@@ -59,4 +59,4 @@
 - **APP_FLOW** : `/dashboard/summary` montre-t-il seulement aujourd'hui, ou aussi les jours passés ?
 - **APP_FLOW** : le récapitulatif montre-t-il des prénoms de clients, ou seulement des chiffres ? Et les chiffres par coiffeur (`get_day_summary` accepte `member_id`) ?
 - **BACKEND_SCHEMA** : l'e-mail n'a pas de `ticket_id`, donc la contrainte d'unicité `unique (ticket_id, channel, dedupe_key)` ne l'empêche pas d'être envoyé deux fois. Qu'est-ce qui garantit un seul e-mail par salon et par jour ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

@@ -157,11 +157,11 @@
 | `pro-manager.end_of_day.closing.cancel` | « Annuler avec excuses » | PRD §5.2 |
 | `pro-manager.end_of_day.closing.all` | « Tous » | Libellé indicatif (APP_FLOW F-M12) |
 | `notifications.end_of_day_risk.push` | « Vous risquez de ne pas être pris avant la fermeture » | PRD §5.2 ; boutons « Je reste » et « J'annule » |
-| `notifications.end_of_day_risk.sms` | — (à rédiger, à partir de « Vous risquez de ne pas être pris avant la fermeture ») | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
-| `notifications.cancelled_by_salon.end_of_day.push` | — (à rédiger) | Excuses et salons proches |
-| `notifications.cancelled_by_salon.end_of_day.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5) ; excuses et salons proches ; hors plafond |
-| `errors.queue.invalid_transition` | — (à rédiger) | Partagée avec S-02, S-12, S-13 |
-| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
+| `notifications.end_of_day_risk.sms` | « {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link} » | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
+| `notifications.cancelled_by_salon.end_of_day.push` | Voir `notifications.cancelled_by_salon.end_of_day.push.*` dans le dictionnaire (2 textes) | Excuses et salons proches |
+| `notifications.cancelled_by_salon.end_of_day.sms` | « {salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. Salons proches : {link} » | **SMS : 160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5) ; excuses et salons proches ; hors plafond |
+| `errors.queue.invalid_transition` | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. » | Partagée avec S-02, S-12, S-13 |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (correction PRD H9) : la fenêtre de 2 h est une valeur par défaut, réglable par salon après le pilote ; elle n'est pas modifiable par le gérant pendant le pilote.
@@ -175,4 +175,4 @@
 - **APP_FLOW / TRD** : comment des « salons proches » tiennent-ils dans un SMS de 160 caractères ? (Même question dans S-12 ; K5 fixe les longueurs, pas ce contenu.)
 - **PRD (consentement, K11)** : sans « Me prévenir », `cancelled_by_salon` passe en `skipped` (BACKEND_SCHEMA §4.16). Un client annulé à la fermeture sans avoir coché la case n'est donc pas prévenu, alors que PRD §5.4 dit que l'annulation par le salon « part toujours ». Laquelle des deux règles l'emporte ? Même question pour un walk-in, qui ne peut pas cocher la case (S-10).
 - **PRD (rendez-vous)** : les documents ne disent rien de particulier sur les rendez-vous en fin de journée. Un client avec rendez-vous reçoit-il l'alerte de fin de journée comme les autres ? Un rendez-vous encore « à confirmer » (`pending_confirmation`, hors calcul) à l'heure de fermeture figure-t-il dans la boîte de décision, ou est-il refusé ? Le gérant peut-il « Annuler avec excuses » un rendez-vous confirmé ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

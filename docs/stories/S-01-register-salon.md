@@ -109,16 +109,16 @@
 ## Textes à prévoir
 | Clé (anglais) | Texte (français) | Contrainte |
 | --- | --- | --- |
-| `pro-manager.signup.account.title` | — (à rédiger) | Étape 1 « Compte » |
+| `pro-manager.signup.account.title` | « Votre compte » | Étape 1 « Compte » |
 | `pro-manager.signup.salon.title` | « Salon » | Libellé indicatif (APP_FLOW F-M1) |
-| `pro-manager.signup.salon.siret_valid` | ✓ (pictogramme, texte alternatif à rédiger) | Accessible au lecteur d'écran (RGAA AA) |
+| `pro-manager.signup.salon.siret_valid` | « SIRET vérifié : établissement actif, activité de coiffure » | Accessible au lecteur d'écran (RGAA AA) |
 | `pro-manager.signup.salon.siret_to_verify` | « à vérifier » | Libellé indicatif (APP_FLOW F-M1), avec ⚠ |
 | `pro-manager.signup.hairdressing.title` | « Vous et la coiffure » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.hairdressing.label` | « Je coiffe aussi » | Libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.signup.submit` | « Envoyer mon dossier » | Libellé indicatif (APP_FLOW F-M1) |
-| `pro-manager.signup.pending.title` | — (à rédiger) | Écran `/signup/pending` |
-| `errors.validation.siret_format` | — (à rédiger) | SIRET de 14 chiffres |
-| `notifications.signup_resume.email` | — (à rédiger) | E-mail de reprise du brouillon, lien valable 7 jours |
+| `pro-manager.signup.pending.title` | « Dossier envoyé » | Écran `/signup/pending` |
+| `errors.validation.siret_format` | « Le SIRET compte 14 chiffres. Vérifiez votre saisie. » | SIRET de 14 chiffres |
+| `notifications.signup_resume.email` | Voir `notifications.signup_resume.email.*` dans le dictionnaire (2 textes) | E-mail de reprise du brouillon, lien valable 7 jours |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E14, PRD §5.1) : un SIRET introuvable ou inactif n'empêche pas l'envoi ; le dossier part « à vérifier » et l'équipe Zelaté décide.
@@ -129,4 +129,4 @@
 - **TRD** : d'après APP_FLOW F-M1, `verify-siret` est appelé quand le gérant quitte le champ, mais TRD §6.1 dit que seuls `salon-signup` et l'admin l'appellent. Qui l'appelle à la saisie ?
 - **TRD** : la longueur minimale du mot de passe gérant (12 caractères) se trouve au TRD §7, qui n'est pas dans les sources de cette story. Faut-il l'ajouter comme scénario limite ?
 - **APP_FLOW / BACKEND_SCHEMA** : au MVP, un gérant ne gère qu'un salon (index unique sur `salon_members.profile_id`). Que voit un gérant déjà inscrit qui commence une deuxième inscription ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

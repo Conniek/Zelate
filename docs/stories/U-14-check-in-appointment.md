@@ -214,8 +214,8 @@
 | `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 |
 | `common.actions.confirm` | « Confirmer » | — |
 | `common.actions.reject` | « Refuser » | — |
-| `notifications.appointment_confirmed.push` | _À rédiger (clé absente du dictionnaire)_ | Avec l'heure de passage |
-| `notifications.appointment_rejected.push` | _À rédiger (clé absente du dictionnaire)_ | Push seulement ; bouton « Rejoindre la file » |
+| `notifications.appointment_confirmed.push` | Voir `notifications.appointment_confirmed.push.*` dans le dictionnaire (2 textes) | Avec l'heure de passage |
+| `notifications.appointment_rejected.push` | Voir `notifications.appointment_rejected.push.*` dans le dictionnaire (2 textes) | Push seulement ; bouton « Rejoindre la file » |
 | `client.ticket.end.reason.appointment_rejected` | Le salon n'a pas retrouvé votre rendez-vous. Vous pouvez rejoindre la file sans rendez-vous. | Écran de fin |
 | `errors.queue.queue_closed` | La file est fermée : aucune nouvelle inscription n'est possible pour le moment. | Partagé avec U-04 |
 | `errors.queue.outside_opening_hours` | Cette heure est en dehors des horaires d'ouverture du salon. Choisissez une heure pendant l'ouverture. | — |

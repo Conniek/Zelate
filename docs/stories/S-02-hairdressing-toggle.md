@@ -111,13 +111,13 @@
 | `pro-manager.signup.hairdressing.label` | « Je coiffe aussi » | Partagée avec S-01 ; libellé indicatif (APP_FLOW F-M1) |
 | `pro-manager.board.hairdressing.label` | « Je coiffe » | Libellé indicatif (APP_FLOW F-M6) |
 | `pro-manager.board.take_next` | « Je prends le prochain » | Libellé indicatif (APP_FLOW F-M6) |
-| `notifications.estimate_changed.push` | — (à rédiger) | Push seulement ; nouvelle heure et raison (APP_FLOW §7) |
-| `notifications.estimate_changed.reason.hairdressing_toggled` | — (à rédiger) | Raison montrée au client, sans détail sur le gérant |
-| `notifications.stylist_change_required.push` | — (à rédiger) | Partagée avec S-11 et S-16 ; ici sans « attendre » (E7, E8) |
-| `errors.queue.no_eligible_ticket` | — (à rédiger) | — |
-| `errors.queue.call_already_in_progress` | — (à rédiger) | TRD §6.2 |
-| `errors.queue.invalid_transition` | — (à rédiger) | — |
-| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
+| `notifications.estimate_changed.push` | Voir `notifications.estimate_changed.push.*` dans le dictionnaire (2 textes) | Push seulement ; nouvelle heure et raison (APP_FLOW §7) |
+| `notifications.estimate_changed.reason.hairdressing_toggled` | « Le nombre de coiffeurs disponibles a changé. » | Raison montrée au client, sans détail sur le gérant |
+| `notifications.stylist_change_required.push` | Voir `notifications.stylist_change_required.push.*` dans le dictionnaire (2 textes) | Partagée avec S-11 et S-16 ; ici sans « attendre » (E7, E8) |
+| `errors.queue.no_eligible_ticket` | « Aucun client à appeler pour l'instant. Il a peut-être été pris par un collègue : vérifiez votre file. » | — |
+| `errors.queue.call_already_in_progress` | « Vous avez déjà un client appelé ou en prestation. Finissez avec lui avant d'appeler le suivant. » | TRD §6.2 |
+| `errors.queue.invalid_transition` | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. » | — |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E8, PRD §5.1) : quand le gérant coupe « Je coiffe », ceux qui le demandaient suivent la règle d'un coiffeur absent : « premier disponible » ou annuler, sans « attendre » ; sans réponse en 10 min, premier disponible.
@@ -126,4 +126,4 @@
 - **PRD / TRD** : PRD §5.1 dit « la même règle s'applique quand le gérant coupe « Je coiffe » » juste après la règle du client appelé (repris en tête) et du client en prestation (terminé par le gérant). TRD §6.2 `set_hairdressing` ne parle que de « ses clients ». Si le gérant coupe l'interrupteur pendant qu'il a un client appelé ou en prestation, ce client appelé est-il repris en tête par le premier coiffeur libre, ou reste-t-il attribué au gérant ?
 - **APP_FLOW / BACKEND_SCHEMA** : F-M1 ne demande pas ses spécialités au gérant. Or l'éligibilité dépend de la maîtrise de la prestation (H1, règle 4). Où le gérant déclare-t-il ses spécialités ? Quels tickets sont éligibles pour « Je prends le prochain » ?
 - **PRD / BACKEND_SCHEMA** : BACKEND_SCHEMA §4.4 dit qu'un membre reçoit des clients s'il est actif, `is_hairdressing = true` et présent, et que le gérant qui a coupé « Je coiffe » peut quand même prendre le prochain client. Pour « Je prends le prochain », faut-il aussi que le gérant ait un statut de présence « disponible » (`stylist_presence`, condition de la transition 2) ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).

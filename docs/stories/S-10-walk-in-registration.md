@@ -131,16 +131,16 @@
 | `pro-manager.walk_in.stylist` | « Coiffeur » | — |
 | `common.first_available` | « Premier disponible » | Partagée avec l'app client (F-C3) |
 | `pro-manager.walk_in.submit` | « Inscrire » | Libellé indicatif (APP_FLOW F-M7) |
-| `notifications.ticket_created.sms` | — (à rédiger) | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; contient rang, heure, code du ticket, lien de suivi (APP_FLOW §7) |
+| `notifications.ticket_created.sms` | « {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} » | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; contient rang, heure, code du ticket, lien de suivi (APP_FLOW §7) |
 | `client.tracking.expired` | « Ce lien a expiré » | APP_FLOW F-C10 ; partagée avec U-06 |
-| `errors.queue.already_has_active_ticket` | — (à rédiger) | Ne nomme pas l'autre salon |
-| `errors.queue.queue_closed` | — (à rédiger) | Partagée avec S-08 |
-| `errors.queue.queue_paused` | — (à rédiger) | Partagée avec S-08 |
-| `errors.queue.queue_full` | — (à rédiger) | Partagée avec S-08 |
-| `errors.queue.rate_limited` | — (à rédiger) | — |
-| `errors.queue.invalid_phone` | — (à rédiger) | Numéro +33 (TRD §6.2) |
-| `errors.queue.forbidden` | — (à rédiger) | Code commun (TRD §6.2) |
-| `errors.validation.first_name` | — (à rédiger) | 1 à 30 caractères |
+| `errors.queue.already_has_active_ticket` | « Ce numéro a déjà une place en cours. Une seule place à la fois est possible. » | Ne nomme pas l'autre salon |
+| `errors.queue.queue_closed` | « La file est fermée : aucune nouvelle inscription n'est possible pour le moment. » | Partagée avec S-08 |
+| `errors.queue.queue_paused` | « La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise. » | Partagée avec S-08 |
+| `errors.queue.queue_full` | « La file est complète pour aujourd'hui : les prochaines prestations finiraient après la fermeture. » | Partagée avec S-08 |
+| `errors.queue.rate_limited` | « Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez. » | — |
+| `errors.queue.invalid_phone` | « Ce numéro n'est pas valide. Saisissez un numéro de téléphone français. » | Numéro +33 (TRD §6.2) |
+| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
+| `errors.validation.first_name` | « Indiquez un prénom de 30 caractères au plus. » | 1 à 30 caractères |
 
 ## Questions ouvertes
 - **Résolu le 18/10** (E12, PRD §5.1) : la prestation d'un walk-in est facultative, 30 min comptées par défaut.
@@ -150,4 +150,4 @@
 - **APP_FLOW** : la boîte propose-t-elle les coiffeurs absents ce jour-là ? Que se passe-t-il si le gérant en choisit un ? Pour un client, F-C3 le prévient et le renvoie vers « premier disponible ». TRD §6.2 ne donne pas `stylist_unavailable` à `register_walk_in` (seulement à `join_queue`).
 - **TRD** : le plafond de création de tickets (`rate_limits`) n'a pas de valeur chiffrée. Quel seuil s'applique pour `queue.rate_limited` ?
 - **TRD** : si le client a déjà un compte client avec ce numéro, le ticket walk-in est-il rattaché à son compte (`client_id` est vide pour un walk-in) ? Le client le voit-il dans `/ticket` après s'être connecté par code SMS ?
-- **APP_FLOW** : les textes marqués « à rédiger » ne figurent dans aucun document.
+- **Résolu le 18/10** (REQ-3) : les textes sont rédigés dans `packages/i18n/src/fr/` (brouillon à relire, voir `packages/i18n/REVIEW.md`).
