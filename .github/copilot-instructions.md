@@ -6,12 +6,9 @@ These rules mirror `CLAUDE.md`. If the two files disagree, `CLAUDE.md` wins and 
 
 ## Current state
 
-- **Phase 2 · Requirements**, almost done (see `docs/IMPLEMENTATION_PLAN.md` §4). **No application code yet**: code starts at lot DEV-0, after gate 3. Do not create `apps/`, `supabase/` or `package.json` before then.
-- Done: PRD v1.1, TRD v0.3, data schema v0.3, app flow v0.3, design system v0.3, 50 user stories in `docs/stories/`, draft French texts in `packages/i18n/src/fr/` (REQ-3).
-- Waiting for answers: business questions E17 to E31, for Ely.
-  
-  Both lists are in `docs/stories/README.md`. The texts to review are listed in `packages/i18n/REVIEW.md`.
-- Technical questions K13 to K27 are answered (TRD v0.4). Phase 3 started in parallel on 19/10: `architect` agent (DES-0) and `zelate-domain` skill v0 (DES-6) are written; Koni works on Figma (DES-1). Waiting for Ely before the appointment and consent mockups and the schema freeze (DES-4). Koni also owns REQ-4 (legal texts) and REQ-5 (processing register).
+- **Phase 2 is closed (19/10/2026).** All business and technical questions are decided: E1-E39 (Ely) and K1-K45 (Koni). For E32-E39 and K42-K45 the written proposals are the default decisions (`docs/stories/README.md`); Ely may still revise one, nothing waits for her.
+- **Next: lot DEV-0 (foundations), then DEV-2 (queue engine).** The pilot is built in two steps: first the core loop (a client joins, a stylist calls, starts and finishes, every wait is recalculated: PRD §2 goal 1), then salon appointments (H10). Figma mockups (DES-1, DES-2) go on in parallel and do not block the code.
+- No application code exists yet.
 
 ## Read before working
 
@@ -28,7 +25,7 @@ In this order, only the parts the task needs:
 
 ## Working rules
 
-1. **Never guess.** A rule, screen, column, text or dependency missing from the docs is a question to Koni first, then a document update, then the work. Write the question down; do not pick an answer silently.
+1. **Do not block on gaps.** If a rule, screen, column or text is missing, take the simplest option compatible with the docs, write it as one line under « Choix par défaut » in the pull request, and go on. Stop and ask Koni only when the gap touches privacy (phone, tokens, client data) or contradicts the PRD.
 2. **Keep documents current.** Any change to a rule, route, schema or decision updates the document in the same pull request, and bumps its version line.
 3. **Business rules belong to Ely, technical choices to Koni.** Flag contradictions between documents instead of choosing one.
 4. **Language.** Code, file names, identifiers, comments, commits, branches and pull requests in **English**. Documents, user stories and user-facing texts in **French**. User-facing texts live only in `packages/i18n/src/fr/*.json`, never hard-coded.

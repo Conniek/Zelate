@@ -2,7 +2,9 @@
 
 50 stories, une par exigence du [PRD v1.1](../PRD.md) §5.3, écrites le 18/10/2026 par l'agent `product-analyst` (lot REQ-2), puis mises à jour le même jour avec le PRD v1.1 (rendez-vous du salon, règle H10) et les réponses E1 à E16 et K1 à K12.
 
-**État : brouillon.** Les scénarios sont prêts à relire ; les questions E32 à E39 (Ely) et K42 à K45 (Koni) restent à trancher ; le reste est du détail (porte 2).
+**État : définitif (19/10/2026).** Les questions E32 à E39 et K42 à K45 sont closes par leurs propositions, devenues décisions par défaut (Ely peut encore en réviser une). Ce qui reste noté « ouvert » dans une story est un détail réglé au fil du développement par le choix le plus simple, noté dans la PR.
+
+~~Ancien état : brouillon.~~ Les scénarios sont prêts à relire ; les questions E32 à E39 (Ely) et K42 à K45 (Koni) restent à trancher ; le reste est du détail (porte 2).
 
 ## Conventions
 

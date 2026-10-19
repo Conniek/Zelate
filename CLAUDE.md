@@ -4,10 +4,9 @@ Zelaté is a virtual queue for hair salons: clients join a nearby salon's queue 
 
 ## Current state
 
-- **Phase 2 · Requirements** (see `docs/IMPLEMENTATION_PLAN.md`). No application code yet: code starts at lot DEV-0, after gate 3.
-- The repository currently holds the reference documents, the user stories in `docs/stories/`, the draft French texts in `packages/i18n/`, the `product-analyst` and `architect` agents and the `zelate-domain` skill. Phase 3 has started in parallel (DES-0, DES-1, DES-6) while Ely answers E17-E31.
-- Salon appointments are in scope since `docs/PRD.md` v1.1 (rule H10, decisions R1-R7 and E1-E16 of 18/10/2026). An appointment is a ticket of kind `appointment` handled by the same queue engine (TRD ADR-016).
-- Open questions still waiting for an answer are listed in `docs/PRD.md` §9 and `docs/stories/README.md`.
+- **Phase 2 is closed (19/10/2026).** All business and technical questions are decided: E1-E39 (Ely) and K1-K45 (Koni). For E32-E39 and K42-K45 the written proposals are the default decisions (`docs/stories/README.md`); Ely may still revise one, nothing waits for her.
+- **Next: lot DEV-0 (foundations), then DEV-2 (queue engine).** The pilot is built in two steps: first the core loop (a client joins, a stylist calls, starts and finishes, every wait is recalculated: PRD §2 goal 1), then salon appointments (H10). Figma mockups (DES-1, DES-2) go on in parallel and do not block the code.
+- No application code exists yet.
 
 ## Read before working
 
@@ -21,7 +20,7 @@ In this order, only the parts the task needs:
 
 ## Working rules
 
-1. **Never guess.** A rule, screen, column or dependency missing from the docs is a question to Koni first, then a document update, then the work.
+1. **Do not block on gaps.** If a rule, screen, column or text is missing, take the simplest option compatible with the docs, write it as one line under « Choix par défaut » in the pull request, and go on. Stop and ask Koni only when the gap touches privacy (phone, tokens, client data) or contradicts the PRD.
 2. **Keep documents current.** Any change to a rule, route, schema or decision updates the document in the same pull request.
 3. **Business rules belong to Ely, technical choices to Koni.** Flag contradictions between documents instead of picking one silently.
 4. **Language.** Code, file names, identifiers, comments, commits, branches and pull requests in **English**. Documents and user-facing texts in **French**; user-facing texts live only in the i18n dictionary, never hard-coded.
