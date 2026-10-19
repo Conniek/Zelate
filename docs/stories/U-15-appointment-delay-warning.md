@@ -150,14 +150,14 @@
 | `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | Côté salon : ne nomme pas l'autre salon |
 
 ## Questions ouvertes
-- **PRD §9 question n° 9 / BACKEND_SCHEMA §3 et §4.16 / TRD §8** : un rendez-vous saisi par le salon n'a pas de profil client, donc pas de `tracking_consent_at`. Avec la règle actuelle (seuls `ticket_created` et `your_turn` partent sans consentement), l'alerte `appointment_delay` serait toujours marquée `skipped` (`no_consent`) : U-15 ne fonctionnerait jamais pour son public principal. À trancher par Ely, avec avis RGPD (scénario 12 en attente).
-- **PRD §5.2 / APP_FLOW F-C13** : le texte diffère : « venez à 14h20 » (PRD) ou « venez vers 14h20 » (APP_FLOW). L'heure annoncée est-elle l'heure de passage exacte ou arrondie (aux 5 min, comme l'attente affichée) ?
-- **PRD §5.2 / BACKEND_SCHEMA §4.13** : si le retard saute d'un coup de 5 à 25 min, envoie-t-on une seule alerte (palier 2) ou deux (paliers 1 et 2) ? Le scénario 5 suppose une alerte par palier franchi ; à confirmer.
-- **PRD §5.2 / §5.4** : si le salon rattrape son retard (mon heure revient vers 14h00), suis-je prévenu ? La notification « Changement d'heure » ne part que par push : un client sans push n'en saura rien et viendra trop tard. Le compteur `appointment_delay_warned_steps` redescend-il ?
-- **PRD §5.4 / APP_FLOW F-M13** : quand le salon modifie l'heure du rendez-vous (`update_appointment`), le compteur de paliers repart-il de zéro ? Quel modèle de notification part (aucun n'est nommé pour « l'heure change de 10 min ou plus ») ?
-- **PRD §5.2** : les alertes continuent-elles une fois le client arrivé, appelé ou en prestation ? Aucun état n'arrête la règle.
+- **Résolu le 19/10** (E17) — Consentement : l'alerte de retard est un message indispensable, envoyée sans case cochée ; le client reçoit un lien pour activer « Me prévenir » ; voir scénarios 1, 1 bis, 3 et 12. Avis RGPD encore à obtenir (PRD §9 n° 9).
+- **Résolu en partie le 19/10** (E23) — Texte : « venez vers 14h20 ». Reste ouvert (PRD §5.2) : l'heure annoncée est-elle l'heure de passage exacte ou arrondie (aux 5 min, comme l'attente affichée) ?
+- **Résolu le 19/10** (E23) — Saut de plusieurs paliers : une seule alerte avec le retard du moment ; voir scénario 5 bis. Reste ouvert (BACKEND_SCHEMA §4.13) : `appointment_delay_warned_steps` est décrit comme « nombre d'alertes envoyées » mais sert de palier atteint ; à préciser.
+- **Résolu le 19/10** (E23) — Rattrapage : pas d'alerte ; voir scénario 5 ter. Reste ouvert : si le salon reprend du retard après avoir rattrapé, un palier déjà atteint donne-t-il une nouvelle alerte (le compteur redescend-il) ?
+- **PRD §5.4 / TRD §6.2 `update_appointment`** : quand le salon modifie l'heure du rendez-vous, le compteur de paliers repart-il de zéro ? La notification « si l'heure change de 10 min ou plus » semble être `estimate_changed` (raison `your_appointment_changed`, K26), qui est un message d'anticipation : un client sans « Me prévenir » ne serait alors pas prévenu d'un changement d'heure de son propre rendez-vous. Est-ce voulu ?
+- **Résolu le 19/10** (E23) — Les alertes s'arrêtent une fois le client arrivé ou appelé ; voir scénario 5 quater.
 - **PRD §5.2 / §5.4** : la règle vaut « si le salon a saisi le téléphone du client ». Un rendez-vous signalé par le client (U-14) ou un rendez-vous saisi sans téléphone dont le client a ensuite activé le push ne reçoit-il jamais d'alerte ?
-- **TRD §9 / APP_FLOW F-C13** : le SMS de retard contient-il le lien de suivi ? La place restante dans 160 caractères en dépend.
-- **APP_FLOW F-S10 / F-M13** : le statut « en retard de X min » de la liste des rendez-vous désigne-t-il le retard du salon (heure de passage après l'heure prévue) ou le retard du client ? Les deux coexistent dans ces écrans.
-- **BACKEND_SCHEMA §4.16** : la forme de `dedupe_key` pour `appointment_delay` n'est pas écrite (un palier = une clé, par exemple). Elle conditionne le scénario 6.
-- **Textes** : les modèles push et SMS « Retard sur un rendez-vous » et le SMS d'inscription d'un rendez-vous ne sont pas rédigés ; seuls des libellés indicatifs existent.
+- **Résolu le 19/10** (dictionnaire `notifications.json`) — Le SMS de retard contient le lien de suivi ; il tient en 160 caractères (au plus 132).
+- **Résolu le 19/10** (E30) — « En retard de X min » = retard du salon sur l'heure du rendez-vous, affiché dès 10 min ; voir scénario 10.
+- **Résolu le 19/10** (BACKEND_SCHEMA v0.5 §4.16) — `dedupe_key` de `appointment_delay` : une clé par palier de 10 min (`appointment_delay:2`) ; voir scénarios 5 bis et 6.
+- **Résolu le 19/10** (dictionnaire `notifications.json`) — Modèles push et SMS « Retard sur un rendez-vous » et SMS d'inscription d'un rendez-vous rédigés.
