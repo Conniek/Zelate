@@ -1,5 +1,6 @@
 # APP FLOW — Zelaté
 
+> version 0.6 · 19/10/2026 · alignement sur le TRD v0.5 et BACKEND_SCHEMA v0.5 : commandes `set_notifications_consent` (K34) et `publish_salon` (K35), messages indispensables sans « Me prévenir » (E17), motif obligatoire pour annuler ou refuser un rendez-vous (E29)
 > version 0.5 · 19/10/2026 · réponses d'Ely E17 à E31 (pause sans choix de coiffeur, aucun compteur d'absences côté salon)
 > version 0.4 · 19/10/2026 · réponses K13 à K27 (consentement par ticket, export et suppression du compte, push au salon pour un rendez-vous signalé)
 > version 0.3 · 18/10/2026 · statut : mis à jour avec le PRD v1.1 (rendez-vous du salon, règles E1 à E16) et le TRD v0.3
@@ -153,7 +154,7 @@ flowchart LR
 | | « Renvoyer le code » (après 30 s) | Renvoie ; au 3e échec : attendre 5 min | — |
 | | Champ prénom (si premier passage) | Obligatoire, 30 caractères max | — |
 | 5 · Récapitulatif | Résumé : salon, prestation, coiffeur, heure estimée, règle d'appel (« une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min ») | — | — |
-| | Case « Me prévenir quand mon tour approche » (décochée, explication : sans elle, vous recevez seulement l'inscription et « votre tour ») | Consentement aux notifications de suivi (K11) | — |
+| | Case « Me prévenir quand mon tour approche » (décochée, explication : sans elle, vous recevez seulement les messages indispensables — inscription, votre tour, rappel, annulation — et pas les messages d'anticipation) | Consentement aux messages d'anticipation (K11, E17) | — |
 | | « Confirmer ma place » | `join_queue` | F-C5 + proposition d'installation (F-C9) |
 | Erreurs | `already_has_active_ticket` | Message + bouton « Voir ma place » | F-C5 |
 | | `queue_closed`, `queue_paused` ou `queue_full` | Message + « Salons proches » | F-C1 |
@@ -228,14 +229,14 @@ Déclenché à T-30 min par notification push (trois actions) ou à l'ouverture 
 
 ### F-C10 · Suivi par lien SMS (`/t/:shortCode`)
 
-Même affichage que F-C5, sans session ; le lien court (8 caractères) est résolu par `ticket-public` ; temps réel par le canal `ticket-token`, sinon rafraîchissement toutes les 30 s. Actions possibles : répondre à T-30, signaler un retard, choisir « attendre » ou « premier disponible », accepter ou refuser une réaffectation, répondre à l'alerte de fin de journée, annuler, activer le push (lié au ticket). Lien « Créer mon compte » qui ouvre `/signin` avec le numéro à confirmer. Jeton inconnu ou ticket de plus de 24 h : « Ce lien a expiré ».
+Même affichage que F-C5, sans session ; le lien court (8 caractères) est résolu par `ticket-public` ; temps réel par le canal `ticket-token`, sinon rafraîchissement toutes les 30 s. Actions possibles : répondre à T-30, signaler un retard, choisir « attendre » ou « premier disponible », accepter ou refuser une réaffectation, répondre à l'alerte de fin de journée, annuler, activer le push (lié au ticket), activer « Me prévenir » (`set_notifications_consent`, E17, K34). Lien « Créer mon compte » qui ouvre `/signin` avec le numéro à confirmer. Jeton inconnu ou ticket de plus de 24 h : « Ce lien a expiré ».
 
 ### F-C11 · Compte (`/account`) — U-13
 
 | Élément | Action |
 | --- | --- |
 | Prénom | Modifiable |
-| Consentements | Interrupteur « Me prévenir » pour la place en cours (consentement porté par le ticket, K18) ; date du consentement affichée ; sans place en cours, rappel que la case sera proposée, décochée, à la prochaine inscription |
+| Consentements | Interrupteur « Me prévenir » pour la place en cours → `set_notifications_consent` (consentement porté par le ticket, K18, K34) ; date du consentement affichée ; sans place en cours, rappel que la case sera proposée, décochée, à la prochaine inscription |
 | « Télécharger mes données » / « Supprimer mon compte » | `account-export` / `account-delete` (K17) |
 | « Télécharger mes données » | Fichier JSON des tickets et consentements |
 | « Supprimer mon compte » | Confirmation en deux temps ; compte supprimé, tickets anonymisés |
@@ -364,8 +365,8 @@ Clients servis, durée moyenne par prestation, écart prévu / réel. Bouton « 
 | Liste du jour | Mes rendez-vous par heure : prénom, prestation, statut (à venir, en retard de X min, à confirmer) | — |
 | « + Rendez-vous » | Prénom, heure (pas de 5 min), prestation (facultative), téléphone (facultatif, jamais réaffiché) → `create_appointment` pour moi | Ajouté à ma file |
 | Rendez-vous qui chevauche un autre | Message `appointment_overlap` | — |
-| Rendez-vous : « Modifier » ou « Annuler » | `update_appointment` ou `cancel_appointment` (tant qu'il n'est pas appelé) | Client prévenu s'il est joignable |
-| Rendez-vous à confirmer | « Confirmer » (avec fusion si je l'avais déjà saisi) ou « Refuser » → `confirm_appointment` | — |
+| Rendez-vous : « Modifier » ou « Annuler » | `update_appointment`, ou motif obligatoire dans une liste puis `cancel_appointment` (tant qu'il n'est pas appelé, E29) | Client prévenu, avec le motif, s'il est joignable |
+| Rendez-vous à confirmer | « Confirmer » (avec fusion si je l'avais déjà saisi) ou « Refuser » (motif obligatoire dans une liste, E29) → `confirm_appointment` | Client prévenu, avec le motif en cas de refus |
 
 ### Gérant qui coiffe
 
@@ -407,7 +408,7 @@ Accessible dès l'envoi du dossier. Liste de contrôle avec progression.
 | --- | --- | --- |
 | « Lancer un test » | `create_test_ticket` : un client fictif « Test » apparaît sur le dashboard et dans l'espace coiffeur | Le gérant ou un coiffeur appelle, saisit le code, commence, termine |
 | Test terminé | Case « Test réussi » cochée automatiquement | — |
-| « Publier mon salon » (actif si dossier validé, test réussi, horaires, 1 coiffeur actif, 1 prestation) | Statut `published` | Visible des clients ; `/dashboard` |
+| « Publier mon salon » (actif si dossier validé, test réussi, horaires, 1 coiffeur actif, 1 prestation) | `publish_salon` → statut `published` ; condition manquante : `salon_not_ready` avec la liste des conditions (K35) | Visible des clients ; `/dashboard` |
 
 ### F-M4 · Déconnecter ou désactiver un coiffeur (`/dashboard/team`) — S-16
 
@@ -495,10 +496,10 @@ Jamais de numéro de téléphone affiché.
 | Liste du jour | Rendez-vous par heure et par coiffeur : prénom, prestation, statut (à venir, en retard de X min, arrivé, à confirmer) | — |
 | « + Rendez-vous » (raccourci clavier `R`) | Prénom (focus auto), heure (pas de 5 min), coiffeur, prestation (facultative), téléphone (facultatif, masqué dès l'enregistrement) → `create_appointment` | Ajouté à la file du coiffeur ; SMS avec lien de suivi si téléphone |
 | Chevauchement avec un autre rendez-vous du coiffeur | Message `appointment_overlap` | — |
-| « Modifier », « Annuler » | `update_appointment`, `cancel_appointment` (tant que le client n'est pas appelé) | Client prévenu s'il est joignable |
+| « Modifier », « Annuler » | `update_appointment`, ou motif obligatoire dans une liste puis `cancel_appointment` (tant que le client n'est pas appelé, E29) | Client prévenu, avec le motif, s'il est joignable |
 | Section « À confirmer » | Clients qui se sont signalés : prénom, heure annoncée, coiffeur ; rapprochement proposé avec un rendez-vous déjà saisi | — |
 | « Confirmer » | `confirm_appointment` (`confirm`, fusion avec le rendez-vous saisi s'il existe) | Le client voit son heure de passage |
-| « Refuser » | `confirm_appointment` (`reject`) | Client prévenu, invité à rejoindre la file |
+| « Refuser » | Motif obligatoire dans une liste → `confirm_appointment` (`reject`, E29) | Client prévenu avec le motif, invité à rejoindre la file |
 
 ---
 
