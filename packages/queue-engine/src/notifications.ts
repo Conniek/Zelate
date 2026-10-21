@@ -9,7 +9,7 @@
  * from `estimate_change_reason` (K26).
  */
 import { ESTIMATE_NOTIFY_THRESHOLD_MINUTES, MINUTE } from './constants.ts';
-import { isActiveStatus, waitOffered } from './rules.ts';
+import { isActiveStatus, isOnSite, waitOffered } from './rules.ts';
 import type {
   CancelReason,
   EstimateChangeReason,
@@ -127,6 +127,21 @@ function ticketReason(
   if (has((b, a) => b.priority_since === null && a.priority_since !== null)) {
     return 'stylist_unavailable';
   }
+  if (
+    after.tickets.some(
+      (t) =>
+        t.kind === 'appointment' &&
+        t.status === 'waiting' &&
+        !previous.has(t.id),
+    )
+  ) {
+    return 'appointment_ahead';
+  }
+  if (
+    has((b, a) => a.kind === 'appointment' && a.scheduled_at !== b.scheduled_at)
+  ) {
+    return 'appointment_changed';
+  }
   if (has((b, a) => a.postpone_count > b.postpone_count))
     return 'client_postponed';
   if (
@@ -181,8 +196,21 @@ function inferReason(
   after: TicketState,
   later: boolean,
 ): EstimateChangeReason {
+  if (
+    after.assigned_member_id !== before.assigned_member_id ||
+    (before.requested_member_id !== after.requested_member_id &&
+      after.requested_member_id !== null)
+  ) {
+    return 'reassigned';
+  }
   if (before.requested_member_id !== after.requested_member_id)
     return 'stylist_choice';
+  if (
+    after.kind === 'appointment' &&
+    after.scheduled_at !== before.scheduled_at
+  ) {
+    return 'your_appointment_changed';
+  }
   const own = [
     after.estimated_member_id,
     before.estimated_member_id,
@@ -227,6 +255,11 @@ function estimateChange(
   if (after.estimated_start_at === null) return null;
   if (after.estimate_version === before.estimate_version) return null;
   if (before.status !== 'waiting' || reference === null) return null;
+  // E23: an appointment not yet on site is told by `appointment_delay`.
+  const own = after.kind === 'appointment';
+  if (own && after.scheduled_at === before.scheduled_at && !isOnSite(after)) {
+    return null;
+  }
   const delta = after.estimated_start_at - reference;
   if (Math.abs(delta) < ESTIMATE_NOTIFY_THRESHOLD_MINUTES * MINUTE) return null;
   const selfDeclared =
@@ -242,7 +275,13 @@ function estimateChange(
       previous_start_at: reference,
       reason: inferReason(context, before, after, delta > 0),
     },
-    { announces: true },
+    {
+      announces: true,
+      // E23: a moved appointment is told to its client, consent or not.
+      essential:
+        after.kind === 'appointment' &&
+        after.scheduled_at !== before.scheduled_at,
+    },
   );
 }
 
@@ -277,6 +316,16 @@ export function diffNotifications(
             release_due_at: a.release_due_at,
           }),
         );
+      } else if (
+        a.status === 'cancelled' &&
+        a.cancel_reason === 'appointment_rejected' &&
+        b.status === 'pending_confirmation'
+      ) {
+        out.push(
+          intent(a, 'appointment_rejected', 'appointment_rejected', {
+            reason: a.removal_reason,
+          }),
+        );
       } else if (a.status === 'no_show') {
         out.push(intent(a, 'released_no_show', 'released_no_show', {}));
       } else if (
@@ -296,6 +345,53 @@ export function diffNotifications(
           ),
         );
       }
+    }
+
+    if (a.appointment_delay_warned_steps > b.appointment_delay_warned_steps) {
+      out.push(
+        intent(
+          a,
+          'appointment_delay',
+          `appointment_delay:${a.appointment_delay_warned_steps}`,
+          {
+            estimated_start_at: a.estimated_start_at,
+            scheduled_at: a.scheduled_at,
+          },
+          { essential: true },
+        ),
+      );
+    }
+
+    if (
+      a.reassignment_requested_at !== null &&
+      a.reassignment_requested_at !== b.reassignment_requested_at
+    ) {
+      out.push(
+        intent(
+          a,
+          'reassignment_request',
+          `reassignment_request:${a.reassignment_requested_at}`,
+          {
+            member_id: a.reassignment_member_id,
+            proposed_start_at: a.reassignment_proposed_start_at,
+          },
+        ),
+      );
+    }
+
+    if (b.confirmed_at === null && a.confirmed_at !== null) {
+      out.push(
+        intent(
+          a,
+          'appointment_confirmed',
+          'appointment_confirmed',
+          {
+            scheduled_at: a.scheduled_at,
+            estimated_start_at: a.estimated_start_at,
+          },
+          { announces: true },
+        ),
+      );
     }
 
     if (

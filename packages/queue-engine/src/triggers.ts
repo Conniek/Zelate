@@ -7,14 +7,22 @@
  * by a column so a second tick at the same instant changes nothing.
  */
 import {
+  APPOINTMENT_DELAY_STEP_MINUTES,
+  CONFIRMATION_REMINDER_MINUTES,
   GET_READY_MINUTES,
   MINUTE,
+  REASSIGNMENT_TIMEOUT_MINUTES,
   STYLIST_CHANGE_TIMEOUT_MINUTES,
   TURN_APPROACHING_MINUTES,
 } from './constants.ts';
 import { finalize, withVersion } from './output.ts';
 import { refresh } from './refresh.ts';
-import { isActiveStatus, lastClosingAt, waitOffered } from './rules.ts';
+import {
+  isActiveStatus,
+  isOnSite,
+  lastClosingAt,
+  waitOffered,
+} from './rules.ts';
 import { CLEARED_CALL, SYSTEM, salonEvent, ticketEvent } from './state.ts';
 import type {
   EngineOutput,
@@ -147,6 +155,81 @@ function closingGrace(now: Instant): TicketRule {
   };
 }
 
+function confirmationReminder(now: Instant): TicketRule {
+  // E19: the salon is reminded once, 10 min after an unconfirmed check-in.
+  return (t) =>
+    t.status === 'pending_confirmation' &&
+    t.confirmation_reminder_sent_at === null &&
+    now >= t.created_at + CONFIRMATION_REMINDER_MINUTES * MINUTE
+      ? { ...t, confirmation_reminder_sent_at: now }
+      : t;
+}
+
+function unconfirmedAtClosing(now: Instant): TicketRule {
+  // E19: a check-in nobody confirmed is cancelled with apologies at closing.
+  return (t, state, events) => {
+    const closing = lastClosingAt(state.salon.service_day);
+    if (
+      t.status !== 'pending_confirmation' ||
+      closing === null ||
+      now < closing
+    ) {
+      return t;
+    }
+    events.push(ticketEvent(SYSTEM, 'cancelled', t.id, 'end_of_day'));
+    return {
+      ...t,
+      status: 'cancelled',
+      cancelled_at: now,
+      cancel_reason: 'end_of_day',
+    };
+  };
+}
+
+function reassignmentExpiry(now: Instant): TicketRule {
+  // E9, E27: no answer in 10 min, nothing changes and the manager sees « expired ».
+  return (t, _state, events) => {
+    if (
+      t.reassignment_requested_at === null ||
+      now < t.reassignment_requested_at + REASSIGNMENT_TIMEOUT_MINUTES * MINUTE
+    ) {
+      return t;
+    }
+    events.push(ticketEvent(SYSTEM, 'reassignment_resolved', t.id, 'expired'));
+    return {
+      ...t,
+      reassignment_member_id: null,
+      reassignment_requested_at: null,
+      reassignment_proposed_start_at: null,
+    };
+  };
+}
+
+function appointmentDelay(): TicketRule {
+  // E23: one alert per reached step, only for a client not yet on site; a
+  // jump of several steps gives one alert, catching up gives none.
+  return (t, _state, events) => {
+    if (
+      t.kind !== 'appointment' ||
+      t.status !== 'waiting' ||
+      t.scheduled_at === null ||
+      t.estimated_start_at === null ||
+      isOnSite(t)
+    ) {
+      return t;
+    }
+    const steps = Math.floor(
+      (t.estimated_start_at - t.scheduled_at) /
+        (APPOINTMENT_DELAY_STEP_MINUTES * MINUTE),
+    );
+    if (steps <= t.appointment_delay_warned_steps) return t;
+    events.push(
+      ticketEvent(SYSTEM, 'appointment_delay_warned', t.id, String(steps)),
+    );
+    return { ...t, appointment_delay_warned_steps: steps };
+  };
+}
+
 function anticipation(now: Instant): TicketRule {
   // H3: T-30 once (records the T-30 estimate, K13), T-10 once.
   return (t) => {
@@ -228,10 +311,14 @@ export function detectTimeTriggers(
     next = eachTicket(next, reminder(now), events);
     next = eachTicket(next, choiceTimeout(now), events);
     next = eachTicket(next, closingGrace(now), events);
+    next = eachTicket(next, unconfirmedAtClosing(now), events);
+    next = eachTicket(next, confirmationReminder(now), events);
+    next = eachTicket(next, reassignmentExpiry(now), events);
   }
   const refreshed = refresh(next, now);
   events.push(...refreshed.events);
   next = eachTicket(refreshed.state, anticipation(now), events);
+  next = eachTicket(next, appointmentDelay(), events);
   const changed = queueSnapshot(next) !== queueSnapshot(state);
   return finalize(
     state,

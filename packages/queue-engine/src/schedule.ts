@@ -17,12 +17,16 @@ import {
   WAIT_ROUNDING_MINUTES,
 } from './constants.ts';
 import {
+  appointmentToTake,
+  appointmentsOf,
   awaitsDeclaredArrival,
   busyTicketOf,
   canServe,
   ceilToMinute,
   durationOf,
   fullnessLimit,
+  isOnSite,
+  masters,
   orderedQueue,
   readyStart,
   shiftEndOf,
@@ -30,6 +34,7 @@ import {
 } from './rules.ts';
 import { newTicket } from './state.ts';
 import type {
+  FreeSlot,
   Instant,
   MemberState,
   QueueState,
@@ -132,7 +137,13 @@ function nextStylist(stylists: readonly SimStylist[]): SimStylist | undefined {
   return best;
 }
 
-/** Simulates the distribution of `queue` (already in queue order). */
+/**
+ * Simulates the distribution of `queue` (walk-ins, already in queue order)
+ * together with the appointments of the day (H10): each appointment keeps its
+ * stylist and never starts before its time unless its client is on site and
+ * the stylist is free (rule 8); a walk-in goes before an appointment only if
+ * his service ends before the appointment time (rule 6, margin 0).
+ */
 function simulate(
   state: QueueState,
   now: Instant,
@@ -140,32 +151,51 @@ function simulate(
 ): Map<string, SimSlot> {
   const stylists = stylistsAt(state, now);
   const pending = [...queue];
+  const appointments = new Map<string, TicketState[]>(
+    stylists.map((s) => [s.member.id, appointmentsOf(state, s.member.id)]),
+  );
   const slots = new Map<string, SimSlot>();
   const day = state.salon.service_day;
 
   for (;;) {
-    const stylist = pending.length > 0 ? nextStylist(stylists) : undefined;
+    const stylist = nextStylist(
+      stylists.filter(
+        (s) =>
+          pending.length > 0 ||
+          (appointments.get(s.member.id)?.length ?? 0) > 0,
+      ),
+    );
     if (!stylist) break;
     const t = skipClosures(day, stylist.freeAt);
     stylist.freeAt = t;
 
+    const mine = appointments.get(stylist.member.id) as TicketState[];
+    const due = mine[0] !== undefined && (mine[0].scheduled_at as Instant) <= t;
+    const limit =
+      mine[0] === undefined || due
+        ? Number.POSITIVE_INFINITY
+        : (mine[0].scheduled_at as Instant);
+
     let chosen: { index: number; start: Instant } | null = null;
     let nextArrival = Number.POSITIVE_INFINITY;
-    for (let i = 0; i < pending.length; i += 1) {
-      const ticket = pending[i] as TicketState;
-      if (!canServe(state, stylist.member, ticket)) continue;
-      const duration = durationOf(ticket);
-      if (awaitsDeclaredArrival(ticket, t)) {
-        const arrival = ticket.declared_arrival_at as Instant;
-        if (fits(stylist, arrival, duration)) {
-          nextArrival = Math.min(nextArrival, arrival);
+    if (!due) {
+      for (let i = 0; i < pending.length; i += 1) {
+        const ticket = pending[i] as TicketState;
+        if (!canServe(state, stylist.member, ticket)) continue;
+        const duration = durationOf(ticket);
+        if (awaitsDeclaredArrival(ticket, t)) {
+          const arrival = ticket.declared_arrival_at as Instant;
+          if (fits(stylist, arrival, duration) && arrival + duration <= limit) {
+            nextArrival = Math.min(nextArrival, arrival);
+          }
+          continue;
         }
-        continue;
+        const start = readyStart(ticket, t);
+        if (!fits(stylist, start, duration) || start + duration > limit)
+          continue;
+        chosen = { index: i, start };
+        break;
       }
-      const start = readyStart(ticket, t);
-      if (!fits(stylist, start, duration)) continue;
-      chosen = { index: i, start };
-      break;
     }
 
     if (chosen) {
@@ -182,7 +212,21 @@ function simulate(
       // H8: nobody else to take, the stylist waits for the declared arrival.
       stylist.freeAt = nextArrival;
     } else {
-      stylist.done = true;
+      const appointment = appointmentToTake(mine, t);
+      if (!appointment) {
+        stylist.done = true;
+        continue;
+      }
+      mine.splice(mine.indexOf(appointment), 1);
+      const scheduled = appointment.scheduled_at as Instant;
+      const start = isOnSite(appointment) ? t : Math.max(t, scheduled);
+      slots.set(appointment.id, {
+        start,
+        memberId: stylist.member.id,
+        position: stylist.position,
+      });
+      stylist.position += 1;
+      stylist.freeAt = start + durationOf(appointment);
     }
   }
   return slots;
@@ -247,7 +291,10 @@ export function computeSchedule(state: QueueState, now: Instant): Schedule {
   const queue = orderedQueue(state);
   const slots = simulate(state, now, queue);
   const tickets: Record<string, TicketEstimate> = {};
-  for (const ticket of queue) {
+  const appointments = state.tickets.filter(
+    (t) => t.status === 'waiting' && t.kind === 'appointment',
+  );
+  for (const ticket of [...queue, ...appointments]) {
     const slot = slots.get(ticket.id);
     const start = slot ? ceilToMinute(slot.start) : null;
     tickets[ticket.id] = {
@@ -259,4 +306,95 @@ export function computeSchedule(state: QueueState, now: Instant): Schedule {
     };
   }
   return { tickets, salon: indicators(state, now, queue) };
+}
+
+interface Interval {
+  readonly start: Instant;
+  readonly end: Instant;
+}
+
+/** Free windows of a stylist from `from` to `to`, minus `busy`, within the opening ranges. */
+function holesOf(
+  from: Instant,
+  to: Instant,
+  busy: readonly Interval[],
+  ranges: readonly Interval[],
+): Interval[] {
+  const free: Interval[] = [];
+  let cursor = from;
+  for (const b of [...busy].sort((x, y) => x.start - y.start)) {
+    if (b.start > cursor)
+      free.push({ start: cursor, end: Math.min(b.start, to) });
+    cursor = Math.max(cursor, b.end);
+  }
+  if (cursor < to) free.push({ start: cursor, end: to });
+  const holes: Interval[] = [];
+  for (const f of free) {
+    for (const r of ranges) {
+      const start = ceilToMinute(Math.max(f.start, r.start));
+      const end = Math.min(f.end, r.end);
+      if (end > start) holes.push({ start, end });
+    }
+  }
+  return holes.sort((a, b) => a.start - b.start);
+}
+
+/**
+ * Next free slots (E22): for each active service, the earliest hole of a
+ * present stylist who masters it, outside breaks and within opening hours,
+ * including after his last client (margin 0). Nothing while the queue is not
+ * open. Holes come from the same simulation as the estimates, so a hole is
+ * never a time that a waiting ticket is already going to use.
+ */
+export function findNextFreeSlots(state: QueueState, now: Instant): FreeSlot[] {
+  if (state.salon.queue_status !== 'open') return [];
+  const queue = orderedQueue(state);
+  const slots = simulate(state, now, queue);
+  const byId = new Map(state.tickets.map((t) => [t.id, t]));
+  const ranges = state.salon.service_day.opening_ranges.map((r) => ({
+    start: r.opens_at,
+    end: r.closes_at,
+  }));
+  const holes = stylistsAt(state, now).map((stylist) => {
+    const busy: Interval[] = [{ start: now, end: stylist.freeAt }];
+    for (const [id, slot] of slots) {
+      const ticket = byId.get(id);
+      if (slot.memberId === stylist.member.id && ticket) {
+        busy.push({ start: slot.start, end: slot.start + durationOf(ticket) });
+      }
+    }
+    return {
+      member: stylist.member,
+      holes: holesOf(
+        Math.max(now, startOfAvailability(stylist.member, now) ?? now),
+        stylist.shiftEnd ?? state.salon.service_day.ends_at,
+        busy,
+        ranges,
+      ),
+    };
+  });
+  const result: FreeSlot[] = [];
+  for (const service of state.services) {
+    if (!service.is_active) continue;
+    const need = service.duration_minutes * MINUTE;
+    let best: FreeSlot | null = null;
+    for (const { member, holes: windows } of holes) {
+      if (!masters(member, service)) continue;
+      const hole = windows.find((w) => w.end - w.start >= need);
+      if (
+        hole &&
+        (best === null ||
+          hole.start < best.start_at ||
+          (hole.start === best.start_at && member.id < best.member_id))
+      ) {
+        best = {
+          service_id: service.id,
+          start_at: hole.start,
+          member_id: member.id,
+        };
+      }
+    }
+    if (best) result.push(best);
+  }
+  return result;
 }
