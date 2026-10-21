@@ -50,7 +50,7 @@ async function account(prefix: string, firstName: string): Promise<Account> {
 }
 
 /** An approved salon, open every day all day, a manager and one stylist. */
-async function readySalon(name: string) {
+async function readySalon(name: string, managerCuts = false) {
   const manager = await account(`m-${name}`, 'Léa');
   const stylist = await account(`s-${name}`, 'Sam');
   const { data: salon, error } = await db
@@ -102,7 +102,7 @@ async function readySalon(name: string) {
           first_name: 'Léa',
           last_name: 'Martin',
           email: manager.email,
-          is_hairdressing: false,
+          is_hairdressing: managerCuts,
         },
         {
           salon_id: salon.id,
@@ -420,15 +420,8 @@ test('the manager sees the new time before changing the stylist (DEV-7, S-13)', 
 }) => {
   const now = parisNow();
   const { salonId, manager, stylistMemberId, managerMemberId } =
-    await readySalon('reassign');
+    await readySalon('reassign', true);
   // Two people cut hair today: Sam, and Léa the manager, both available.
-  must(
-    await db
-      .from('salon_members')
-      .update({ is_hairdressing: true })
-      .eq('id', managerMemberId),
-    'manager cuts hair',
-  );
   must(
     await db.from('stylist_presence').insert(
       [stylistMemberId, managerMemberId].map((member_id) => ({

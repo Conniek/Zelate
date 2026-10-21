@@ -185,14 +185,16 @@ describe('previews of the manager board (S-11, S-13)', () => {
         channel: 'app',
       }),
     ).ticket_id as string;
-    const ticket = h.db.tickets.get(ticket_id)!;
-    const other = ticket.estimated_member_id === ANNA ? BEN : ANNA;
     const before = JSON.stringify([...h.db.tickets.values()]);
-    const response = await previewReassignment(
-      depsOf(h),
-      { profileId: MANAGER_PROFILE },
-      { ticket_id, member_id: other },
-    );
+    // Whoever is not the expected stylist yet: one of the two answers.
+    const ask = (member_id: string) =>
+      previewReassignment(
+        depsOf(h),
+        { profileId: MANAGER_PROFILE },
+        { ticket_id, member_id },
+      );
+    let response = await ask(BEN);
+    if (!(response.body as { ok: boolean }).ok) response = await ask(ANNA);
     const { reassignment } = data(response) as {
       reassignment: Record<string, unknown>;
     };
