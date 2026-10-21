@@ -124,7 +124,7 @@ Relevées par les agents en mettant les stories à jour. Chaque proposition est 
 
 - **Ely, E17 à E31** : toutes les propositions acceptées, intégrées au [PRD v1.2](../PRD.md) (§5.1, §5.2, §5.4, §11).
 - **Koni, K28 à K41** (issues de la [revue d'architecture](../reviews/2026-10-19-architect-review.md)) : toutes acceptées, intégrées au TRD v0.5 et au schéma v0.5.
-- **Encore ouvertes, pour Ely : E32 à E36** (partie E du doc « Questions à trancher ») : ouverture automatique de la file et fin de pause, rappel après un retard déclaré, heure déclarée (H8), signalement pendant une pause, client appelé repris en tête.
+- **E32 à E36, closes par leurs propositions** (décisions par défaut du 19/10, PR #11 ; texte des propositions repris de la partie E du doc « Questions à trancher », tableau ci-dessous) : ouverture de la file par le gérant et fin de pause automatique, rappel après un retard déclaré, heure déclarée (H8), signalement pendant une pause, client appelé repris en tête. Ely peut encore en réviser une.
 
 ### Passe finale des stories (19/10)
 
