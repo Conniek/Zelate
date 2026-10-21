@@ -4,16 +4,16 @@ begin;
 set local client_min_messages = warning;
 truncate public.salons, public.platform_admins, private.ticket_contacts cascade;
 delete from auth.users where id::text ~ '^00000000-0000-0000-0000-00000000[ac]00';
-select plan(17);
+select plan(18);
 
 select has_table('private', t, 'private.' || t || ' exists')
 from unnest(array['ticket_contacts', 'member_invitations', 'processed_commands',
-                  'rate_limits', 'no_show_records', 'no_show_warnings']) as t;
+                  'rate_limits', 'no_show_records', 'no_show_warnings', 'signup_drafts']) as t;
 
 select is(
   (select count(*)::int from pg_class c where c.relnamespace = 'private'::regnamespace
    and c.relkind = 'r' and c.relrowsecurity),
-  6, 'RLS is enabled on every private table'
+  7, 'RLS is enabled on every private table'
 );
 select ok(
   not has_table_privilege('anon', 'private.ticket_contacts', 'select')

@@ -51,9 +51,15 @@
     "code_expired": "Ce code a expiré. Demandez-en un nouveau.",
     "too_many_attempts": "Trop d'essais. Patientez 5 min, puis demandez un nouveau code.",
     "invalid_credentials": "E-mail ou mot de passe incorrect.",
-    "invalid_mfa_code": "Ce code n'est pas le bon. Réessayez avec le code affiché dans votre application."
+    "invalid_mfa_code": "Ce code n'est pas le bon. Réessayez avec le code affiché dans votre application.",
+    "email_in_use": "Cette adresse e-mail a déjà un compte. Connectez-vous ou utilisez-en une autre.",
+    "weak_password": "Le mot de passe doit compter au moins 12 caractères."
   },
   "validation": {
+    "required": "Complétez ce champ pour continuer.",
+    "phone_format": "Saisissez un numéro français, par exemple 01 42 00 00 00.",
+    "postal_code_format": "Le code postal compte 5 chiffres.",
+    "address_not_selected": "Choisissez l'adresse dans la liste proposée.",
     "siret_format": "Le SIRET compte 14 chiffres. Vérifiez votre saisie.",
     "hours_order": "L'heure de fermeture doit être après l'heure d'ouverture.",
     "hours_overlap": "Ces plages horaires se chevauchent. Modifiez-les pour qu'elles se suivent.",
@@ -87,6 +93,7 @@
     "delete_failed": "La suppression de votre compte n'a pas abouti. Réessayez dans quelques minutes."
   },
   "admin": {
-    "salon_already_decided": "Ce dossier a déjà été traité."
+    "salon_already_decided": "Ce dossier a déjà été traité. Actualisez la liste.",
+    "salon_not_found": "Ce dossier est introuvable."
   }
 }

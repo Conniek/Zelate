@@ -1372,6 +1372,17 @@ export type Database = {
         Args: { p_first_name: string };
         Returns: Database['public']['Tables']['profiles']['Row'];
       };
+      admin_decide_salon: {
+        Args: {
+          p_decision: Database['public']['Enums']['verification_decision'];
+          p_reason?: string;
+          p_salon_id: string;
+        };
+        Returns: undefined;
+      };
+      admin_get_salon: { Args: { p_salon_id: string }; Returns: Json };
+      admin_list_salons: { Args: { p_filter?: string }; Returns: Json };
+      get_signup_draft: { Args: never; Returns: Json };
       get_audit_log: {
         Args: {
           cursor?: Json;
@@ -1392,6 +1403,54 @@ export type Database = {
       get_stylist_queue: { Args: never; Returns: Json };
       my_active_ticket: { Args: never; Returns: Json };
       resolve_qr_token: { Args: { qr_token: string }; Returns: string };
+      save_signup_draft: {
+        Args: { p_data: Json; p_step: number };
+        Returns: undefined;
+      };
+      activate_invitation: {
+        Args: { p_token_hash: string; p_user_id: string };
+        Returns: Json;
+      };
+      find_auth_user_id: { Args: { p_email: string }; Returns: string };
+      invite_member: {
+        Args: {
+          p_email: string;
+          p_expires_at: string;
+          p_first_name: string;
+          p_last_name: string;
+          p_manager: string;
+          p_specialties: string[];
+          p_token_hash: string;
+        };
+        Returns: Json;
+      };
+      peek_invitation: { Args: { p_token_hash: string }; Returns: Json };
+      rotate_qr_token: {
+        Args: { p_manager: string; p_rotate: boolean };
+        Returns: Json;
+      };
+      replace_opening_hours: { Args: { p_hours: Json }; Returns: undefined };
+      submit_salon_signup: {
+        Args: {
+          p_address_line: string;
+          p_city: string;
+          p_city_code: string;
+          p_first_name: string;
+          p_is_hairdressing: boolean;
+          p_last_name: string;
+          p_latitude: number;
+          p_longitude: number;
+          p_naf_code: string;
+          p_phone: string;
+          p_postal_code: string;
+          p_salon_name: string;
+          p_siret: string;
+          p_siret_check_payload: Json;
+          p_siret_check_result: Database['public']['Enums']['siret_check_result'];
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       is_rate_limited: {
         Args: {
           p_bucket: string;

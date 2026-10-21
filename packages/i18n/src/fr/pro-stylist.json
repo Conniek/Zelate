@@ -2,7 +2,9 @@
   "invite": {
     "activate_button": "Activer mon compte",
     "check_email": "Ouvrez sur votre téléphone le lien reçu par e-mail",
-    "link_invalid": "Ce lien n'est plus valable. Demandez une nouvelle invitation à votre gérant."
+    "link_invalid": "Ce lien n'est plus valable. Demandez une nouvelle invitation à votre gérant.",
+    "title": "Activer votre compte Zelaté Pro",
+    "intro": "Touchez le bouton pour recevoir votre lien de connexion par e-mail."
   },
   "install": {
     "prompt": "Installez Zelaté Pro pour ouvrir votre file d'un geste.",

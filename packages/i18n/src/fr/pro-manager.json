@@ -8,7 +8,10 @@
       "password": "Mot de passe",
       "password_hint": "12 caractères minimum",
       "first_name": "Prénom",
-      "last_name": "Nom"
+      "last_name": "Nom",
+      "create": "Créer mon compte",
+      "confirm_email": "Un e-mail de confirmation vient de vous être envoyé. Cliquez sur le lien qu'il contient, puis revenez ici pour continuer.",
+      "have_account": "J'ai déjà un compte"
     },
     "salon": {
       "title": "Salon",
@@ -22,7 +25,9 @@
       "siret_checking": "Vérification du SIRET…",
       "siret_valid": "SIRET vérifié : établissement actif, activité de coiffure",
       "siret_to_verify": "À vérifier",
-      "siret_to_verify_hint": "Vous pouvez continuer : l'équipe Zelaté vérifiera votre dossier."
+      "siret_to_verify_hint": "Vous pouvez continuer : l'équipe Zelaté vérifiera votre dossier.",
+      "address_none": "Aucune adresse trouvée",
+      "siret_unavailable": "Vérification indisponible"
     },
     "hairdressing": {
       "title": "Vous et la coiffure",
@@ -31,7 +36,10 @@
     },
     "review": {
       "title": "Récapitulatif",
-      "edit": "Modifier"
+      "edit": "Modifier",
+      "address": "Adresse",
+      "hairdressing_yes": "Je coiffe aussi",
+      "hairdressing_no": "Je ne coiffe pas"
     },
     "submit": "Envoyer mon dossier",
     "pending": {
@@ -39,7 +47,9 @@
       "body": "L'équipe Zelaté vérifie votre salon. Vous recevrez la réponse par e-mail.",
       "setup_hint": "En attendant, préparez votre salon : horaires, équipe, prestations et QR code.",
       "setup_cta": "Préparer mon salon"
-    }
+    },
+    "title": "Créer mon salon",
+    "draft_error": "Le brouillon n'a pas pu être enregistré. Vos saisies restent sur cet écran."
   },
   "setup": {
     "title": "Préparer mon salon",
@@ -65,7 +75,8 @@
       "missing_hint": "Vous pourrez publier quand tous les points seront cochés.",
       "pending_review_hint": "Votre dossier est en cours de validation : vous pourrez publier dès qu'il sera validé."
     },
-    "publish": "Publier mon salon"
+    "publish": "Publier mon salon",
+    "page_title": "Préparer mon salon"
   },
   "hours": {
     "title": "Horaires",
@@ -82,8 +93,13 @@
       "from": "Du",
       "to": "Au",
       "reason": "Motif (facultatif)",
-      "add": "Ajouter une fermeture"
-    }
+      "add": "Ajouter une fermeture",
+      "remove": "Supprimer",
+      "empty": "Aucune fermeture prévue."
+    },
+    "save": "Enregistrer les horaires",
+    "saved": "Horaires enregistrés.",
+    "copy_hint": "Copie les horaires du lundi sur tous les jours."
   },
   "team": {
     "title": "Équipe",
@@ -115,7 +131,10 @@
       "title": "Désactiver {stylist_name} ?",
       "confirm": "L'accès sera retiré en 15 min au plus. {count, plural, =0 {Aucun client en attente ne demande ce coiffeur.} one {# client qui demandait {stylist_name} devra choisir « Premier disponible » ou annuler.} other {# clients qui demandaient {stylist_name} devront choisir « Premier disponible » ou annuler.}} Ses rendez-vous restants seront à réaffecter.",
       "submit": "Désactiver"
-    }
+    },
+    "empty": "Aucun coiffeur pour le moment.",
+    "invite_sent": "Invitation envoyée à {email}.",
+    "cancel": "Annuler"
   },
   "services": {
     "title": "Prestations",
@@ -140,7 +159,16 @@
       "price": "Prix (€)",
       "specialty": "Spécialité requise",
       "specialty_none": "Aucune"
-    }
+    },
+    "save": "Enregistrer",
+    "saved": "Prestation enregistrée.",
+    "active": "Proposée aux clients",
+    "empty": "Aucune prestation pour le moment.",
+    "edit": "Modifier",
+    "suggested_add": "Ajouter les prestations cochées",
+    "suggested_pick": "Cocher {name}",
+    "cancel_edit": "Annuler",
+    "summary": "{name} · {duration} min · {price} €"
   },
   "qr": {
     "title": "QR code",
@@ -439,14 +467,22 @@
         "name": "Salon",
         "city": "Ville",
         "submitted_at": "Envoyé le",
-        "siret": "SIRET"
+        "siret": "SIRET",
+        "status": "Décision"
       },
       "siret": {
         "valid": "SIRET vérifié",
         "to_check": "SIRET à vérifier",
         "invalid": "SIRET non valide"
       },
-      "empty": "Aucun dossier à traiter."
+      "empty": "Aucun dossier à traiter.",
+      "decision": {
+        "pending": "À traiter",
+        "approved": "Validé",
+        "rejected": "Refusé"
+      },
+      "open": "Ouvrir le dossier",
+      "load_error": "Les dossiers n'ont pas pu être chargés."
     },
     "salon": {
       "sections": {
@@ -467,7 +503,24 @@
         "label": "Motif du refus",
         "hint": "Le gérant reçoit ce motif par e-mail."
       },
-      "reject_submit": "Envoyer le refus"
+      "reject_submit": "Envoyer le refus",
+      "back": "Retour aux dossiers",
+      "not_found": "Ce dossier est introuvable.",
+      "fields": {
+        "name": "Salon",
+        "phone": "Téléphone",
+        "address": "Adresse",
+        "siret": "SIRET",
+        "naf": "Code NAF",
+        "manager": "Gérant",
+        "submitted_at": "Dossier envoyé le"
+      },
+      "map_link": "Voir sur OpenStreetMap",
+      "decided": "Décision : {decision}, le {date}",
+      "decided_reason": "Motif : {reason}",
+      "approve_done": "Dossier validé.",
+      "reject_done": "Dossier refusé.",
+      "reject_confirm_title": "Refuser ce dossier ?"
     },
     "audit": {
       "title": "Journal global",

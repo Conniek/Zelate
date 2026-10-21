@@ -5,8 +5,8 @@ export interface TextFieldProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'id' | 'size'
 > {
-  error?: string;
-  helpText?: string;
+  error?: string | undefined;
+  helpText?: string | undefined;
   id?: string;
   label: string;
 }
