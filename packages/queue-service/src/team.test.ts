@@ -91,6 +91,54 @@ describe('revoke-member-sessions (S-16 scenario 1)', () => {
   });
 });
 
+describe('never across salons (security review DEV-6)', () => {
+  it('an old, deactivated membership gives no power over the person', async () => {
+    data(
+      await deactivateMember(
+        deps(),
+        { profileId: MANAGER_PROFILE },
+        { member_id: BEN },
+      ),
+    );
+    h.db.revokedSessions = [];
+    expect(
+      code(
+        await revokeMemberSessions(
+          deps(),
+          { profileId: MANAGER_PROFILE },
+          { member_id: BEN },
+        ),
+      ),
+    ).toBe('team.member_not_found');
+    expect(h.db.revokedSessions).toEqual([]);
+  });
+
+  it('someone who also works in another salon keeps his sessions', async () => {
+    h.db.members.push({
+      ...h.db.members.find((m) => m.id === BEN)!,
+      id: '20000000-0000-4000-8000-0000000000b2',
+      salon_id: '10000000-0000-4000-8000-000000000002',
+    });
+    data(
+      await revokeMemberSessions(
+        deps(),
+        { profileId: MANAGER_PROFILE },
+        { member_id: BEN },
+      ),
+    );
+    data(
+      await deactivateMember(
+        deps(),
+        { profileId: MANAGER_PROFILE },
+        { member_id: BEN },
+      ),
+    );
+    expect(h.db.revokedSessions).toEqual([]);
+    expect(h.db.deletedPush).toEqual([BEN, BEN]);
+    expect(h.db.members.find((m) => m.id === BEN)?.status).toBe('deactivated');
+  });
+});
+
 describe('deactivate-member (S-16 scenarios 4 to 8)', () => {
   it('deactivates, revokes, and lets his clients choose without « attendre »', async () => {
     const waiting = data(await join(CLIENT, { requested_member_id: ANNA }))

@@ -1364,6 +1364,22 @@ async function resolveMemberAction(
   return { manager, target };
 }
 
+/**
+ * Auth sessions belong to the account, not to the salon: they are deleted only
+ * when the person works nowhere else, so that a manager can never sign out
+ * someone who also works in another salon (security review DEV-6).
+ */
+async function sessionsToRevoke(
+  tx: QueueTx,
+  target: MemberRecord,
+): Promise<string[]> {
+  if (!target.profile_id) return [];
+  const elsewhere = (await tx.memberships(target.profile_id)).filter(
+    (m) => m.member_id !== target.member_id,
+  );
+  return elsewhere.length === 0 ? [target.profile_id] : [];
+}
+
 function memberEvent(
   action: MemberAction,
   type: 'member_sessions_revoked' | 'member_deactivated',
@@ -1390,6 +1406,8 @@ export async function revokeMemberSessions(
     const action = await resolveMemberAction(tx, caller, body);
     if ('status' in action) return action;
     const { target } = action;
+    // Only someone who still works here (an old membership gives no power).
+    if (target.status !== 'active') return teamError('team.member_not_found');
     await tx.apply({
       salon_id: target.salon_id,
       service_date: parisDate(deps.clock()),
@@ -1404,7 +1422,7 @@ export async function revokeMemberSessions(
       contact_replaces: [],
       events: [memberEvent(action, 'member_sessions_revoked')],
       notifications: [],
-      revoke_sessions_of: target.profile_id ? [target.profile_id] : [],
+      revoke_sessions_of: await sessionsToRevoke(tx, target),
       delete_push_of_members: [target.member_id],
       broadcasts: [],
       version: 0,
@@ -1519,7 +1537,7 @@ export async function deactivateMember(
           columns: { ...previous?.columns, status: 'deactivated' },
         },
       ],
-      revoke_sessions_of: target.profile_id ? [target.profile_id] : [],
+      revoke_sessions_of: await sessionsToRevoke(tx, target),
       delete_push_of_members: [target.member_id],
     });
     return okResponse({ queue_version: writes.version });
