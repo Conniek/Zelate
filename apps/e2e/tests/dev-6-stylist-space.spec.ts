@@ -16,6 +16,15 @@ const db = createClient(env.apiUrl, env.serviceRoleKey, {
 });
 
 const run = Date.now().toString(36);
+
+/** Seed step: fail with the database's own message. */
+function must<T>(
+  result: { data: T; error: { message: string } | null },
+  step: string,
+): T {
+  if (result.error) throw new Error(`${step}: ${result.error.message}`);
+  return result.data;
+}
 const PASSWORD = 'e2e-Password-2026!';
 
 interface Account {
@@ -62,44 +71,53 @@ async function readySalon(name: string) {
     .select('id')
     .single();
   if (error || !salon) throw error ?? new Error('salon creation failed');
-  await db.from('opening_hours').insert(
-    [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
-      salon_id: salon.id,
-      weekday,
-      opens_at: '00:00',
-      closes_at: '24:00',
-    })),
+  must(
+    await db.from('opening_hours').insert(
+      [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
+        salon_id: salon.id,
+        weekday,
+        opens_at: '00:00',
+        closes_at: '24:00',
+      })),
+    ),
+    'opening hours',
   );
-  await db.from('services').insert({
-    salon_id: salon.id,
-    name: 'Coupe',
-    duration_minutes: 30,
-    price_cents: 2500,
-  });
-  const { data: members } = await db
-    .from('salon_members')
-    .insert([
-      {
-        salon_id: salon.id,
-        profile_id: manager.id,
-        role: 'manager',
-        status: 'active',
-        first_name: 'Léa',
-        last_name: 'Martin',
-        email: manager.email,
-        is_hairdressing: false,
-      },
-      {
-        salon_id: salon.id,
-        profile_id: stylist.id,
-        role: 'stylist',
-        status: 'active',
-        first_name: 'Sam',
-        last_name: 'Durand',
-        email: stylist.email,
-      },
-    ])
-    .select('id, role');
+  must(
+    await db.from('services').insert({
+      salon_id: salon.id,
+      name: 'Coupe',
+      duration_minutes: 30,
+      price_cents: 2500,
+    }),
+    'service',
+  );
+  const members = must(
+    await db
+      .from('salon_members')
+      .insert([
+        {
+          salon_id: salon.id,
+          profile_id: manager.id,
+          role: 'manager',
+          status: 'active',
+          first_name: 'Léa',
+          last_name: 'Martin',
+          email: manager.email,
+          is_hairdressing: false,
+        },
+        {
+          salon_id: salon.id,
+          profile_id: stylist.id,
+          role: 'stylist',
+          status: 'active',
+          first_name: 'Sam',
+          last_name: 'Durand',
+          email: stylist.email,
+        },
+      ])
+      .select('id, role'),
+    'members',
+  );
   const stylistMember = members?.find((m) => m.role === 'stylist');
   if (!stylistMember) throw new Error('member creation failed');
   return {
