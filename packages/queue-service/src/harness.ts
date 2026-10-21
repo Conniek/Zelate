@@ -1,6 +1,11 @@
 /** Shared setup of the service tests (not shipped: excluded from coverage via testing). */
 import type { Instant } from '../../queue-engine/src/index.ts';
-import { handleQueueCommand, type CommandResponse } from './service.ts';
+import {
+  handleQueueCommand,
+  runQueueTick,
+  type CommandResponse,
+  type TickReport,
+} from './service.ts';
 import {
   FakeDb,
   MONDAY_10H,
@@ -18,6 +23,7 @@ export interface Harness {
     payload?: unknown,
     options?: { commandId?: string; token?: string },
   ): Promise<CommandResponse>;
+  tick(): Promise<TickReport>;
 }
 
 export function harness(): Harness {
@@ -38,6 +44,8 @@ export function harness(): Harness {
           ...(options.token ? { tracking_token: options.token } : {}),
         },
       ),
+    tick: () =>
+      runQueueTick({ db, clock: () => h.now, random, phones: fakePhones }),
   };
   return h;
 }

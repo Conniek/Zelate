@@ -7,6 +7,7 @@
  */
 import {
   applyCommand,
+  detectTimeTriggers,
   findNextFreeSlots,
   isActiveStatus,
   newTicket,
@@ -19,6 +20,7 @@ import {
   type TicketState,
 } from '../../queue-engine/src/index.ts';
 import { normalizeFrenchMobile } from '../../auth-policy/src/phone.ts';
+import proManager from '../../i18n/src/fr/pro-manager.json' with { type: 'json' };
 import { diffStates, iso, ticketColumns, toState } from './mapping.ts';
 import type {
   Broadcast,
@@ -27,6 +29,7 @@ import type {
   DayData,
   DbValue,
   EventRow,
+  FreeSlotRow,
   MemberRef,
   NewContact,
   NotificationRow,
@@ -460,7 +463,8 @@ const PREPARE: { [K in CommandName]?: Prepare<K> } = {
         recipient_member_id: member_id,
         channel: 'push',
         template: 'appointment_checked_in',
-        params: { first_name: firstName, scheduled_at: iso(scheduled_at) },
+        // Names are added by the sender from the ticket, like for clients.
+        params: { scheduled_at: iso(scheduled_at) },
         dedupe_key: `appointment_checked_in:${member_id}`,
         requires_consent: false,
       });
@@ -609,9 +613,11 @@ function createTestTicket(run: Run): Outcome | CommandResponse {
     run.extras.data.short_code = running.short_code;
     return { output: unchanged(run.state), extraEvents: [] };
   }
-  // The client « Test » is named by the interface from its dictionary
-  // (`pro-manager.setup.test.ticket_name`), so no text is stored here.
-  const { ticket_id, short_code } = newIds(run, '');
+  // The fictitious client is named from the dictionary (K24), never in code.
+  const { ticket_id, short_code } = newIds(
+    run,
+    proManager.setup.test.ticket_name,
+  );
   const rank = Math.max(0, ...run.state.tickets.map((t) => t.queue_rank)) + 1;
   const ticket: TicketState = {
     ...newTicket({
@@ -738,7 +744,25 @@ function clientNotifications(output: EngineOutput): NotificationRow[] {
   return rows;
 }
 
-function buildWrites(run: Run, req: ParsedRequest, outcome: Outcome): WriteSet {
+function sameSlots(
+  stored: readonly FreeSlotRow[],
+  computed: readonly FreeSlotRow[],
+): boolean {
+  return (
+    stored.length === computed.length &&
+    stored.every(
+      (s, i) =>
+        s.service_id === computed[i]!.service_id &&
+        Date.parse(s.start_at) === Date.parse(computed[i]!.start_at),
+    )
+  );
+}
+
+function buildWrites(
+  run: Run,
+  outcome: Outcome,
+  commandId: string | null,
+): WriteSet {
   const { output } = outcome;
   const { extras } = run;
   const diff = diffStates(
@@ -792,24 +816,15 @@ function buildWrites(run: Run, req: ParsedRequest, outcome: Outcome): WriteSet {
     );
   }
 
-  if (diff.changed) {
-    // ADR-017: next free slot per service, without the stylist.
-    salon.next_free_slots = JSON.stringify(
-      findNextFreeSlots(output.state, run.now).map((s) => ({
-        service_id: s.service_id,
-        start_at: iso(s.start_at),
-      })),
-    );
-  }
-
-  // complete_service of the setup test (K35).
-  if (req.command === 'complete_service') {
-    const ticket = output.state.tickets.find(
-      (t) => t.id === req.payload.ticket_id,
-    );
-    if (ticket?.is_test && run.day.salon.setup_test_passed_at === null) {
-      salon.setup_test_passed_at = iso(run.now);
-    }
+  // ADR-017: next free slot per service, without the stylist. It moves with
+  // time too, so it is compared with the stored one at every pass.
+  const slots: FreeSlotRow[] = findNextFreeSlots(output.state, run.now).map(
+    (s) => ({ service_id: s.service_id, start_at: iso(s.start_at) }),
+  );
+  if (!sameSlots(run.day.salon.next_free_slots, slots)) {
+    salon.next_free_slots = JSON.stringify(slots);
+    if (!diff.changed && !extraChanged)
+      broadcasts.push({ kind: 'salon_public' });
   }
 
   return {
@@ -836,8 +851,8 @@ function buildWrites(run: Run, req: ParsedRequest, outcome: Outcome): WriteSet {
     contact_moves: extras.contactMoves,
     contact_replaces: extras.contactReplaces,
     events: [
-      ...output.events.map((e) => ({ ...e, command_id: req.command_id })),
-      ...outcome.extraEvents.map((e) => ({ ...e, command_id: req.command_id })),
+      ...output.events.map((e) => ({ ...e, command_id: commandId })),
+      ...outcome.extraEvents.map((e) => ({ ...e, command_id: commandId })),
     ],
     notifications: [
       ...clientNotifications(output),
@@ -918,7 +933,17 @@ async function execute(
   }
   if ('status' in outcome) return outcome;
 
-  const writes = buildWrites(run, req, outcome);
+  // complete_service of the setup test (K35).
+  if (req.command === 'complete_service') {
+    const ticket = outcome.output.state.tickets.find(
+      (t) => t.id === req.payload.ticket_id,
+    );
+    if (ticket?.is_test && run.day.salon.setup_test_passed_at === null) {
+      run.extras.salon.setup_test_passed_at = iso(run.now);
+    }
+  }
+
+  const writes = buildWrites(run, outcome, req.command_id);
   await run.tx.apply(writes);
   return okResponse(successData(run, req, outcome.output, writes.version));
 }
@@ -966,5 +991,227 @@ export async function handleQueueCommand(
     const response = await execute(run, req, phone);
     await tx.saveProcessed(req.command_id, req.command, ctx.salonId, response);
     return response;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// queue-tick (TRD §6.1): time triggers, salon by salon
+// ---------------------------------------------------------------------------
+
+export interface TickReport {
+  /** Salon days examined. */
+  readonly salons: number;
+  /** Salon days where something was written. */
+  readonly changed: number;
+  /** Salon days whose transaction failed (the others still ran). */
+  readonly failed: number;
+}
+
+const SYSTEM_CONTEXT = (salonId: string): Context => ({
+  salonId,
+  actor: { type: 'system' },
+  member: null,
+  profileId: null,
+});
+
+/** E19: second push to the salon 10 min after an unconfirmed check-in. */
+function confirmationReminders(run: Run, after: QueueState): void {
+  const before = new Map(run.state.tickets.map((t) => [t.id, t]));
+  const managers = run.day.members
+    .filter((m) => m.status === 'active' && m.role === 'manager')
+    .map((m) => m.id);
+  for (const ticket of after.tickets) {
+    if (
+      ticket.confirmation_reminder_sent_at === null ||
+      before.get(ticket.id)?.confirmation_reminder_sent_at !== null
+    ) {
+      continue;
+    }
+    const recipients = new Set(managers);
+    if (ticket.requested_member_id) recipients.add(ticket.requested_member_id);
+    for (const member_id of recipients) {
+      run.extras.staffNotifications.push({
+        ticket_id: ticket.id,
+        recipient_profile_id: null,
+        recipient_member_id: member_id,
+        channel: 'push',
+        template: 'appointment_checked_in',
+        params: {
+          variant: 'reminder',
+          scheduled_at:
+            ticket.scheduled_at === null ? null : iso(ticket.scheduled_at),
+        },
+        dedupe_key: `appointment_checked_in:${member_id}:reminder`,
+        requires_consent: false,
+      });
+    }
+  }
+}
+
+/** K8, E10, E28: absences counted by number, every salon; warning outside the SMS cap. */
+async function noShowWarnings(run: Run, after: QueueState): Promise<void> {
+  const before = new Map(run.state.tickets.map((t) => [t.id, t.status]));
+  const released = after.tickets.filter(
+    (t) => t.status === 'no_show' && before.get(t.id) !== 'no_show',
+  );
+  if (released.length === 0) return;
+  const warned = new Set(
+    await run.tx.recordNoShows(
+      released.map((t) => t.id),
+      run.now,
+    ),
+  );
+  for (const ticket of released) {
+    if (!warned.has(ticket.id)) continue;
+    for (const channel of ['push', 'sms'] as const) {
+      run.extras.staffNotifications.push({
+        ticket_id: ticket.id,
+        recipient_profile_id: ticket.client_id,
+        recipient_member_id: null,
+        channel,
+        template: 'no_show_warning',
+        params: {},
+        dedupe_key: 'no_show_warning',
+        requires_consent: false,
+      });
+    }
+  }
+}
+
+async function tickSalon(
+  tx: QueueTx,
+  deps: QueueServiceDeps,
+  salonId: string,
+  serviceDate: string,
+  now: Instant,
+): Promise<boolean> {
+  await tx.lockSalon(salonId);
+  const day = await tx.loadDay(salonId, serviceDate, isoWeekday(serviceDate));
+  if (!day) return false;
+  const run: Run = {
+    tx,
+    deps,
+    ctx: SYSTEM_CONTEXT(salonId),
+    day,
+    now,
+    serviceDate,
+    state: toState(
+      day,
+      serviceDayOf(serviceDate, day.opening_hours, day.closed),
+      now,
+    ),
+    extras: emptyExtras(),
+  };
+  const output = detectTimeTriggers(run.state, now);
+  confirmationReminders(run, output.state);
+  await noShowWarnings(run, output.state);
+  const writes = buildWrites(run, { output, extraEvents: [] }, null);
+  const empty =
+    Object.keys(writes.salon).length === 0 &&
+    writes.ticket_updates.length === 0 &&
+    writes.presences.length === 0 &&
+    writes.members.length === 0 &&
+    writes.notifications.length === 0;
+  if (empty) return false;
+  await tx.apply(writes);
+  return true;
+}
+
+export async function runQueueTick(
+  deps: QueueServiceDeps,
+): Promise<TickReport> {
+  const now = deps.clock();
+  const due = await deps.db.transaction((tx) =>
+    tx.dueSalonDays(parisDate(now)),
+  );
+  let changed = 0;
+  let failed = 0;
+  for (const { salon_id, service_date } of due) {
+    try {
+      const wrote = await deps.db.transaction((tx) =>
+        tickSalon(tx, deps, salon_id, service_date, now),
+      );
+      if (wrote) changed += 1;
+    } catch {
+      // One salon in error never stops the others; the next minute retries.
+      failed += 1;
+    }
+  }
+  return { salons: due.length, changed, failed };
+}
+
+// ---------------------------------------------------------------------------
+// preview_presence_change (TRD §6.3, K2): the engine runs, nothing is written
+// ---------------------------------------------------------------------------
+
+export interface PresencePreviewTicket {
+  readonly ticket_id: string;
+  readonly short_code: string;
+  readonly estimated_start_at_before: string | null;
+  readonly estimated_start_at_after: string | null;
+  /** The client will be asked to wait or take the first available (E7). */
+  readonly choice_required: boolean;
+}
+
+export async function previewPresenceChange(
+  deps: QueueServiceDeps,
+  caller: Caller,
+  payload: unknown,
+): Promise<CommandResponse> {
+  const req = parseRequest({
+    command: 'set_presence',
+    command_id: deps.random.uuid(),
+    payload,
+  });
+  if (!req || req.command !== 'set_presence') {
+    return errorResponse('invalid_payload');
+  }
+  return deps.db.transaction(async (tx) => {
+    const ctx = await resolveContext(tx, req, caller);
+    if ('status' in ctx) return ctx;
+    if (ctx.member?.role !== 'manager') return errorResponse('forbidden');
+    const now = deps.clock();
+    const serviceDate = parisDate(now);
+    const day = await tx.loadDay(
+      ctx.salonId,
+      serviceDate,
+      isoWeekday(serviceDate),
+    );
+    if (!day) return errorResponse('forbidden');
+    const state = toState(
+      day,
+      serviceDayOf(serviceDate, day.opening_hours, day.closed),
+      now,
+    );
+    const result = applyCommand(
+      state,
+      { command: 'set_presence', actor: ctx.actor, payload: req.payload },
+      now,
+    );
+    if (!result.ok) return errorResponse(result.error.code);
+    const before = new Map(state.tickets.map((t) => [t.id, t]));
+    const tickets: PresencePreviewTicket[] = [];
+    for (const after of result.state.tickets) {
+      const old = before.get(after.id);
+      if (!old || !isActiveStatus(after.status)) continue;
+      const choice =
+        old.stylist_change_pending_since === null &&
+        after.stylist_change_pending_since !== null;
+      if (old.estimated_start_at === after.estimated_start_at && !choice) {
+        continue;
+      }
+      tickets.push({
+        ticket_id: after.id,
+        short_code: after.short_code,
+        estimated_start_at_before:
+          old.estimated_start_at === null ? null : iso(old.estimated_start_at),
+        estimated_start_at_after:
+          after.estimated_start_at === null
+            ? null
+            : iso(after.estimated_start_at),
+        choice_required: choice,
+      });
+    }
+    return okResponse({ tickets });
   });
 }

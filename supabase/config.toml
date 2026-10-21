@@ -444,3 +444,7 @@ verify_jwt = false
 
 [functions.regenerate-qr]
 verify_jwt = false
+
+# DEV-5: called by pg_cron with the shared secret (CRON_SECRET), not a user JWT.
+[functions.queue-tick]
+verify_jwt = false

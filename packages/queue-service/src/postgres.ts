@@ -22,6 +22,7 @@ import type {
   TicketStatus,
 } from '../../queue-engine/src/index.ts';
 import { TICKET_FIELDS, TICKET_INSTANT_FIELDS } from './mapping.ts';
+import type { LinkView, TicketLinkReader } from './link.ts';
 import type {
   Broadcast,
   DayData,
@@ -302,6 +303,8 @@ function sqlTx(q: SqlRunner): QueueTx {
         qr_token: salon.qr_token as string,
         setup_test_passed_at: ms(salon.setup_test_passed_at),
         opening_hours_count: num(salon.opening_hours_count),
+        next_free_slots:
+          (salon.next_free_slots as SalonRow['next_free_slots']) ?? [],
       };
       const day: DayData = {
         salon: salonRow,
@@ -350,6 +353,52 @@ function sqlTx(q: SqlRunner): QueueTx {
     },
 
     apply: (writes) => applyWrites(q, writes),
+
+    async dueSalonDays(today) {
+      const rows = await q.query<Row>(
+        `select id as salon_id, $1::text as service_date from public.salons
+           where status = 'published'
+         union
+         select distinct salon_id, service_date::text from public.tickets
+           where status in ${ACTIVE}
+         order by service_date, salon_id`,
+        [today],
+      );
+      return rows.map((r) => ({
+        salon_id: r.salon_id as string,
+        service_date: r.service_date as string,
+      }));
+    },
+
+    async recordNoShows(ticketIds, now) {
+      const at = new Date(now).toISOString();
+      const warned: string[] = [];
+      for (const ticketId of ticketIds) {
+        // A ticket without number (appointment entered without phone) counts for no one.
+        const record = await one<{ h: string }>(
+          `insert into private.no_show_records (phone_hash, ticket_id, occurred_at)
+           select phone_hash, ticket_id, $2 from private.ticket_contacts where ticket_id = $1
+           on conflict do nothing
+           returning encode(phone_hash, 'hex') as h`,
+          [ticketId, at],
+        );
+        if (!record) continue;
+        const warning = await one(
+          `with recent as (
+             select count(*) as n from private.no_show_records
+             where phone_hash = decode($1, 'hex')
+               and occurred_at > $2::timestamptz - interval '30 days')
+           insert into private.no_show_warnings (phone_hash, warned_at)
+           select decode($1, 'hex'), $2 from recent where recent.n >= 5
+           on conflict (phone_hash) do update set warned_at = excluded.warned_at
+             where private.no_show_warnings.warned_at <= excluded.warned_at - interval '30 days'
+           returning 1`,
+          [record.h, at],
+        );
+        if (warning) warned.push(ticketId);
+      }
+      return warned;
+    },
   };
 }
 
@@ -559,4 +608,42 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
       );
     }
   }
+}
+
+/** `ticket-public`: the ticket of a tracking link, outside any transaction. */
+export function sqlTicketLinkReader(q: SqlRunner): TicketLinkReader {
+  return {
+    async byLinkCode(code) {
+      const [row] = await q.query<{
+        view: Omit<LinkView, 'tracking_token'>;
+        tracking_token: string;
+        created_at: unknown;
+      }>(
+        `select jsonb_build_object(
+           'ticket', jsonb_build_object(
+             'id', t.id, 'salon_id', t.salon_id, 'service_date', t.service_date,
+             'short_code', t.short_code, 'kind', t.kind, 'scheduled_at', t.scheduled_at,
+             'display_name', t.display_name, 'status', t.status, 'queue_rank', t.queue_rank,
+             'planned_duration_minutes', t.planned_duration_minutes,
+             'estimated_start_at', t.estimated_start_at, 'eta_response', t.eta_response,
+             'declared_delay_minutes', t.declared_delay_minutes, 'arrived_at', t.arrived_at,
+             'called_at', t.called_at, 'started_at', t.started_at,
+             'notifications_consent', t.notifications_consent_at is not null),
+           'salon', to_jsonb(sv),
+           'assigned_stylist_first_name', st.first_name) as view,
+           t.tracking_token, t.created_at
+         from public.tickets t
+         join public.public_salons sv on sv.id = t.salon_id
+         left join public.public_stylists st on st.id = t.assigned_member_id
+         where t.tracking_short_code = $1 and not t.is_test`,
+        [code],
+      );
+      if (!row) return null;
+      return {
+        ...row.view,
+        tracking_token: row.tracking_token,
+        created_at: ms(row.created_at)!,
+      };
+    },
+  };
 }

@@ -55,7 +55,6 @@ export interface FakeContact {
 
 export interface FakeSalon extends Mutable<SalonRow> {
   published_at: string | null;
-  next_free_slots: string;
 }
 
 const INSTANTS: ReadonlySet<string> = new Set(TICKET_INSTANT_FIELDS);
@@ -108,6 +107,8 @@ export class FakeDb implements QueueDb {
   events: EventRow[] = [];
   notifications: NotificationRow[] = [];
   broadcasts: (Broadcast & { version: number })[] = [];
+  noShowRecords: { hash: string; ticket_id: string; at: Instant }[] = [];
+  noShowWarnings = new Map<string, Instant>();
   /** Throw inside `apply`, to test that nothing is written. */
   failNextApply = false;
 
@@ -220,6 +221,54 @@ export class FakeDb implements QueueDb {
             Date.parse(t.columns.created_at as string) >= since,
         ).length,
       apply: async (writes) => this.apply(writes),
+      dueSalonDays: async (today) => {
+        const out = new Map<
+          string,
+          { salon_id: string; service_date: string }
+        >();
+        for (const [id, salon] of this.salons) {
+          if (salon.status === 'published') {
+            out.set(`${today}:${id}`, { salon_id: id, service_date: today });
+          }
+        }
+        for (const t of this.tickets.values()) {
+          const date = t.columns.service_date as string;
+          if (isActiveStatus(t.columns.status as TicketState['status'])) {
+            out.set(`${date}:${t.salon_id}`, {
+              salon_id: t.salon_id,
+              service_date: date,
+            });
+          }
+        }
+        return [...out.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([, v]) => v);
+      },
+      recordNoShows: async (ids, now) => {
+        const warned: string[] = [];
+        for (const id of ids) {
+          const contact = this.contacts.get(id);
+          if (!contact) continue;
+          this.noShowRecords.push({
+            hash: contact.phone_hash,
+            ticket_id: id,
+            at: now,
+          });
+          const recent = this.noShowRecords.filter(
+            (r) =>
+              r.hash === contact.phone_hash && r.at > now - 30 * 86_400_000,
+          ).length;
+          const last = this.noShowWarnings.get(contact.phone_hash);
+          if (
+            recent >= 5 &&
+            (last === undefined || last <= now - 30 * 86_400_000)
+          ) {
+            this.noShowWarnings.set(contact.phone_hash, now);
+            warned.push(id);
+          }
+        }
+        return warned;
+      },
     };
   }
 
@@ -306,7 +355,9 @@ export class FakeDb implements QueueDb {
         key,
       )
         ? ms(value as string | null)
-        : value;
+        : key === 'next_free_slots'
+          ? JSON.parse(value as string)
+          : value;
     }
     for (const m of w.members) {
       const member = this.members.find((x) => x.id === m.id)!;
@@ -524,7 +575,7 @@ export function salonRow(
     setup_test_passed_at: null,
     opening_hours_count: 7,
     published_at: null,
-    next_free_slots: '[]',
+    next_free_slots: [],
     ...overrides,
   };
 }

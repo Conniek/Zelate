@@ -34,6 +34,12 @@ export interface TicketRef {
   readonly status: TicketStatus;
 }
 
+/** One entry of `salons.next_free_slots` (ADR-017). */
+export interface FreeSlotRow {
+  readonly service_id: string;
+  readonly start_at: string;
+}
+
 export interface SalonRow {
   readonly id: string;
   readonly status: SalonStatus;
@@ -47,6 +53,7 @@ export interface SalonRow {
   readonly qr_token: string;
   readonly setup_test_passed_at: Instant | null;
   readonly opening_hours_count: number;
+  readonly next_free_slots: readonly FreeSlotRow[];
 }
 
 /** A salon member and its presence row of the day (null = none yet, offline). */
@@ -233,6 +240,20 @@ export interface QueueTx {
   appointmentsCreatedSince(salonId: string, since: Instant): Promise<number>;
 
   apply(writes: WriteSet): Promise<void>;
+
+  /**
+   * `queue-tick`: published salons for today, and every salon and day that
+   * still holds an active ticket (a past day is closed at midnight, E24).
+   */
+  dueSalonDays(
+    today: string,
+  ): Promise<{ salon_id: string; service_date: string }[]>;
+  /**
+   * K8, E10, E28: records the absences of these tickets by number and returns
+   * the tickets whose number reaches 5 absences in 30 days and was not warned
+   * in the last 30 days (the warning is recorded at the same time).
+   */
+  recordNoShows(ticketIds: readonly string[], now: Instant): Promise<string[]>;
 }
 
 export interface QueueDb {

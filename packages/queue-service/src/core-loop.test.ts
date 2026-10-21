@@ -62,7 +62,7 @@ describe('join_queue', () => {
     });
     expect(h.db.salons.get(SALON)!.queue_version).toBe(1);
     expect(h.db.salons.get(SALON)!.waiting_count).toBe(1);
-    expect(JSON.parse(h.db.salons.get(SALON)!.next_free_slots)).toEqual(
+    expect(h.db.salons.get(SALON)!.next_free_slots).toEqual(
       expect.arrayContaining([expect.objectContaining({ service_id: CUT })]),
     );
   });

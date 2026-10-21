@@ -320,12 +320,19 @@ export function diffStates(
   }
   updates.sort((x, y) => x.rank - y.rank);
 
+  // A recalculation that moved nothing only refreshes `estimate_updated_at`:
+  // not a change, nothing to write or broadcast (every queue-tick pass).
+  const salonChanged = Object.keys(salon).some(
+    (k) => k !== 'estimate_updated_at',
+  );
   const changed =
-    Object.keys(salon).length > 0 ||
+    salonChanged ||
     members.length > 0 ||
     presences.length > 0 ||
     updates.length > 0 ||
     newTickets.length > 0;
+
+  if (!changed) delete salon.estimate_updated_at;
 
   const broadcasts: Broadcast[] = [];
   if (changed) {

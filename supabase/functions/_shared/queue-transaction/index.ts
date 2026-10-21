@@ -6,7 +6,9 @@ import {
   cryptoRandom,
   hmacPhoneHasher,
   sqlQueueDb,
+  sqlTicketLinkReader,
   type QueueServiceDeps,
+  type TicketLinkReader,
 } from '../../../../packages/queue-service/src/index.ts';
 
 let sql: ReturnType<typeof postgres> | null = null;
@@ -36,4 +38,13 @@ export function queueServiceDeps(): QueueServiceDeps {
     random: cryptoRandom,
     phones: hmacPhoneHasher(Deno.env.get('PHONE_HASH_SECRET') ?? ''),
   };
+}
+
+/** Read-only: the tracking link of `ticket-public`, outside the queue lock. */
+export function ticketLinkReader(): TicketLinkReader {
+  const db = connection();
+  return sqlTicketLinkReader({
+    query: (text, params = []) =>
+      db.unsafe(text, params as never[]) as unknown as Promise<never[]>,
+  });
 }

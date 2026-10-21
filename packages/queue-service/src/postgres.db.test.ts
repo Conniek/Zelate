@@ -6,11 +6,22 @@
  */
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { sqlQueueDb } from './postgres.ts';
+import { readTicketLink } from './link.ts';
+import { sqlQueueDb, sqlTicketLinkReader } from './postgres.ts';
 import { cryptoRandom, hmacPhoneHasher } from './random.ts';
-import { handleQueueCommand, type CommandResponse } from './service.ts';
+import {
+  handleQueueCommand,
+  previewPresenceChange,
+  runQueueTick,
+  type CommandResponse,
+} from './service.ts';
 
 const url = process.env.DATABASE_URL;
+if (process.env.CI && !url) {
+  throw new Error(
+    'DATABASE_URL is required in CI: the integration tests must run',
+  );
+}
 const sql = url ? postgres(url, { max: 6, onnotice: () => {} }) : null;
 
 const deps = () => ({
@@ -339,5 +350,70 @@ describe.skipIf(!sql)('queue-command on Postgres', () => {
     const [event] = await sql!`select type from public.salon_events
       where salon_id = ${salon} and type = 'published'`;
     expect(event).toBeDefined();
+  });
+
+  it('queue-tick releases a called client at release_due_at and records the absence', async () => {
+    const [called] = await sql!`select id from public.tickets
+      where salon_id = ${salon} and status = 'called' limit 1`;
+    const calledId = called!.id as string;
+    await sql!`update public.tickets set called_at = now() - interval '11 minutes',
+      release_due_at = now() - interval '1 minute', declared_arrival_at = null
+      where id = ${calledId}`;
+    const report = await runQueueTick(deps());
+    expect(report.salons).toBeGreaterThan(0);
+    const [ticket] =
+      await sql!`select status, called_at from public.tickets where id = ${calledId}`;
+    expect(ticket).toMatchObject({ status: 'no_show', called_at: null });
+    const [record] =
+      await sql!`select count(*) as n from private.no_show_records
+      where ticket_id = ${calledId}`;
+    expect(Number(record!.n)).toBe(1);
+    // A second pass in the same minute has nothing more to do for this salon.
+    const [v1] =
+      await sql!`select queue_version from public.salons where id = ${salon}`;
+    await runQueueTick(deps());
+    const [v2] =
+      await sql!`select queue_version from public.salons where id = ${salon}`;
+    expect(v2!.queue_version).toBe(v1!.queue_version);
+  });
+
+  it('ticket-public exchanges the SMS link for the view and the token', async () => {
+    const [row] =
+      await sql!`select tracking_short_code, tracking_token from public.tickets
+      where salon_id = ${salon} and status = 'waiting' and not is_test limit 1`;
+    const reader = sqlTicketLinkReader({
+      query: (text, params = []) =>
+        sql!.unsafe(text, params as never[]) as unknown as Promise<never[]>,
+    });
+    const response = await readTicketLink(
+      reader,
+      row!.tracking_short_code as string,
+      Date.now(),
+    );
+    expect(response.status).toBe(200);
+    const view = (response.body as { data: Record<string, unknown> }).data;
+    expect(view.tracking_token).toBe(row!.tracking_token);
+    expect(view.salon).toMatchObject({ id: salon });
+    expect(JSON.stringify(view)).not.toMatch(/\+33/);
+    expect((await readTicketLink(reader, 'Nope0000', Date.now())).status).toBe(
+      410,
+    );
+  });
+
+  it('preview_presence_change answers without writing', async () => {
+    const [v1] =
+      await sql!`select queue_version from public.salons where id = ${salon}`;
+    const response = await previewPresenceChange(
+      deps(),
+      { profileId: manager.user },
+      { member_id: ben.member, status: 'absent' },
+    );
+    expect(response.status).toBe(200);
+    const [v2] =
+      await sql!`select queue_version from public.salons where id = ${salon}`;
+    expect(v2!.queue_version).toBe(v1!.queue_version);
+    const [presence] = await sql!`select status from public.stylist_presence
+      where member_id = ${ben.member}`;
+    expect(presence!.status).toBe('available');
   });
 });

@@ -592,7 +592,7 @@ describe('appointments (H10)', () => {
     expect(staff[0]).toMatchObject({
       channel: 'push',
       requires_consent: false,
-      params: { first_name: 'Léa', scheduled_at: '2026-10-19T12:30:00.000Z' },
+      params: { scheduled_at: '2026-10-19T12:30:00.000Z' },
     });
     expect(
       h.db.broadcasts.some(
@@ -715,7 +715,7 @@ describe('setup test and publication (K24, K35)', () => {
     const id = created.ticket_id as string;
     expect(h.db.ticket(id)).toMatchObject({
       is_test: true,
-      display_name: '',
+      display_name: 'Test',
       status: 'waiting',
     });
     expect(h.db.contacts.has(id)).toBe(false);
