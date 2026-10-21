@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { Skeleton } from '@zelate/ui';
+import { DashboardNav } from './DashboardNav';
 import { loadOwnSalon } from '../lib/setup-api';
 import type { SetupSalon } from '../lib/setup-api';
 import { supabase } from '../lib/supabase';
@@ -34,5 +35,10 @@ export function DashboardGuard() {
     );
   }
   if (data === 'signup') return <Navigate replace to="/signup" />;
-  return <Outlet context={data} />;
+  return (
+    <>
+      <DashboardNav />
+      <Outlet context={data} />
+    </>
+  );
 }

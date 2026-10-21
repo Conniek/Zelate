@@ -5,6 +5,7 @@
 import { AccessLost } from './queue-api';
 import type { PresenceStatus } from './queue-api';
 import { supabase } from './supabase';
+import type { Json } from '@zelate/db-types';
 
 export interface BoardStylist {
   member_id: string;
@@ -113,4 +114,64 @@ export async function previewPresence(
   );
   if (error || !data?.ok) throw new Error('preview failed');
   return (data.data as { tickets: ImpactTicket[] }).tickets;
+}
+
+export interface DaySummary {
+  served_count: number;
+  announced_wait_minutes: number | null;
+  actual_wait_minutes: number | null;
+  no_show_count: number;
+  cancelled_count: number;
+}
+
+export async function loadDaySummary(
+  salonId: string,
+  serviceDate: string,
+): Promise<DaySummary> {
+  const { data, error } = await supabase.rpc('get_day_summary', {
+    salon_id: salonId,
+    service_date: serviceDate,
+  });
+  if (error || !data) throw new Error('summary failed');
+  return data as unknown as DaySummary;
+}
+
+export interface AuditEvent {
+  source: 'salon' | 'ticket';
+  id: number;
+  created_at: string;
+  type: string;
+  actor_type: 'client' | 'stylist' | 'manager' | 'system' | 'admin';
+  actor_first_name: string | null;
+  ticket_code: string | null;
+  reason_code: string | null;
+}
+
+export interface AuditPage {
+  events: AuditEvent[];
+  next_cursor: Record<string, unknown> | null;
+}
+
+export interface AuditFilters {
+  from: string;
+  to: string;
+  type: string;
+  memberId: string;
+}
+
+export async function loadAuditLog(
+  salonId: string,
+  filters: AuditFilters,
+  cursor: Record<string, unknown> | null,
+): Promise<AuditPage> {
+  const { data, error } = await supabase.rpc('get_audit_log', {
+    salon_id: salonId,
+    from: filters.from,
+    to: filters.to,
+    ...(filters.type === '' ? {} : { type: filters.type }),
+    ...(filters.memberId === '' ? {} : { member_id: filters.memberId }),
+    ...(cursor ? { cursor: cursor as Json } : {}),
+  });
+  if (error || !data) throw new Error('audit failed');
+  return data as unknown as AuditPage;
 }

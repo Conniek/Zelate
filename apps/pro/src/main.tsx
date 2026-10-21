@@ -65,6 +65,36 @@ const router = createBrowserRouter(
           }),
           path: 'appointments',
         },
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/SummaryPage')).SummaryPage,
+          }),
+          path: 'summary',
+        },
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/AuditPage')).AuditPage,
+          }),
+          path: 'audit',
+        },
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/ConfigPages')).TeamPage,
+          }),
+          path: 'team',
+        },
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/ConfigPages')).ServicesPage,
+          }),
+          path: 'services',
+        },
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/ConfigPages')).HoursPage,
+          }),
+          path: 'hours',
+        },
       ],
       lazy: async () => ({
         Component: (await import('./routes/DashboardGuard')).DashboardGuard,

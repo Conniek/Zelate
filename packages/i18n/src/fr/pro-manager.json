@@ -569,5 +569,11 @@
     "submit": "Se connecter",
     "magic_link": "Recevoir un lien de connexion",
     "link_sent": "Lien envoyé. Ouvrez-le sur cet appareil."
+  },
+  "nav": {
+    "board": "File",
+    "team": "Équipe",
+    "services": "Prestations",
+    "hours": "Horaires"
   }
 }

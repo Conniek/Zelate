@@ -283,23 +283,6 @@ export function DashboardPage() {
             </Link>
           </Banner>
         ) : null}
-        <nav
-          aria-label={t('board.menu_label')}
-          className="flex flex-wrap gap-x-4"
-        >
-          <Link
-            className="inline-flex min-h-11 items-center text-body-sm font-semibold text-link"
-            to="/dashboard/appointments"
-          >
-            {t('board.appointments')}
-          </Link>
-          <Link
-            className="inline-flex min-h-11 items-center text-body-sm font-semibold text-link"
-            to="/dashboard/setup"
-          >
-            {t('board.setup_link')}
-          </Link>
-        </nav>
       </header>
 
       {tickets.length === 0 ? <Banner>{t('board.empty')}</Banner> : null}
