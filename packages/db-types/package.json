@@ -1,0 +1,17 @@
+{
+  "name": "@zelate/db-types",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "supabase gen types typescript --local --schema public > src/database.types.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@zelate/config": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}
