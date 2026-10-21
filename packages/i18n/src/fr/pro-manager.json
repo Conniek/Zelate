@@ -225,7 +225,9 @@
       "reassignment_refused": "Réaffectation refusée par le client",
       "reassignment_expired": "Réaffectation sans réponse du client"
     },
-    "empty": "Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct."
+    "empty": "Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct.",
+    "page_title": "File du salon – {app}",
+    "columns_label": "Coiffeurs"
   },
   "walk_in": {
     "open": "+ Client à l'accueil",
