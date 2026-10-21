@@ -15,6 +15,26 @@ const router = createBrowserRouter(
       element: <HomePage />,
       path: '/',
     },
+    {
+      lazy: async () => ({
+        Component: (await import('./routes/SignInPage')).SignInPage,
+      }),
+      path: '/signin',
+    },
+    {
+      children: [
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/AdminHomePage')).AdminHomePage,
+          }),
+          path: 'salons',
+        },
+      ],
+      lazy: async () => ({
+        Component: (await import('./routes/AdminGuard')).AdminGuard,
+      }),
+      path: '/admin',
+    },
   ],
   {
     basename: import.meta.env.BASE_URL,

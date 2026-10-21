@@ -11,7 +11,10 @@
   },
   "dependencies": {
     "@sentry/react": "^9.35.0",
+    "@supabase/supabase-js": "^2.118.0",
     "@tanstack/react-query": "^5.83.0",
+    "@zelate/auth-policy": "workspace:*",
+    "@zelate/db-types": "workspace:*",
     "@zelate/i18n": "workspace:*",
     "@zelate/ui": "workspace:*",
     "react": "^19.1.0",
