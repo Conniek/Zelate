@@ -187,12 +187,20 @@ export type QueueErrorCode =
   | 'unknown_code'
   | 'ticket_other_salon'
   | 'ticket_closed'
+  | 'appointment_overlap'
+  | 'outside_opening_hours'
+  | 'appointment_in_past'
+  | 'appointment_not_today'
+  | 'appointment_not_editable'
+  | 'member_required'
+  | 'invalid_merge_target'
   | 'no_eligible_ticket'
   | 'call_already_in_progress'
   | 'not_assigned_to_you'
   | 'postpone_limit_reached'
   | 'duration_limit_reached'
   | 'salon_not_published'
+  | 'reassignment_pending'
   | 'closing_not_reached';
 
 // ---------------------------------------------------------------------------
@@ -292,6 +300,13 @@ export interface TicketState {
   /** Appointments only (step 2). */
   readonly scheduled_at: Instant | null;
   readonly appointment_source: AppointmentSource | null;
+  /** A client check-in confirmed by the salon (transition 1b). */
+  readonly confirmed_at: Instant | null;
+  readonly confirmed_by_member_id: string | null;
+  /** E19: reminder sent to the salon 10 min after an unconfirmed check-in. */
+  readonly confirmation_reminder_sent_at: Instant | null;
+  /** Last delay step warned (1 = 10 min, 2 = 20 min…), E23. */
+  readonly appointment_delay_warned_steps: number;
   readonly client_id: string | null;
   readonly channel: TicketChannel;
   readonly is_test: boolean;
@@ -377,6 +392,13 @@ export interface SalonIndicators {
   readonly current_wait_minutes: number | null;
   /** The next service would end after the last closing of the day (K36). */
   readonly is_full: boolean;
+}
+
+/** First hole that fits a service (E22); an indication, not a reservation. */
+export interface FreeSlot {
+  readonly service_id: string;
+  readonly start_at: Instant;
+  readonly member_id: string;
 }
 
 export interface Schedule {
@@ -475,6 +497,56 @@ export type RemoveTicketCommand = CommandOf<
   'remove_ticket',
   { readonly ticket_id: string; readonly reason_code: string }
 >;
+export type CreateAppointmentCommand = CommandOf<
+  'create_appointment',
+  {
+    readonly ticket_id: string;
+    readonly short_code: string;
+    readonly scheduled_at: Instant;
+    readonly member_id: string;
+    readonly service_id: string | null;
+    /** The caller checks the phone hash against every active ticket (ADR-011). */
+    readonly phone_has_active_ticket: boolean;
+  }
+>;
+export type UpdateAppointmentCommand = CommandOf<
+  'update_appointment',
+  {
+    readonly ticket_id: string;
+    readonly scheduled_at?: Instant;
+    readonly member_id?: string;
+    /** `null` = « je ne sais pas encore ». */
+    readonly service_id?: string | null;
+  }
+>;
+export type CancelAppointmentCommand = CommandOf<
+  'cancel_appointment',
+  { readonly ticket_id: string; readonly reason_code: string }
+>;
+export type CheckInAppointmentCommand = CommandOf<
+  'check_in_appointment',
+  {
+    readonly ticket_id: string;
+    readonly short_code: string;
+    /** `scheduled_time` of the TRD, already turned into an instant of the day by the caller, who also checks the QR token. */
+    readonly scheduled_at: Instant;
+    /** null = « je ne sais plus ». */
+    readonly member_id: string | null;
+    readonly service_id: string | null;
+    readonly notifications_consent: boolean;
+    readonly has_active_ticket_elsewhere: boolean;
+  }
+>;
+export type ConfirmAppointmentCommand = CommandOf<
+  'confirm_appointment',
+  {
+    readonly ticket_id: string;
+    readonly decision: 'confirm' | 'reject';
+    readonly member_id?: string;
+    readonly merge_into_ticket_id?: string;
+    readonly reason_code?: string;
+  }
+>;
 export type SetPresenceCommand = CommandOf<
   'set_presence',
   {
@@ -489,6 +561,14 @@ export type SetPresenceCommand = CommandOf<
 export type ResolveStylistChangeCommand = CommandOf<
   'resolve_stylist_change',
   { readonly ticket_id: string; readonly choice: 'wait' | 'first_available' }
+>;
+export type ReassignTicketCommand = CommandOf<
+  'reassign_ticket',
+  { readonly ticket_id: string; readonly member_id: string }
+>;
+export type RespondReassignmentCommand = CommandOf<
+  'respond_reassignment',
+  { readonly ticket_id: string; readonly choice: 'accept' | 'refuse' }
 >;
 export type RespondEndOfDayCommand = CommandOf<
   'respond_end_of_day',
@@ -522,8 +602,15 @@ export type Command =
   | RespondEtaCommand
   | CancelTicketCommand
   | RemoveTicketCommand
+  | CreateAppointmentCommand
+  | UpdateAppointmentCommand
+  | CancelAppointmentCommand
+  | CheckInAppointmentCommand
+  | ConfirmAppointmentCommand
   | SetPresenceCommand
   | ResolveStylistChangeCommand
+  | ReassignTicketCommand
+  | RespondReassignmentCommand
   | RespondEndOfDayCommand
   | SetHairdressingCommand
   | SetQueueStatusCommand
@@ -584,6 +671,8 @@ export interface EngineOutput {
   readonly state: QueueState;
   readonly events: readonly QueueEvent[];
   readonly notifications: readonly NotificationIntent[];
+  /** Non-blocking warnings, for example `stylist_absent` (E26); absent when empty. */
+  readonly warnings?: readonly string[];
 }
 
 export interface QueueError {

@@ -199,3 +199,58 @@ export function busyTicketOf(
 
 export const ceilToMinute = (t: Instant): Instant =>
   Math.ceil(t / MINUTE) * MINUTE;
+
+/** Rule 7: a late appointment client keeps priority this long after his time. */
+export const APPOINTMENT_GRACE = 10 * MINUTE;
+
+/** A client who checked in by himself is on site; a salon-entered one is only expected (default 🟡). */
+export function isOnSite(ticket: TicketState): boolean {
+  return (
+    ticket.arrived_at !== null ||
+    ticket.confirmed_at !== null ||
+    ticket.appointment_source === 'client_check_in'
+  );
+}
+
+/** Waiting appointments of a stylist, by time (rule 6: fixed stylist and slot). */
+export function appointmentsOf(
+  state: QueueState,
+  memberId: string,
+): TicketState[] {
+  return state.tickets
+    .filter(
+      (t) =>
+        t.status === 'waiting' &&
+        t.kind === 'appointment' &&
+        t.assigned_member_id === memberId &&
+        t.scheduled_at !== null,
+    )
+    .sort(
+      (a, b) =>
+        (a.scheduled_at as Instant) - (b.scheduled_at as Instant) ||
+        a.queue_rank - b.queue_rank,
+    );
+}
+
+/**
+ * The appointment a free stylist takes next (rules 7 and 8): the earliest
+ * one, unless it is more than 10 minutes late and would overrun the following
+ * appointment, which is then taken first so that nobody else is delayed.
+ */
+export function appointmentToTake(
+  appointments: readonly TicketState[],
+  t: Instant,
+): TicketState | undefined {
+  const first = appointments[0];
+  const second = appointments[1];
+  if (!first) return undefined;
+  const scheduled = first.scheduled_at as Instant;
+  if (
+    second &&
+    t > scheduled + APPOINTMENT_GRACE &&
+    t + durationOf(first) > (second.scheduled_at as Instant)
+  ) {
+    return second;
+  }
+  return first;
+}

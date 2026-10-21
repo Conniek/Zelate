@@ -1,6 +1,6 @@
 /**
- * `applyCommand`: the core queue commands of TRD §6.2 (step 1 of DEV-2,
- * without appointments and reassignment). Pure: the caller loads the state
+ * `applyCommand`: the queue commands of TRD §6.2 (DEV-2: core commands and
+ * appointments, H10; reassignment requests, E9 and E27). Pure: the caller loads the state
  * under the per-salon lock, applies the result and writes the outbox
  * (ADR-003, K38).
  */
@@ -12,6 +12,8 @@ import {
   MIN_DELAY_MINUTES,
   MIN_DURATION_MINUTES,
   MINUTE,
+  PAST_APPOINTMENT_TOLERANCE_MINUTES,
+  REASSIGNMENT_TOLERANCE_MINUTES,
   UNKNOWN_SERVICE_MINUTES,
 } from './constants.ts';
 import { callableTickets, pickNextTicket } from './distribution.ts';
@@ -70,6 +72,7 @@ interface Step {
   readonly events: readonly QueueEvent[];
   /** False for a command that changes nothing (same value twice). */
   readonly changed?: boolean;
+  readonly warnings?: readonly string[];
 }
 
 type Handled = Step | QueueErrorCode;
@@ -81,11 +84,14 @@ function finish(before: QueueState, step: Step, now: Instant): EngineOutput {
     return { state: before, events: [], notifications: [] };
   }
   const refreshed = refresh(step.state, now);
-  return finalize(
+  const output = finalize(
     before,
     withVersion(refreshed.state, before.salon.queue_version + 1),
     [...step.events, ...refreshed.events],
   );
+  return step.warnings?.length
+    ? { ...output, warnings: step.warnings }
+    : output;
 }
 
 function activeMember(
@@ -822,7 +828,571 @@ function removeTicket(
   };
 }
 
+// --- appointments (H10, transitions 1 and 1b) ------------------------------
+
+interface Slot {
+  readonly duration_minutes: number;
+  readonly warnings: readonly string[];
+}
+
+/**
+ * Checks an appointment slot (E26): today, not too far in the past, a
+ * stylist who cuts hair, a service he masters, within opening hours, and no
+ * overlap measured on the service duration (back to back is accepted).
+ */
+function slotError(
+  state: QueueState,
+  now: Instant,
+  p: {
+    readonly member_id: string;
+    readonly scheduled_at: Instant;
+    readonly service_id: string | null;
+    readonly duration_minutes?: number | undefined;
+    readonly exclude_id: string | null;
+    readonly check_past: boolean;
+  },
+): QueueErrorCode | Slot {
+  if (!Number.isFinite(p.scheduled_at)) return 'invalid_payload';
+  if (p.scheduled_at >= state.salon.service_day.ends_at) {
+    return 'appointment_not_today';
+  }
+  if (
+    p.check_past &&
+    p.scheduled_at < now - PAST_APPOINTMENT_TOLERANCE_MINUTES * MINUTE
+  ) {
+    return 'appointment_in_past';
+  }
+  const member = findMember(state, p.member_id);
+  if (!member || member.status !== 'active' || !member.is_hairdressing) {
+    return 'stylist_unavailable';
+  }
+  const service = findService(state, p.service_id);
+  if (p.service_id !== null && (!service || !service.is_active)) {
+    return 'service_unavailable';
+  }
+  if (!masters(member, service)) return 'service_unavailable';
+  const duration =
+    p.duration_minutes ?? service?.duration_minutes ?? UNKNOWN_SERVICE_MINUTES;
+  const end = p.scheduled_at + duration * MINUTE;
+  const inHours = state.salon.service_day.opening_ranges.some(
+    (r) => p.scheduled_at >= r.opens_at && end <= r.closes_at,
+  );
+  if (!inHours) return 'outside_opening_hours';
+  const overlaps = state.tickets.some(
+    (t) =>
+      t.id !== p.exclude_id &&
+      t.kind === 'appointment' &&
+      t.status === 'waiting' &&
+      t.assigned_member_id === p.member_id &&
+      t.scheduled_at !== null &&
+      p.scheduled_at < t.scheduled_at + durationOf(t) &&
+      t.scheduled_at < end,
+  );
+  if (overlaps) return 'appointment_overlap';
+  return {
+    duration_minutes: duration,
+    warnings: member.presence.status === 'absent' ? ['stylist_absent'] : [],
+  };
+}
+
+/** The manager, or the stylist the appointment belongs to. */
+function appointmentActor(
+  state: QueueState,
+  actor: Actor,
+  stylistId: string | null,
+): MemberState | QueueErrorCode {
+  const member = activeMember(state, actor);
+  if (typeof member === 'string') return member;
+  return member.role === 'manager' || member.id === stylistId
+    ? member
+    : 'forbidden';
+}
+
+/** First estimate of a new waiting ticket: the reference of later changes (E11). */
+function seedEstimate(
+  state: QueueState,
+  ticketId: string,
+  now: Instant,
+): QueueState {
+  const estimate = computeSchedule(state, now).tickets[ticketId];
+  const start = estimate?.estimated_start_at ?? null;
+  return patchTicket(state, ticketId, {
+    estimated_start_at: start,
+    estimated_member_id: estimate?.estimated_member_id ?? null,
+    initial_estimated_start_at: start,
+    last_notified_start_at: start,
+    estimate_version: start === null ? 0 : 1,
+  });
+}
+
+function nextRank(state: QueueState): number {
+  return Math.max(0, ...state.tickets.map((t) => t.queue_rank)) + 1;
+}
+
+function createAppointment(
+  state: QueueState,
+  command: Extract<Command, { command: 'create_appointment' }>,
+  now: Instant,
+): Handled {
+  const { payload } = command;
+  const actor = appointmentActor(state, command.actor, payload.member_id);
+  if (typeof actor === 'string') return actor;
+  if (findTicket(state, payload.ticket_id)) return 'invalid_payload';
+  if (payload.phone_has_active_ticket) return 'already_has_active_ticket';
+  const slot = slotError(state, now, {
+    member_id: payload.member_id,
+    scheduled_at: payload.scheduled_at,
+    service_id: payload.service_id,
+    exclude_id: null,
+    check_past: true,
+  });
+  if (typeof slot === 'string') return slot;
+  const ticket: TicketState = {
+    ...newTicket({
+      id: payload.ticket_id,
+      service_date: state.salon.service_day.service_date,
+      short_code: payload.short_code,
+      client_id: null,
+      channel: 'front_desk',
+      service_id: payload.service_id,
+      planned_duration_minutes: slot.duration_minutes,
+      requested_member_id: null,
+      queue_rank: nextRank(state),
+      declared_arrival_at: null,
+      notifications_consent_at: null,
+      created_by_member_id: actor.id,
+      created_at: now,
+    }),
+    kind: 'appointment',
+    scheduled_at: payload.scheduled_at,
+    appointment_source: 'salon_entry',
+    assigned_member_id: payload.member_id,
+  };
+  const next = seedEstimate(
+    { ...state, tickets: [...state.tickets, ticket] },
+    ticket.id,
+    now,
+  );
+  return {
+    state: next,
+    events: [
+      ticketEvent(identityOf(state, command.actor), 'created', ticket.id),
+    ],
+    warnings: slot.warnings,
+  };
+}
+
+function updateAppointment(
+  state: QueueState,
+  command: Extract<Command, { command: 'update_appointment' }>,
+  now: Instant,
+): Handled {
+  const { payload } = command;
+  const ticket = findTicket(state, payload.ticket_id);
+  if (!ticket) return 'ticket_other_salon';
+  const actor = appointmentActor(
+    state,
+    command.actor,
+    ticket.assigned_member_id,
+  );
+  if (typeof actor === 'string') return actor;
+  if (
+    actor.role !== 'manager' &&
+    payload.member_id !== undefined &&
+    payload.member_id !== actor.id
+  ) {
+    return 'forbidden';
+  }
+  if (
+    ticket.kind !== 'appointment' ||
+    ticket.status !== 'waiting' ||
+    ticket.scheduled_at === null ||
+    ticket.assigned_member_id === null
+  ) {
+    return 'appointment_not_editable';
+  }
+  const memberId = payload.member_id ?? ticket.assigned_member_id;
+  const scheduledAt = payload.scheduled_at ?? ticket.scheduled_at;
+  const serviceId =
+    payload.service_id === undefined ? ticket.service_id : payload.service_id;
+  const timeChanged = scheduledAt !== ticket.scheduled_at;
+  const serviceChanged = serviceId !== ticket.service_id;
+  if (
+    !timeChanged &&
+    !serviceChanged &&
+    memberId === ticket.assigned_member_id
+  ) {
+    return { state, events: [], changed: false };
+  }
+  const slot = slotError(state, now, {
+    member_id: memberId,
+    scheduled_at: scheduledAt,
+    service_id: serviceId,
+    duration_minutes: serviceChanged
+      ? undefined
+      : ticket.planned_duration_minutes,
+    exclude_id: ticket.id,
+    check_past: timeChanged,
+  });
+  if (typeof slot === 'string') return slot;
+  return {
+    state: patchTicket(state, ticket.id, {
+      scheduled_at: scheduledAt,
+      assigned_member_id: memberId,
+      service_id: serviceId,
+      planned_duration_minutes: slot.duration_minutes,
+    }),
+    events: [
+      ticketEvent(
+        identityOf(state, command.actor),
+        'appointment_updated',
+        ticket.id,
+      ),
+    ],
+    warnings: slot.warnings,
+  };
+}
+
+function cancelAppointment(
+  state: QueueState,
+  command: Extract<Command, { command: 'cancel_appointment' }>,
+  now: Instant,
+): Handled {
+  const ticket = findTicket(state, command.payload.ticket_id);
+  if (!ticket) return 'ticket_other_salon';
+  const actor = appointmentActor(
+    state,
+    command.actor,
+    ticket.assigned_member_id,
+  );
+  if (typeof actor === 'string') return actor;
+  const reason = REMOVAL_REASONS.find((r) => r === command.payload.reason_code);
+  if (!reason) return 'invalid_payload';
+  if (ticket.kind !== 'appointment' || ticket.status !== 'waiting') {
+    return 'appointment_not_editable';
+  }
+  return {
+    state: patchTicket(state, ticket.id, {
+      ...cancel(ticket, 'removed_by_salon', now),
+      removal_reason: reason,
+    }),
+    events: [
+      ticketEvent(
+        identityOf(state, command.actor),
+        'cancelled',
+        ticket.id,
+        reason,
+      ),
+    ],
+  };
+}
+
+function checkInAppointment(
+  state: QueueState,
+  command: Extract<Command, { command: 'check_in_appointment' }>,
+  now: Instant,
+): Handled {
+  const { actor, payload } = command;
+  if (actor.type !== 'client') return 'forbidden';
+  const closed = queueOpenError(state, now);
+  if (closed) return closed;
+  if (findTicket(state, payload.ticket_id)) return 'invalid_payload';
+  const hasActive =
+    payload.has_active_ticket_elsewhere ||
+    state.tickets.some(
+      (t) => isActiveStatus(t.status) && t.client_id === actor.profile_id,
+    );
+  if (hasActive) return 'already_has_active_ticket';
+  if (!Number.isFinite(payload.scheduled_at)) return 'invalid_payload';
+  const service = findService(state, payload.service_id);
+  if (payload.service_id !== null && (!service || !service.is_active)) {
+    return 'service_unavailable';
+  }
+  const requested = requestedError(state, payload.member_id, now);
+  if (requested) return requested;
+  const duration = service?.duration_minutes ?? UNKNOWN_SERVICE_MINUTES;
+  const inHours = state.salon.service_day.opening_ranges.some(
+    (r) =>
+      payload.scheduled_at >= r.opens_at &&
+      payload.scheduled_at + duration * MINUTE <= r.closes_at,
+  );
+  if (!inHours) return 'outside_opening_hours';
+  const ticket: TicketState = {
+    ...newTicket({
+      id: payload.ticket_id,
+      service_date: state.salon.service_day.service_date,
+      short_code: payload.short_code,
+      client_id: actor.profile_id,
+      channel: 'qr',
+      service_id: payload.service_id,
+      planned_duration_minutes: duration,
+      requested_member_id: payload.member_id,
+      queue_rank: nextRank(state),
+      declared_arrival_at: null,
+      notifications_consent_at: payload.notifications_consent ? now : null,
+      created_by_member_id: null,
+      created_at: now,
+    }),
+    kind: 'appointment',
+    scheduled_at: payload.scheduled_at,
+    appointment_source: 'client_check_in',
+    status: 'pending_confirmation',
+  };
+  return {
+    state: { ...state, tickets: [...state.tickets, ticket] },
+    events: [
+      ticketEvent(
+        identityOf(state, actor),
+        'appointment_checked_in',
+        ticket.id,
+      ),
+    ],
+  };
+}
+
+function confirmAppointment(
+  state: QueueState,
+  command: Extract<Command, { command: 'confirm_appointment' }>,
+  now: Instant,
+): Handled {
+  const { payload } = command;
+  const ticket = findTicket(state, payload.ticket_id);
+  if (!ticket) return 'ticket_other_salon';
+  const actor = activeMember(state, command.actor);
+  if (typeof actor === 'string') return actor;
+  const mayDecide =
+    actor.role === 'manager' ||
+    ticket.requested_member_id === actor.id ||
+    (ticket.requested_member_id === null &&
+      (payload.decision === 'reject' || payload.member_id === actor.id));
+  if (!mayDecide) return 'forbidden';
+  if (ticket.kind !== 'appointment') return 'invalid_payload';
+  if (ticket.status !== 'pending_confirmation') return 'already_resolved';
+  const who = identityOf(state, command.actor);
+
+  if (payload.decision === 'reject') {
+    const reason = REMOVAL_REASONS.find((r) => r === payload.reason_code);
+    if (!reason) return 'invalid_payload';
+    return {
+      state: patchTicket(state, ticket.id, {
+        ...cancel(ticket, 'appointment_rejected', now),
+        removal_reason: reason,
+      }),
+      events: [ticketEvent(who, 'appointment_rejected', ticket.id, reason)],
+    };
+  }
+
+  const memberId = payload.member_id ?? ticket.requested_member_id;
+  if (memberId === null) return 'member_required';
+  const scheduledAt = ticket.scheduled_at as Instant;
+  const confirmation = {
+    confirmed_at: now,
+    confirmed_by_member_id: actor.id,
+  };
+
+  if (payload.merge_into_ticket_id !== undefined) {
+    const target = findTicket(state, payload.merge_into_ticket_id);
+    if (!target) return 'ticket_other_salon';
+    if (
+      target.id === ticket.id ||
+      target.kind !== 'appointment' ||
+      target.appointment_source !== 'salon_entry' ||
+      target.status !== 'waiting' ||
+      target.assigned_member_id !== memberId
+    ) {
+      return 'invalid_merge_target';
+    }
+    // The salon's ticket survives and takes over the client and his consent.
+    const merged = patchTicket(state, target.id, {
+      client_id: ticket.client_id,
+      notifications_consent_at: ticket.notifications_consent_at,
+      ...confirmation,
+    });
+    return {
+      state: patchTicket(merged, ticket.id, cancel(ticket, 'merged', now)),
+      events: [
+        ticketEvent(who, 'appointment_merged', ticket.id),
+        ticketEvent(who, 'appointment_confirmed', target.id),
+      ],
+    };
+  }
+
+  const slot = slotError(state, now, {
+    member_id: memberId,
+    scheduled_at: scheduledAt,
+    service_id: ticket.service_id,
+    duration_minutes: ticket.planned_duration_minutes,
+    exclude_id: ticket.id,
+    check_past: false,
+  });
+  if (typeof slot === 'string') return slot;
+  return {
+    state: seedEstimate(
+      patchTicket(state, ticket.id, {
+        status: 'waiting',
+        assigned_member_id: memberId,
+        ...confirmation,
+      }),
+      ticket.id,
+      now,
+    ),
+    events: [ticketEvent(who, 'appointment_confirmed', ticket.id)],
+    warnings: slot.warnings,
+  };
+}
+
 /** Requests the stylist choice of transition 8 for the given tickets. */
+// --- reassignment (E9, E27) ---------------------------------------------------
+
+/** Estimated start of the ticket if `memberId` served it, the rest unchanged. */
+function startWith(
+  state: QueueState,
+  ticket: TicketState,
+  memberId: string,
+  now: Instant,
+): Instant | null {
+  const moved = patchTicket(
+    state,
+    ticket.id,
+    ticket.kind === 'appointment'
+      ? { assigned_member_id: memberId }
+      : { requested_member_id: memberId },
+  );
+  return (
+    computeSchedule(moved, now).tickets[ticket.id]?.estimated_start_at ?? null
+  );
+}
+
+function reassignError(
+  state: QueueState,
+  ticket: TicketState,
+  memberId: string,
+  now: Instant,
+): QueueErrorCode | null {
+  const target = findMember(state, memberId);
+  if (!target || !worksToday(target, now)) return 'stylist_unavailable';
+  if (!masters(target, findService(state, ticket.service_id))) {
+    return 'stylist_unavailable';
+  }
+  if (ticket.kind === 'appointment' && ticket.scheduled_at !== null) {
+    const end = ticket.scheduled_at + durationOf(ticket) * MINUTE;
+    const clash = state.tickets.some(
+      (t) =>
+        t.id !== ticket.id &&
+        t.kind === 'appointment' &&
+        t.status === 'waiting' &&
+        t.assigned_member_id === memberId &&
+        t.scheduled_at !== null &&
+        t.scheduled_at < end &&
+        t.scheduled_at + durationOf(t) * MINUTE > ticket.scheduled_at!,
+    );
+    if (clash) return 'appointment_overlap';
+  }
+  return null;
+}
+
+const NO_REASSIGNMENT = {
+  reassignment_member_id: null,
+  reassignment_requested_at: null,
+  reassignment_proposed_start_at: null,
+} as const;
+
+function applyReassignment(
+  state: QueueState,
+  ticket: TicketState,
+  memberId: string,
+): QueueState {
+  return patchTicket(state, ticket.id, {
+    ...NO_REASSIGNMENT,
+    ...(ticket.kind === 'appointment'
+      ? { assigned_member_id: memberId }
+      : { requested_member_id: memberId, stylist_change_pending_since: null }),
+  });
+}
+
+function askReassignment(
+  state: QueueState,
+  who: ActorIdentity,
+  ticket: TicketState,
+  memberId: string,
+  proposed: Instant,
+  now: Instant,
+): Step {
+  return {
+    state: patchTicket(state, ticket.id, {
+      reassignment_member_id: memberId,
+      reassignment_requested_at: now,
+      reassignment_proposed_start_at: proposed,
+    }),
+    events: [ticketEvent(who, 'reassignment_requested', ticket.id, memberId)],
+  };
+}
+
+function reassignTicket(
+  state: QueueState,
+  command: Extract<Command, { command: 'reassign_ticket' }>,
+  now: Instant,
+): Handled {
+  const actor = manager(state, command.actor);
+  if (typeof actor === 'string') return actor;
+  const { ticket_id, member_id } = command.payload;
+  const ticket = findTicket(state, ticket_id);
+  if (!ticket) return 'ticket_other_salon';
+  if (ticket.status !== 'waiting') return 'invalid_transition';
+  if (ticket.reassignment_requested_at !== null) return 'reassignment_pending';
+  const error = reassignError(state, ticket, member_id, now);
+  if (error) return error;
+  const current =
+    computeSchedule(state, now).tickets[ticket.id]?.estimated_start_at ?? null;
+  const proposed = startWith(state, ticket, member_id, now);
+  if (proposed === null) return 'stylist_unavailable';
+  const who = identityOf(state, command.actor);
+  if (current === null || proposed <= current) {
+    return {
+      state: applyReassignment(state, ticket, member_id),
+      events: [ticketEvent(who, 'reassigned', ticket.id, member_id)],
+    };
+  }
+  return askReassignment(state, who, ticket, member_id, proposed, now);
+}
+
+function respondReassignment(
+  state: QueueState,
+  command: Extract<Command, { command: 'respond_reassignment' }>,
+  now: Instant,
+): Handled {
+  const ticket = clientTicket(state, command.actor, command.payload.ticket_id);
+  if (typeof ticket === 'string') return ticket;
+  const memberId = ticket.reassignment_member_id;
+  const asked = ticket.reassignment_proposed_start_at;
+  if (ticket.status !== 'waiting' || memberId === null || asked === null) {
+    return 'already_resolved';
+  }
+  const who = identityOf(state, command.actor);
+  const resolved = (result: string) =>
+    ticketEvent(who, 'reassignment_resolved', ticket.id, result);
+  if (command.payload.choice === 'refuse') {
+    return {
+      state: patchTicket(state, ticket.id, NO_REASSIGNMENT),
+      events: [resolved('refused')],
+    };
+  }
+  const error = reassignError(state, ticket, memberId, now);
+  if (error) return error;
+  const proposed = startWith(state, ticket, memberId, now);
+  if (proposed === null) return 'stylist_unavailable';
+  if (proposed >= asked + REASSIGNMENT_TOLERANCE_MINUTES * MINUTE) {
+    return askReassignment(state, who, ticket, memberId, proposed, now);
+  }
+  return {
+    state: applyReassignment(state, ticket, memberId),
+    events: [
+      ticketEvent(who, 'reassigned', ticket.id, memberId),
+      resolved('accepted'),
+    ],
+  };
+}
+
 function requestChoice(
   state: QueueState,
   who: ActorIdentity,
@@ -1050,8 +1620,22 @@ function handle(state: QueueState, command: Command, now: Instant): Handled {
       return cancelTicket(state, command, now);
     case 'remove_ticket':
       return removeTicket(state, command, now);
+    case 'create_appointment':
+      return createAppointment(state, command, now);
+    case 'update_appointment':
+      return updateAppointment(state, command, now);
+    case 'cancel_appointment':
+      return cancelAppointment(state, command, now);
+    case 'check_in_appointment':
+      return checkInAppointment(state, command, now);
+    case 'confirm_appointment':
+      return confirmAppointment(state, command, now);
     case 'set_presence':
       return setPresence(state, command, now);
+    case 'reassign_ticket':
+      return reassignTicket(state, command, now);
+    case 'respond_reassignment':
+      return respondReassignment(state, command, now);
     case 'resolve_stylist_change':
       return resolveStylistChange(state, command);
     case 'respond_end_of_day':

@@ -1,6 +1,6 @@
 export * from './types.ts';
 export * from './constants.ts';
-export { computeSchedule } from './schedule.ts';
+export { computeSchedule, findNextFreeSlots } from './schedule.ts';
 export {
   callableTickets,
   estimateStylist,
