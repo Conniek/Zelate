@@ -394,7 +394,13 @@ describe.skipIf(!sql)('queue-command on Postgres', () => {
     const view = (response.body as { data: Record<string, unknown> }).data;
     expect(view.tracking_token).toBe(row!.tracking_token);
     expect(view.salon).toMatchObject({ id: salon });
-    expect(JSON.stringify(view)).not.toMatch(/\+33/);
+    // The salon's public number is there; the client's number never is (H6).
+    const [contact] =
+      await sql!`select c.phone_e164 from private.ticket_contacts c
+      join public.tickets t on t.id = c.ticket_id
+      where t.tracking_short_code = ${row!.tracking_short_code as string}`;
+    if (contact)
+      expect(JSON.stringify(view)).not.toContain(contact.phone_e164 as string);
     expect((await readTicketLink(reader, 'Nope0000', Date.now())).status).toBe(
       410,
     );
