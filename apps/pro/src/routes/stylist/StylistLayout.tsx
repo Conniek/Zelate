@@ -63,6 +63,8 @@ export function StylistLayout() {
   const online = useOnline();
   // Set when this screen signs out itself, so the auth listener stays quiet.
   const leaving = useRef(false);
+  // Why this screen is leaving: the redirect below must keep it.
+  const exitReason = useRef<SignInReason | null>(null);
 
   const [message, setMessage] = useState('');
   const announce = useCallback((text: string) => {
@@ -99,6 +101,7 @@ export function StylistLayout() {
   useEffect(() => {
     if (reason === undefined) return;
     leaving.current = true;
+    exitReason.current = reason;
     rememberStaff(false);
     void signOutHere(queryClient).then(() =>
       navigate(signInPath(reason), { replace: true }),
@@ -124,7 +127,8 @@ export function StylistLayout() {
   }, [announce, lost, t]);
 
   if (session.data === false) {
-    return <Navigate replace to={signInPath(null)} />;
+    // Signing out clears the session first: the redirect keeps the reason.
+    return <Navigate replace to={signInPath(exitReason.current)} />;
   }
   if (!ctx || ctx.access !== 'active' || !ctx.member_id || !ctx.salon_id) {
     return (
