@@ -5,6 +5,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { canServe, compareQueueOrder } from './rules.ts';
 import {
   applyCommand,
   computeSchedule,
@@ -564,6 +565,68 @@ describe('Invariants (zelate-domain §7)', () => {
               expect(movedBack).toBe(false);
               expect(postponed).toBe(false);
             }
+          }
+        }
+      }),
+      PARAMS,
+    );
+  });
+
+  it('invariant 3 / H5 — a late client loses at most 2 places over his life at every stylist who could take him, and nobody else loses a place', () => {
+    const waitingOrder = (state: QueueState, extra?: TicketState) =>
+      [
+        ...state.tickets.filter((t) => t.status === 'waiting'),
+        ...(extra ? [extra] : []),
+      ]
+        .sort(compareQueueOrder)
+        .map((t) => t.id);
+    fc.assert(
+      fc.property(runs, (run) => {
+        const lost = new Map<string, number>();
+        for (const { before, after, command } of simulate(run)) {
+          const target =
+            command?.command === 'take_next' ? command.payload.ticket_id : null;
+          // Nobody but the postponed client moves behind a ticket that was after him.
+          const kept = (state: QueueState) =>
+            new Map(
+              state.tickets
+                .filter((t) => t.status === 'waiting' && t.id !== target)
+                .map((t) => [t.id, t]),
+            );
+          const was = kept(before);
+          const now = kept(after);
+          const stable = [...was.keys()].filter(
+            (id) =>
+              now.has(id) &&
+              was.get(id)?.priority_since === now.get(id)?.priority_since,
+          );
+          const posBefore = waitingOrder(before);
+          const posAfter = waitingOrder(after);
+          for (const x of stable) {
+            for (const y of stable) {
+              if (posBefore.indexOf(x) < posBefore.indexOf(y)) {
+                expect(posAfter.indexOf(x)).toBeLessThan(posAfter.indexOf(y));
+              }
+            }
+          }
+          if (target === null) continue;
+          const postponedBefore = before.tickets.find((t) => t.id === target);
+          if (!postponedBefore) continue;
+          const order1 = waitingOrder(before, postponedBefore);
+          const order2 = waitingOrder(after);
+          for (const stylist of before.members) {
+            if (!canServe(before, stylist, postponedBefore)) continue;
+            const passed = before.tickets.filter(
+              (x) =>
+                x.status === 'waiting' &&
+                order2.includes(x.id) &&
+                canServe(before, stylist, x) &&
+                order1.indexOf(x.id) > order1.indexOf(target) &&
+                order2.indexOf(x.id) < order2.indexOf(target),
+            ).length;
+            const key = `${target}|${stylist.id}`;
+            lost.set(key, (lost.get(key) ?? 0) + passed);
+            expect(lost.get(key)).toBeLessThanOrEqual(2);
           }
         }
       }),

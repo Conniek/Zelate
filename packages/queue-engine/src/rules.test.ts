@@ -444,6 +444,82 @@ describe('H5 — no free reordering; back at most 2 places, only after a declare
       ],
     });
 
+  it('H5 — a priority ticket with a high rank never stretches the move back beyond the allowed places', () => {
+    const blowdry = { service_id: 'blowdry', planned_duration_minutes: 15 };
+    const state = makeState({
+      members: [makeMember('ines'), makeManager()],
+      tickets: [
+        calledTicket('lea', 'ines', at('10:00'), {
+          ...blowdry,
+          queue_rank: 5,
+          eta_response: 'late',
+          declared_delay_minutes: 15,
+          declared_arrival_at: at('10:20'),
+          postpone_count: 1,
+        }),
+        makeTicket('q', { ...blowdry, queue_rank: 6 }),
+        makeTicket('r', { ...blowdry, queue_rank: 7 }),
+        makeTicket('s', { ...blowdry, queue_rank: 8 }),
+        makeTicket('p', {
+          ...blowdry,
+          queue_rank: 100,
+          priority_since: at('10:01'),
+        }),
+      ],
+    });
+    const out = ok(state, takeNext('ines', 'lea'), at('10:05'));
+    const rank = (id: string) => ticketOf(out.state, id).queue_rank;
+    expect(rank('q')).toBeLessThan(rank('lea'));
+    expect(rank('lea')).toBeLessThan(rank('r'));
+    expect(rank('r')).toBeLessThan(rank('s'));
+    expect(rank('p')).toBe(100);
+    expect(ticketOf(out.state, 'lea').postpone_count).toBe(2);
+    expect(ticketOf(out.state, 'p').status).toBe('called');
+  });
+
+  it('H5 — the places lost are also capped at every other stylist who could take the client', () => {
+    // Léa (« sans préférence », coupe) can be taken by Inès or Karim. Behind her: k1, k2
+    // only for Karim, then b for Inès. Passing k1, k2 and b would cost her 3 places at Karim.
+    const state = makeState({
+      members: [
+        makeMember('ines', { specialties: ['women_cut'] }),
+        makeMember('karim', { specialties: ['women_cut', 'color'] }),
+      ],
+      tickets: [
+        calledTicket('lea', 'ines', at('10:00'), {
+          queue_rank: 1,
+          eta_response: 'late',
+          declared_delay_minutes: 15,
+          declared_arrival_at: at('10:20'),
+          postpone_count: 1,
+        }),
+        makeTicket('k1', {
+          queue_rank: 2,
+          service_id: 'color',
+          planned_duration_minutes: 60,
+        }),
+        makeTicket('k2', {
+          queue_rank: 3,
+          service_id: 'color',
+          planned_duration_minutes: 60,
+        }),
+        makeTicket('b', { queue_rank: 4 }),
+      ],
+    });
+    expect(fails(state, takeNext('ines', 'lea'), at('10:05'))).toBe(
+      'no_eligible_ticket',
+    );
+    const fresh = {
+      ...state,
+      tickets: state.tickets.map((t) =>
+        t.id === 'lea' ? { ...t, postpone_count: 0 } : t,
+      ),
+    };
+    expect(fails(fresh, takeNext('ines', 'lea'), at('10:05'))).toBe(
+      'no_eligible_ticket',
+    );
+  });
+
   it('« Prendre le suivant » moves the late client back 2 places and calls the next one', () => {
     const out = ok(lateCalled(), takeNext('ines', 'a'), at('10:02'));
     const order = [...out.state.tickets]

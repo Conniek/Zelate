@@ -33,6 +33,10 @@ function applyEstimates(state: QueueState, now: Instant): QueueState {
       estimated_start_at: estimate.estimated_start_at,
       estimated_member_id: estimate.estimated_member_id,
       estimate_version: ticket.estimate_version + (startChanged ? 1 : 0),
+      // E11: a ticket shown « heure à venir » takes its first time silently as
+      // the reference, so that later changes of 10 min or more are told.
+      last_notified_start_at:
+        ticket.last_notified_start_at ?? estimate.estimated_start_at,
     };
   });
   return {
