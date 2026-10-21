@@ -82,10 +82,8 @@ export function PendingAppointment({
   }
 
   return (
-    <section
-      aria-live="polite"
-      className="grid gap-3 rounded-xl border border-warning bg-warning-subtle p-4"
-    >
+    // Announced once by the screen (StylistQueuePage), not as a live card.
+    <section className="grid gap-3 rounded-xl border border-warning bg-warning-subtle p-4">
       <h2 className="font-semibold">{t('queue.pending_appointment.title')}</h2>
       <p>
         {t('queue.pending_appointment.banner', {
@@ -112,7 +110,8 @@ export function PendingAppointment({
                 merge_into_ticket_id: twin.id,
               })
             }
-            size="lg"
+            size="xl"
+            variant="success"
           >
             {t('appointments.merge_confirm')}
           </Button>
@@ -121,7 +120,8 @@ export function PendingAppointment({
             disabled={disabled}
             loading={command.busy === 'confirm_appointment'}
             onClick={() => void decide({ decision: 'confirm' })}
-            size="lg"
+            size="xl"
+            variant="success"
           >
             {t('queue.pending_appointment.confirm')}
           </Button>
@@ -132,7 +132,7 @@ export function PendingAppointment({
             command.setError(null);
             setRejecting(true);
           }}
-          size="lg"
+          size="xl"
           variant="secondary"
         >
           {t('queue.pending_appointment.reject')}

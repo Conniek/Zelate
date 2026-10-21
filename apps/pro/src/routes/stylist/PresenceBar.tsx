@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { parisInstant } from '@zelate/queue-service/time';
+import { parisInstant, parisTime } from '@zelate/queue-service/time';
 import { Banner, Button, Dialog, TextField } from '@zelate/ui';
 import type { QueueTicket, StylistContext } from '../../lib/queue-api';
 import { timeParts, todayInParis } from '../../lib/stylist';
@@ -9,6 +9,9 @@ import type { useCommand } from '../../lib/use-command';
 
 const BREAK_TYPES = ['meal', 'short', 'unexpected'] as const;
 const BREAK_MINUTES = [5, 10, 15, 30, 45, 60] as const;
+
+/** Id of the status heading, focused when the status changes. */
+export const PRESENCE_HEADING = 'presence-heading';
 
 interface Props {
   ctx: StylistContext & { member_id: string; salon_id: string };
@@ -36,6 +39,7 @@ export function PresenceBar({
   const [breakMinutes, setBreakMinutes] = useState<number>(15);
   const [endLater, setEndLater] = useState(false);
   const [endTime, setEndTime] = useState('');
+  const [endError, setEndError] = useState<string | null>(null);
 
   const presence = ctx.presence ?? null;
   const status = presence?.status ?? 'offline';
@@ -53,65 +57,79 @@ export function PresenceBar({
     if (payload.status === 'off_duty') void navigate('/stylist/summary');
   }
 
-  const shiftEnd =
-    endLater && /^\d{2}:\d{2}$/.test(endTime)
+  function endOfDay() {
+    if (endLater && !/^\d{2}:\d{2}$/.test(endTime)) {
+      setEndError(t('appointments.time_required'));
+      return;
+    }
+    setEndError(null);
+    const shiftEnd = endLater
       ? new Date(parisInstant(todayInParis(), endTime)).toISOString()
       : new Date().toISOString();
+    void setPresence({ status: 'off_duty', shift_end_at: shiftEnd });
+  }
+
+  const statusLabel = tCommon(
+    `presence_status.${status}` as 'presence_status.available',
+  );
 
   return (
     <section
-      aria-labelledby="presence-title"
+      aria-labelledby={PRESENCE_HEADING}
       className="grid gap-3 rounded-xl border border-border bg-surface p-4"
     >
-      <h2 className="sr-only" id="presence-title">
-        {tCommon(`presence_status.${status}` as 'presence_status.available')}
+      <h2
+        className="text-body font-semibold focus:outline-none"
+        id={PRESENCE_HEADING}
+        tabIndex={-1}
+      >
+        {t('presence.title')}
       </h2>
-      <p className="text-body font-semibold" aria-live="polite">
-        {t('presence.current', {
-          status: tCommon(
-            `presence_status.${status}` as 'presence_status.available',
-          ),
-        })}
+      <p className="text-body">
+        {t('presence.current', { status: statusLabel })}
         {status === 'on_break' && presence?.expected_back_at ? (
-          <span className="ml-2 font-normal text-text-muted">
+          <span className="ml-2 text-text-muted">
             {t('presence.break_until', {
               time: time(presence.expected_back_at),
             })}
           </span>
         ) : null}
         {status === 'off_duty' && presence?.shift_end_at ? (
-          <span className="ml-2 font-normal text-text-muted">
+          <span className="ml-2 text-text-muted">
             {t('presence.end_of_day_until', {
               time: time(presence.shift_end_at),
             })}
           </span>
         ) : null}
       </p>
+      {/* « Appeler » is the screen's only primary action: these stay secondary. */}
       <div className="flex flex-wrap gap-2">
         {status === 'on_break' ? (
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             loading={command.busy === 'set_presence'}
             onClick={() => void setPresence({ status: 'available' })}
-            size="lg"
+            size="xl"
+            variant="secondary"
           >
             {t('presence.resume')}
           </Button>
         ) : status !== 'available' && status !== 'in_service' ? (
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             loading={command.busy === 'set_presence'}
             onClick={() => void setPresence({ status: 'available' })}
-            size="lg"
+            size="xl"
+            variant="secondary"
           >
             {t('presence.ready')}
           </Button>
         ) : null}
         {status === 'available' ? (
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             onClick={() => setSheet('break')}
-            size="lg"
+            size="xl"
             variant="secondary"
           >
             {t('presence.break')}
@@ -119,9 +137,12 @@ export function PresenceBar({
         ) : null}
         {status !== 'off_duty' ? (
           <Button
-            disabled={disabled}
-            onClick={() => setSheet('end')}
-            size="lg"
+            aria-disabled={disabled || undefined}
+            onClick={() => {
+              setEndError(null);
+              setSheet('end');
+            }}
+            size="xl"
             variant="secondary"
           >
             {t('presence.end_of_day')}
@@ -179,7 +200,7 @@ export function PresenceBar({
             </Banner>
           ) : null}
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             fullWidth
             loading={command.busy === 'set_presence'}
             onClick={() =>
@@ -229,7 +250,9 @@ export function PresenceBar({
             </label>
             {endLater ? (
               <TextField
-                label={t('presence.end_of_day_time_label')}
+                error={endError ?? undefined}
+                label={t('appointments.form.time')}
+                min={parisTime(Date.now())}
                 onChange={(event) => setEndTime(event.target.value)}
                 step={300}
                 type="time"
@@ -257,12 +280,10 @@ export function PresenceBar({
             </Banner>
           ) : null}
           <Button
-            disabled={disabled || (endLater && endTime === '')}
+            aria-disabled={disabled || undefined}
             fullWidth
             loading={command.busy === 'set_presence'}
-            onClick={() =>
-              void setPresence({ status: 'off_duty', shift_end_at: shiftEnd })
-            }
+            onClick={endOfDay}
             size="xl"
           >
             {t('presence.end_of_day_submit')}

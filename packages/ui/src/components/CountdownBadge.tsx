@@ -1,3 +1,4 @@
+import { Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export interface CountdownBadgeProps {
@@ -40,8 +41,10 @@ export function CountdownBadge({
           : 'bg-surface-muted text-text',
       ].join(' ')}
     >
+      {/* Not colour alone: an icon marks the last 5 minutes. */}
+      {warning ? <Timer aria-hidden="true" size={16} /> : null}
       <span>{label}</span>
-      <time aria-hidden="true">{`${pad(minutes)}:${pad(left % 60)}`}</time>
+      <time>{`${pad(minutes)}:${pad(left % 60)}`}</time>
       <span aria-live="polite" className="sr-only">
         {announced === null ? '' : announce(announced)}
       </span>

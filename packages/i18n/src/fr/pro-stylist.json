@@ -37,7 +37,8 @@
     "end_of_day_submit": "Terminer ma journée",
     "current": "Statut : {status}",
     "break_until": "Retour vers {time}",
-    "end_of_day_until": "Fin de journée à {time}"
+    "end_of_day_until": "Fin de journée à {time}",
+    "title": "Mon statut"
   },
   "connection": {
     "lost": "Connexion perdue. Reconnexion en cours…",
@@ -59,7 +60,9 @@
     "my_appointments": "Mes rendez-vous",
     "call": "Appeler",
     "call_hint": "Disponible pour appeler votre prochain client.",
-    "appointment_badge": "RDV {time}"
+    "appointment_badge": "RDV {time}",
+    "call_unavailable": "Déclarez-vous disponible pour appeler un client.",
+    "call_no_client": "Aucun client à appeler pour l'instant."
   },
   "call": {
     "title": "Appel en cours",
@@ -106,7 +109,8 @@
     "adjust_label": "Ajouter {minutes} min à la prestation",
     "complete": "Terminer",
     "complete_hint": "Maintenez pour terminer",
-    "complete_confirm": "Terminer la prestation de {first_name} ?"
+    "complete_confirm": "Terminer la prestation de {first_name} ?",
+    "adjust_group": "Ajouter du temps à la prestation"
   },
   "appointments": {
     "title": "Mes rendez-vous",
@@ -138,7 +142,8 @@
     "warning_stylist_absent": "Vous êtes déclaré absent aujourd'hui. Le rendez-vous est enregistré.",
     "reason_label": "Motif, envoyé au client",
     "reject_title": "Refuser le rendez-vous de {first_name} ?",
-    "pending": "À confirmer"
+    "pending": "À confirmer",
+    "time_required": "Indiquez une heure."
   },
   "summary": {
     "title": "Mon bilan du jour",
@@ -155,5 +160,6 @@
     "queue": "Ma file",
     "appointments": "Mes rendez-vous",
     "summary": "Mon bilan"
-  }
+  },
+  "page_title": "{page} – {app}"
 }

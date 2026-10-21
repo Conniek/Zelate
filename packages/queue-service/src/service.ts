@@ -1408,6 +1408,7 @@ export async function revokeMemberSessions(
     const { target } = action;
     // Only someone who still works here (an old membership gives no power).
     if (target.status !== 'active') return teamError('team.member_not_found');
+    const revoked = await sessionsToRevoke(tx, target);
     await tx.apply({
       salon_id: target.salon_id,
       service_date: parisDate(deps.clock()),
@@ -1422,12 +1423,14 @@ export async function revokeMemberSessions(
       contact_replaces: [],
       events: [memberEvent(action, 'member_sessions_revoked')],
       notifications: [],
-      revoke_sessions_of: await sessionsToRevoke(tx, target),
+      revoke_sessions_of: revoked,
       delete_push_of_members: [target.member_id],
       broadcasts: [],
       version: 0,
     });
-    return okResponse({});
+    // The person also works in another salon: told to the manager, who can
+    // still deactivate the membership of his own salon.
+    return okResponse({ sessions_kept: revoked.length === 0 });
   });
 }
 

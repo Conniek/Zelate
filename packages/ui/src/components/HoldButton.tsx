@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 export interface HoldButtonProps {
   children: ReactNode;
@@ -10,7 +10,7 @@ export interface HoldButtonProps {
   hint: string;
   /** Called once the button was held long enough. */
   onHold: () => void;
-  /** Keyboard (Enter or Space): the screen asks for a confirmation instead. */
+  /** Any quick activation (tap, keyboard, screen reader, voice): confirm in a dialog. */
   onRequestConfirm: () => void;
 }
 
@@ -25,6 +25,8 @@ export function HoldButton({
 }: HoldButtonProps) {
   const [holding, setHolding] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The hold finished: the click that follows the release is not a tap. */
+  const held = useRef(false);
   const hintId = useId();
 
   function stop() {
@@ -37,19 +39,25 @@ export function HoldButton({
 
   function start() {
     if (disabled || timer.current) return;
+    held.current = false;
     setHolding(true);
     timer.current = setTimeout(() => {
       timer.current = null;
+      held.current = true;
       setHolding(false);
       onHold();
     }, holdMs);
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      if (!disabled) onRequestConfirm();
+  // A tap, a screen reader double-tap, a voice command, a switch, Enter or
+  // Space all arrive as a click: they ask for a confirmation instead.
+  function handleClick() {
+    if (disabled) return;
+    if (held.current) {
+      held.current = false;
+      return;
     }
+    onRequestConfirm();
   }
 
   return (
@@ -62,8 +70,8 @@ export function HoldButton({
           'disabled:cursor-not-allowed disabled:opacity-50',
         ].join(' ')}
         disabled={disabled}
+        onClick={handleClick}
         onContextMenu={(event) => event.preventDefault()}
-        onKeyDown={handleKeyDown}
         onPointerCancel={stop}
         onPointerDown={start}
         onPointerLeave={stop}
@@ -72,12 +80,10 @@ export function HoldButton({
       >
         <span
           aria-hidden="true"
-          className="absolute inset-y-0 left-0 bg-primary-active motion-reduce:transition-none"
+          className="absolute inset-y-0 left-0 bg-primary-active transition-[width] ease-linear motion-reduce:transition-none"
           data-testid="hold-fill"
           style={{
             transitionDuration: `${holding ? holdMs : 0}ms`,
-            transitionProperty: 'width',
-            transitionTimingFunction: 'linear',
             width: holding ? '100%' : '0%',
           }}
         />

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   NavLink,
@@ -8,14 +8,16 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router';
-import { Button, ConnectionBanner, Skeleton } from '@zelate/ui';
+import { Banner, Button, ConnectionBanner, Skeleton } from '@zelate/ui';
 import { AccessLost } from '../../lib/queue-api';
 import type { StylistContext } from '../../lib/queue-api';
 import {
+  rememberStaff,
   signOutHere,
   useOnline,
   useSalonRealtime,
   useStylistContext,
+  wasStaff,
 } from '../../lib/stylist';
 import type { SignInReason } from '../../lib/stylist';
 import { supabase } from '../../lib/supabase';
@@ -24,6 +26,10 @@ export interface StylistOutlet {
   ctx: StylistContext & { member_id: string; salon_id: string };
   /** Connection lost: every action is blocked (F-S4). */
   lost: boolean;
+  /** Realtime is up: reading can slow down. */
+  live: boolean;
+  /** One polite announcement for screen readers (DESIGN_SYSTEM §9). */
+  announce: (message: string) => void;
 }
 
 function signInPath(reason: SignInReason | null): string {
@@ -39,66 +45,95 @@ export function StylistLayout() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
+  // Read at every visit: a sign-in in between must be seen (never cached).
   const session = useQuery({
     queryKey: ['session'],
     queryFn: async () =>
       (await supabase.auth.getSession()).data.session !== null,
-    staleTime: Infinity,
+    gcTime: 0,
+    staleTime: 0,
   });
-  const context = useStylistContext();
-  const wasActive = useRef(false);
-  // Set when this screen signs out itself, so the auth listener stays quiet.
-  const leaving = useRef(false);
-  const online = useOnline();
+  const [live, setLive] = useState(false);
+  const context = useStylistContext(live);
   const ctx = context.data;
   const realtime = useSalonRealtime(
     ctx?.access === 'active' ? ctx.salon_id : undefined,
   );
+  useEffect(() => setLive(realtime), [realtime]);
+  const online = useOnline();
+  // Set when this screen signs out itself, so the auth listener stays quiet.
+  const leaving = useRef(false);
+
+  const [message, setMessage] = useState('');
+  const announce = useCallback((text: string) => {
+    // Cleared first, so that the same text is read again.
+    setMessage('');
+    window.setTimeout(() => setMessage(text), 50);
+  }, []);
 
   // Session ended elsewhere (revoked, refresh refused): back to sign-in.
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== 'SIGNED_OUT' || leaving.current) return;
       queryClient.clear();
-      void navigate(signInPath(wasActive.current ? 'sessions_revoked' : null), {
+      void navigate(signInPath(wasStaff() ? 'sessions_revoked' : null), {
         replace: true,
       });
     });
     return () => data.subscription.unsubscribe();
   }, [navigate, queryClient]);
 
+  useEffect(() => {
+    if (ctx?.access === 'active') rememberStaff(true);
+  }, [ctx?.access]);
+
   // Access lost while signed in: the reads are refused (ADR-019).
   const reason: SignInReason | null | undefined =
     context.error instanceof AccessLost || ctx?.access === 'none'
-      ? wasActive.current
+      ? wasStaff()
         ? 'sessions_revoked'
         : null
       : ctx?.access === 'deactivated'
         ? 'access_revoked'
         : undefined;
   useEffect(() => {
-    if (ctx?.access === 'active') wasActive.current = true;
-  }, [ctx?.access]);
-  useEffect(() => {
     if (reason === undefined) return;
     leaving.current = true;
+    rememberStaff(false);
     void signOutHere(queryClient).then(() =>
       navigate(signInPath(reason), { replace: true }),
     );
   }, [navigate, queryClient, reason]);
+
+  // « Connexion rétablie » once, after a loss.
+  const lost = !online || (!realtime && context.isError);
+  const [restored, setRestored] = useState(false);
+  const wasLost = useRef(false);
+  useEffect(() => {
+    if (lost) {
+      wasLost.current = true;
+      setRestored(false);
+    } else if (wasLost.current) {
+      wasLost.current = false;
+      setRestored(true);
+      announce(t('connection.restored'));
+      const timer = window.setTimeout(() => setRestored(false), 4000);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, [announce, lost, t]);
 
   if (session.data === false) {
     return <Navigate replace to={signInPath(null)} />;
   }
   if (!ctx || ctx.access !== 'active' || !ctx.member_id || !ctx.salon_id) {
     return (
-      <main className="mx-auto w-full max-w-xl px-5 py-10" aria-busy="true">
+      <main aria-busy="true" className="mx-auto w-full max-w-xl px-5 py-10">
         <Skeleton className="h-10 w-full" />
       </main>
     );
   }
 
-  const lost = !online || (!realtime && context.isError);
   const links = [
     { to: '/stylist/queue', label: t('menu.queue') },
     { to: '/stylist/appointments', label: t('menu.appointments') },
@@ -115,6 +150,7 @@ export function StylistLayout() {
           <Button
             onClick={() => {
               leaving.current = true;
+              rememberStaff(false);
               void signOutHere(queryClient).then(() =>
                 navigate(signInPath(null), { replace: true }),
               );
@@ -126,7 +162,7 @@ export function StylistLayout() {
           </Button>
         </div>
         <nav aria-label={t('menu.label')}>
-          <ul className="flex gap-2">
+          <ul className="flex flex-wrap gap-2">
             {links.map((link) => (
               <li key={link.to}>
                 <NavLink
@@ -143,12 +179,20 @@ export function StylistLayout() {
           </ul>
         </nav>
         <ConnectionBanner lost={lost} lostLabel={t('connection.lost')} />
+        {restored ? (
+          <Banner tone="success">{t('connection.restored')}</Banner>
+        ) : null}
       </header>
+      <p aria-live="polite" className="sr-only" role="status">
+        {message}
+      </p>
       <Outlet
         context={
           {
             ctx: ctx as StylistOutlet['ctx'],
             lost,
+            live,
+            announce,
           } satisfies StylistOutlet
         }
       />

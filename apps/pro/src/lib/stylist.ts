@@ -6,12 +6,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { parisDate, parisTime } from '@zelate/queue-service/time';
 import { AccessLost, loadStylistContext, loadStylistQueue } from './queue-api';
 import { supabase } from './supabase';
 
-/** Fallback reading while realtime is down or quiet (TRD §6.4). */
+/** Fallback reading while realtime is down (TRD §6.4). */
 export const POLL_MS = 10_000;
+/** Safety net while realtime is up: light on a low-end phone. */
+export const LIVE_POLL_MS = 60_000;
 
 export const queryKeys = {
   context: ['stylist-context'] as const,
@@ -20,27 +23,49 @@ export const queryKeys = {
 
 export type SignInReason = 'sessions_revoked' | 'access_revoked';
 
+/**
+ * « This device was used by a staff member »: a plain flag, no client data
+ * (ADR-007). It lets a reopened app explain a cut session (F-S2).
+ */
+const STAFF_FLAG = 'zelate-pro-staff';
+
+export function rememberStaff(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(STAFF_FLAG, '1');
+    else localStorage.removeItem(STAFF_FLAG);
+  } catch {
+    // Private browsing: the message is simply less precise.
+  }
+}
+
+export function wasStaff(): boolean {
+  try {
+    return localStorage.getItem(STAFF_FLAG) === '1';
+  } catch {
+    return false;
+  }
+}
+
 /** Ends the session on this device and forgets every client shown (ADR-007). */
 export async function signOutHere(queryClient: QueryClient): Promise<void> {
   queryClient.clear();
   await supabase.auth.signOut({ scope: 'local' });
 }
 
-export function useStylistContext() {
+export function useStylistContext(live: boolean) {
   return useQuery({
     queryKey: queryKeys.context,
     queryFn: loadStylistContext,
-    refetchInterval: POLL_MS,
+    refetchInterval: live ? LIVE_POLL_MS : POLL_MS,
     retry: (count, error) => !(error instanceof AccessLost) && count < 2,
   });
 }
 
-export function useStylistQueue(enabled: boolean) {
+export function useStylistQueue(live: boolean) {
   return useQuery({
-    enabled,
     queryKey: queryKeys.queue,
     queryFn: loadStylistQueue,
-    refetchInterval: POLL_MS,
+    refetchInterval: live ? LIVE_POLL_MS : POLL_MS,
     refetchOnWindowFocus: true,
     retry: (count, error) => !(error instanceof AccessLost) && count < 2,
   });
@@ -105,4 +130,13 @@ export function todayInParis(): string {
 
 export function minutesBetween(fromIso: string, to: number): number {
   return Math.max(0, Math.floor((to - Date.parse(fromIso)) / 60_000));
+}
+
+/** One title per screen (WCAG 2.4.2): « Ma file – Zelaté Pro ». */
+export function usePageTitle(page: string): void {
+  const { t } = useTranslation('pro-stylist');
+  const { t: tCommon } = useTranslation('common');
+  useEffect(() => {
+    document.title = t('page_title', { page, app: tCommon('brand.pro_name') });
+  }, [page, t, tCommon]);
 }

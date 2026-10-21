@@ -99,7 +99,7 @@ export function CodeField({
           {hint}
         </p>
       ) : null}
-      <div className="flex gap-2">
+      <div className="flex w-full gap-2">
         {Array.from({ length }, (_, index) => (
           <input
             aria-invalid={error ? true : undefined}
@@ -108,7 +108,8 @@ export function CodeField({
             autoComplete="off"
             autoCorrect="off"
             className={[
-              'h-16 w-14 rounded-lg border bg-surface text-center font-display text-h2 uppercase tabular-nums text-text',
+              // Shrinks to fit 320 px and 200 % zoom (DEV-6 accessibility review).
+              'h-16 min-w-0 max-w-14 flex-1 rounded-lg border bg-surface text-center font-display text-h2 uppercase tabular-nums text-text',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
               error ? 'border-danger' : 'border-border-strong',
             ].join(' ')}

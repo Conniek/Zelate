@@ -125,12 +125,15 @@
     "revoke_sessions": {
       "title": "Déconnecter les appareils ?",
       "confirm": "Toutes les sessions de ce compte seront coupées, par exemple sur un téléphone perdu ou changé. {stylist_name} pourra se reconnecter avec un lien reçu par e-mail.",
-      "submit": "Déconnecter les appareils"
+      "submit": "Déconnecter les appareils",
+      "done": "Les appareils de {stylist_name} sont déconnectés.",
+      "kept": "{stylist_name} travaille aussi dans un autre salon : ses sessions n'ont pas été coupées. Désactivez son compte pour lui retirer l'accès à votre salon."
     },
     "deactivate": {
       "title": "Désactiver {stylist_name} ?",
       "confirm": "L'accès sera retiré en 15 min au plus. {count, plural, =0 {Aucun client en attente ne demande ce coiffeur.} one {# client qui demandait {stylist_name} devra choisir « Premier disponible » ou annuler.} other {# clients qui demandaient {stylist_name} devront choisir « Premier disponible » ou annuler.}} Ses rendez-vous restants seront à réaffecter.",
-      "submit": "Désactiver"
+      "submit": "Désactiver",
+      "done": "{stylist_name} est désactivé."
     },
     "empty": "Aucun coiffeur pour le moment.",
     "invite_sent": "Invitation envoyée à {email}.",

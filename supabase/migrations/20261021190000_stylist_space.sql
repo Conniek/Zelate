@@ -80,7 +80,7 @@ begin
            t.declared_delay_minutes, t.arrived_at, t.called_at, t.started_at,
            t.assigned_member_id, t.estimated_member_id, t.requested_member_id,
            t.service_id, t.release_due_at, t.reminder_sent_at, t.call_count,
-           t.postpone_count, t.declared_arrival_at, t.is_test,
+           t.postpone_count, t.declared_arrival_at, t.is_test, t.no_show_at,
            sv.name as service_name
     from public.tickets t
     left join public.services sv on sv.id = t.service_id
@@ -91,10 +91,18 @@ begin
     'called', (select to_jsonb(j) from j where j.status = 'called' and j.assigned_member_id = v_member limit 1),
     'pending_appointments', coalesce((select jsonb_agg(to_jsonb(j) order by j.scheduled_at) from j
       where j.status = 'pending_confirmation' and j.requested_member_id = v_member), '[]'),
-    'next', coalesce((select jsonb_agg(to_jsonb(j) order by j.queue_rank) from j
+    -- Service order, not registration order: `queue_rank` is the order of
+    -- arrival in the queue, an appointment entered early is not « next » (F-S4).
+    'next', coalesce((select jsonb_agg(to_jsonb(j)
+        order by j.estimated_start_at nulls last, j.queue_rank) from j
       where j.status = 'waiting'
         and (j.estimated_member_id = v_member or j.requested_member_id = v_member
              or (j.kind = 'appointment' and j.assigned_member_id = v_member))), '[]'),
+    -- F-S8: my last client released for not arriving, within 15 min.
+    'released', (select to_jsonb(j) from j
+      where j.status = 'no_show' and j.assigned_member_id = v_member
+        and j.no_show_at > now() - interval '15 minutes'
+      order by j.no_show_at desc limit 1),
     'appointments', coalesce((select jsonb_agg(to_jsonb(j) order by j.scheduled_at) from j
       where j.kind = 'appointment' and j.assigned_member_id = v_member
         and j.status in ('waiting', 'called', 'in_service')), '[]'))

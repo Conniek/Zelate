@@ -234,7 +234,8 @@ test('test ticket called, served and published from a phone (DEV-6, S-07)', asyn
 
   await page
     .getByRole('button', {
-      name: fr('pro-stylist', 'service.adjust_label', { minutes: 15 }),
+      name: fr('pro-stylist', 'service.adjust_15'),
+      exact: true,
     })
     .click();
   await expect

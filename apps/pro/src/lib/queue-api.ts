@@ -59,6 +59,7 @@ export interface QueueTicket {
   postpone_count: number;
   declared_arrival_at: string | null;
   is_test: boolean;
+  no_show_at: string | null;
   service_name: string | null;
 }
 
@@ -68,6 +69,8 @@ export interface StylistQueue {
   pending_appointments: QueueTicket[];
   next: QueueTicket[];
   appointments: QueueTicket[];
+  /** My last client released for not arriving, within 15 min (F-S8). */
+  released: QueueTicket | null;
 }
 
 export interface ServiceOption {
@@ -119,13 +122,16 @@ export async function loadServiceOptions(
   return check(data ?? [], error);
 }
 
+/** My own figures, also for a manager who cuts hair (never the whole salon here). */
 export async function loadDaySummary(
   salonId: string,
   serviceDate: string,
+  memberId: string,
 ): Promise<DaySummary> {
   const { data, error } = await supabase.rpc('get_day_summary', {
     salon_id: salonId,
     service_date: serviceDate,
+    member_id: memberId,
   });
   return check(data as unknown as DaySummary, error);
 }

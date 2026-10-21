@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(9);
 
 -- Demo seed: Camille, manager and hairdresser of the Enghien salon.
 set local role authenticated;
@@ -9,6 +9,7 @@ select is((select public.stylist_context() ->> 'access'), 'active', 'an active m
 select is((select public.stylist_context() ->> 'member_id'),
   '30000000-0000-0000-0000-000000000001', 'with his member id');
 select ok((select public.get_stylist_queue() ? 'called'), 'the queue reads');
+select ok((select public.get_stylist_queue() ? 'released'), 'with the last released client (F-S8)');
 
 -- ADR-019: a token whose session was deleted loses staff access at once.
 set local request.jwt.claims =

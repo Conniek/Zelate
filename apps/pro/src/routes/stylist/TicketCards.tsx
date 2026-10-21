@@ -14,6 +14,9 @@ import type { useCommand } from '../../lib/use-command';
 
 type Command = ReturnType<typeof useCommand>;
 
+/** Id of the heading that receives the focus when the stage changes. */
+export const STAGE_HEADING = 'stage-heading';
+
 /** Re-renders every 30 s for elapsed times (announced once a minute at most). */
 function useNow(stepMs = 30_000): number {
   const [now, setNow] = useState(() => Date.now());
@@ -140,12 +143,13 @@ export function CallCard({
 
   return (
     <section
-      aria-labelledby="call-title"
-      className="grid gap-4 rounded-xl border-2 border-primary bg-surface p-5 shadow-md"
+      aria-labelledby={STAGE_HEADING}
+      className="grid gap-4 rounded-xl border-2 border-primary bg-surface p-4 shadow-md"
     >
       <h2
-        className="text-body-sm font-semibold uppercase text-primary"
-        id="call-title"
+        className="text-body font-semibold text-primary focus:outline-none"
+        id={STAGE_HEADING}
+        tabIndex={-1}
       >
         {t('call.title')}
       </h2>
@@ -178,7 +182,7 @@ export function CallCard({
             {t('arrival.arrived')}
           </p>
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             fullWidth
             onClick={() => {
               command.setError(null);
@@ -194,21 +198,21 @@ export function CallCard({
           <CodeField
             charLabel={(index) => t('arrival.char_label', { index, count: 5 })}
             disabled={disabled || command.busy !== null}
+            error={sheet === null ? (command.error ?? undefined) : undefined}
             hint={t('arrival.code_hint')}
             label={t('arrival.enter_code')}
             onChange={setCode}
             onComplete={(value) => void confirmArrival(value)}
             value={code}
           />
-          <ErrorBanner text={sheet === null ? command.error : null} />
           {ticket.eta_response === 'late' ? (
             <Button
-              disabled={disabled}
+              aria-disabled={disabled || undefined}
               onClick={() => {
                 command.setError(null);
                 setSheet('take_next');
               }}
-              size="lg"
+              size="xl"
               variant="secondary"
             >
               {t('take_next.button')}
@@ -251,16 +255,16 @@ export function CallCard({
             <span className="font-semibold text-body-sm" id="duration-label">
               {t('start.duration_label')}
             </span>
+            {/* The group gives the context; each button is named by its text (WCAG 2.5.3). */}
             <div
               aria-labelledby="duration-label"
               className="flex items-center gap-3"
               role="group"
             >
               <Button
-                aria-label={t('start.duration_decrease')}
-                disabled={duration <= 5}
+                aria-disabled={duration <= 5 || undefined}
                 onClick={() => setDuration((d) => Math.max(5, d - 5))}
-                size="lg"
+                size="xl"
                 variant="secondary"
               >
                 {t('start.decrease_short')}
@@ -272,10 +276,9 @@ export function CallCard({
                 {tCommon('units.minutes', { count: duration })}
               </output>
               <Button
-                aria-label={t('start.duration_increase')}
-                disabled={duration >= 240}
+                aria-disabled={duration >= 240 || undefined}
                 onClick={() => setDuration((d) => Math.min(240, d + 5))}
-                size="lg"
+                size="xl"
                 variant="secondary"
               >
                 {t('start.increase_short')}
@@ -284,7 +287,7 @@ export function CallCard({
           </div>
           <ErrorBanner text={command.error} />
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             fullWidth
             loading={command.busy === 'start_service'}
             onClick={() => void start()}
@@ -310,7 +313,7 @@ export function CallCard({
           </p>
           <ErrorBanner text={command.error} />
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             fullWidth
             loading={command.busy === 'take_next'}
             onClick={() => void takeNext()}
@@ -360,12 +363,13 @@ export function ServiceCard({
 
   return (
     <section
-      aria-labelledby="service-title"
-      className="grid gap-4 rounded-xl border-2 border-success bg-surface p-5 shadow-md"
+      aria-labelledby={STAGE_HEADING}
+      className="grid gap-4 rounded-xl border-2 border-success bg-surface p-4 shadow-md"
     >
       <h2
-        className="text-body-sm font-semibold uppercase text-success-text"
-        id="service-title"
+        className="text-body font-semibold text-success-text focus:outline-none"
+        id={STAGE_HEADING}
+        tabIndex={-1}
       >
         {t('service.in_progress')}
       </h2>
@@ -380,11 +384,15 @@ export function ServiceCard({
           time: tCommon('formats.time', timeParts(end.toISOString())),
         })}
       </p>
-      <div className="grid grid-cols-4 gap-2">
+      <div
+        aria-label={t('service.adjust_group')}
+        className="grid grid-cols-2 gap-2 min-[400px]:grid-cols-4"
+        role="group"
+      >
         {([5, 15, 30, 45] as const).map((minutes) => (
           <Button
-            aria-label={t('service.adjust_label', { minutes })}
-            disabled={disabled || command.busy !== null}
+            aria-disabled={disabled || command.busy !== null || undefined}
+            className="px-2"
             key={minutes}
             onClick={() =>
               void command.run(
@@ -420,7 +428,7 @@ export function ServiceCard({
         <div className="grid gap-4">
           <ErrorBanner text={command.error} />
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             fullWidth
             loading={command.busy === 'complete_service'}
             onClick={() => void complete()}

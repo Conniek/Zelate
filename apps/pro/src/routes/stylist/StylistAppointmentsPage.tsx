@@ -13,7 +13,12 @@ import {
 } from '@zelate/ui';
 import { loadServiceOptions } from '../../lib/queue-api';
 import type { QueueTicket } from '../../lib/queue-api';
-import { timeParts, todayInParis, useStylistQueue } from '../../lib/stylist';
+import {
+  timeParts,
+  todayInParis,
+  usePageTitle,
+  useStylistQueue,
+} from '../../lib/stylist';
 import { useCommand } from '../../lib/use-command';
 import { PendingAppointment, ReasonPicker } from './PendingAppointment';
 import type { RemovalReason } from './PendingAppointment';
@@ -45,9 +50,10 @@ export function StylistAppointmentsPage() {
   const { t } = useTranslation('pro-stylist');
   const { t: tCommon } = useTranslation('common');
   const { t: tErrors } = useTranslation('errors');
-  const { ctx, lost } = useOutletContext<StylistOutlet>();
+  const { ctx, lost, live } = useOutletContext<StylistOutlet>();
+  usePageTitle(t('appointments.title'));
   const command = useCommand();
-  const queue = useStylistQueue(true);
+  const queue = useStylistQueue(live);
   const services = useQuery({
     queryKey: ['services', ctx.salon_id],
     queryFn: () => loadServiceOptions(ctx.salon_id),
@@ -57,7 +63,10 @@ export function StylistAppointmentsPage() {
   const [cancelling, setCancelling] = useState<QueueTicket | null>(null);
   const [reason, setReason] = useState<RemovalReason>('other');
   const [warning, setWarning] = useState(false);
-  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    firstName?: string;
+    time?: string;
+  }>({});
 
   if (!queue.data) {
     return (
@@ -72,11 +81,17 @@ export function StylistAppointmentsPage() {
 
   async function save() {
     if (!form) return;
-    if (form.firstName.trim() === '' || !/^\d{2}:\d{2}$/.test(form.time)) {
-      setFieldError(tErrors('validation.required'));
-      return;
-    }
-    setFieldError(null);
+    // Each error next to its field (WCAG 3.3.1).
+    const errors = {
+      ...(form.firstName.trim() === ''
+        ? { firstName: tErrors('validation.required') }
+        : {}),
+      ...(!/^\d{2}:\d{2}$/.test(form.time)
+        ? { time: t('appointments.time_required') }
+        : {}),
+    };
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     const scheduledAt = new Date(
       parisInstant(todayInParis(), form.time),
     ).toISOString();
@@ -179,9 +194,10 @@ export function StylistAppointmentsPage() {
               {a.status === 'waiting' ? (
                 <div className="flex gap-2">
                   <Button
-                    disabled={lost}
+                    aria-disabled={lost || undefined}
                     onClick={() => {
                       command.setError(null);
+                      setFieldErrors({});
                       setForm({
                         ticket: a,
                         firstName: a.display_name,
@@ -190,18 +206,18 @@ export function StylistAppointmentsPage() {
                         phone: '',
                       });
                     }}
-                    size="md"
+                    size="xl"
                     variant="secondary"
                   >
                     {t('appointments.edit')}
                   </Button>
                   <Button
-                    disabled={lost}
+                    aria-disabled={lost || undefined}
                     onClick={() => {
                       command.setError(null);
                       setCancelling(a);
                     }}
-                    size="md"
+                    size="xl"
                     variant="ghost"
                   >
                     {t('appointments.cancel')}
@@ -213,9 +229,10 @@ export function StylistAppointmentsPage() {
         })}
       </ul>
       <Button
-        disabled={lost}
+        aria-disabled={lost || undefined}
         onClick={() => {
           command.setError(null);
+          setFieldErrors({});
           setWarning(false);
           setForm(EMPTY);
         }}
@@ -237,12 +254,14 @@ export function StylistAppointmentsPage() {
         {form ? (
           <div className="grid gap-4">
             <TextField
+              error={fieldErrors.firstName}
               label={t('appointments.form.first_name')}
               maxLength={30}
               onChange={(e) => setForm({ ...form, firstName: e.target.value })}
               value={form.firstName}
             />
             <TextField
+              error={fieldErrors.time}
               label={t('appointments.form.time')}
               onChange={(e) => setForm({ ...form, time: e.target.value })}
               step={300}
@@ -275,13 +294,13 @@ export function StylistAppointmentsPage() {
               prefix="+33"
               value={form.phone}
             />
-            {fieldError || command.error ? (
+            {command.error ? (
               <Banner role="alert" tone="danger">
-                {fieldError ?? command.error}
+                {command.error}
               </Banner>
             ) : null}
             <Button
-              disabled={lost}
+              aria-disabled={lost || undefined}
               fullWidth
               loading={command.busy !== null}
               onClick={() => void save()}
@@ -318,16 +337,16 @@ export function StylistAppointmentsPage() {
               </Banner>
             ) : null}
             <div className="flex flex-wrap gap-2">
+              <Button onClick={() => setCancelling(null)} variant="ghost">
+                {t('appointments.cancel_keep')}
+              </Button>
               <Button
-                disabled={lost}
+                aria-disabled={lost || undefined}
                 loading={command.busy === 'cancel_appointment'}
                 onClick={() => void cancel()}
                 variant="danger"
               >
                 {t('appointments.cancel_submit')}
-              </Button>
-              <Button onClick={() => setCancelling(null)} variant="ghost">
-                {t('appointments.cancel_keep')}
               </Button>
             </div>
           </div>

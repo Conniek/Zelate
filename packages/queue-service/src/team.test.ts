@@ -37,13 +37,15 @@ const join = (profile: string, extra: Record<string, unknown> = {}) =>
 
 describe('revoke-member-sessions (S-16 scenario 1)', () => {
   it('cuts every session and push of the member, who stays active', async () => {
-    data(
-      await revokeMemberSessions(
-        deps(),
-        { profileId: MANAGER_PROFILE },
-        { member_id: ANNA },
+    expect(
+      data(
+        await revokeMemberSessions(
+          deps(),
+          { profileId: MANAGER_PROFILE },
+          { member_id: ANNA },
+        ),
       ),
-    );
+    ).toEqual({ sessions_kept: false });
     expect(h.db.revokedSessions).toEqual([ANNA_PROFILE]);
     expect(h.db.deletedPush).toEqual([ANNA]);
     expect(h.db.members.find((m) => m.id === ANNA)?.status).toBe('active');
@@ -119,13 +121,15 @@ describe('never across salons (security review DEV-6)', () => {
       id: '20000000-0000-4000-8000-0000000000b2',
       salon_id: '10000000-0000-4000-8000-000000000002',
     });
-    data(
-      await revokeMemberSessions(
-        deps(),
-        { profileId: MANAGER_PROFILE },
-        { member_id: BEN },
+    expect(
+      data(
+        await revokeMemberSessions(
+          deps(),
+          { profileId: MANAGER_PROFILE },
+          { member_id: BEN },
+        ),
       ),
-    );
+    ).toEqual({ sessions_kept: true });
     data(
       await deactivateMember(
         deps(),

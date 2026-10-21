@@ -31,9 +31,12 @@ export function TeamMemberActions({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<'revoke' | 'deactivate' | null>(null);
   const [count, setCount] = useState(0);
+  const [preparing, setPreparing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<{ text: string; warning: boolean } | null>(
+    null,
+  );
 
   async function confirm() {
     if (!open) return;
@@ -48,47 +51,66 @@ export function TeamMemberActions({
       setError(errorText(outcome.messageKey));
       return;
     }
-    setDone(
-      open === 'revoke'
-        ? t('team.menu.revoke_sessions')
-        : t('team.status.deactivated'),
-    );
+    // Sessions kept: the person also works in another salon (security review DEV-6).
+    if (open === 'revoke' && outcome.data.sessions_kept === true) {
+      setDone({
+        text: t('team.revoke_sessions.kept', { stylist_name: name }),
+        warning: true,
+      });
+    } else {
+      setDone({
+        text:
+          open === 'revoke'
+            ? t('team.revoke_sessions.done', { stylist_name: name })
+            : t('team.deactivate.done', { stylist_name: name }),
+        warning: false,
+      });
+    }
     setOpen(null);
     await queryClient.invalidateQueries({ queryKey: ['team', salonId] });
   }
 
   return (
-    <div
-      className="flex flex-wrap items-center gap-2"
-      aria-label={t('team.menu.label', { stylist_name: name })}
-      role="group"
-    >
-      <Button
-        onClick={() => {
-          setError(null);
-          setOpen('revoke');
-        }}
-        size="sm"
-        variant="ghost"
+    <div className="grid w-full gap-2">
+      <div
+        aria-label={t('team.menu.label', { stylist_name: name })}
+        className="flex flex-wrap items-center gap-2"
+        role="group"
       >
-        {t('team.menu.revoke_sessions')}
-      </Button>
-      <Button
-        onClick={() => {
-          setError(null);
-          setCount(0);
-          setOpen('deactivate');
-          void clientsToChoose(memberId).then(setCount);
-        }}
-        size="sm"
-        variant="ghost"
-      >
-        {t('team.menu.deactivate')}
-      </Button>
+        <Button
+          onClick={() => {
+            setError(null);
+            setDone(null);
+            setOpen('revoke');
+          }}
+          size="sm"
+          variant="ghost"
+        >
+          {t('team.menu.revoke_sessions')}
+        </Button>
+        <Button
+          loading={preparing}
+          onClick={() => {
+            setError(null);
+            setDone(null);
+            setPreparing(true);
+            // The count is known before the dialog opens, so it is read once and right.
+            void clientsToChoose(memberId)
+              .catch(() => 0)
+              .then((n) => {
+                setCount(n);
+                setPreparing(false);
+                setOpen('deactivate');
+              });
+          }}
+          size="sm"
+          variant="ghost"
+        >
+          {t('team.menu.deactivate')}
+        </Button>
+      </div>
       {done ? (
-        <span className="text-body-sm text-success-text" role="status">
-          {done}
-        </span>
+        <Banner tone={done.warning ? 'warning' : 'success'}>{done.text}</Banner>
       ) : null}
       <Dialog
         closeLabel={tCommon('actions.close')}
@@ -111,7 +133,11 @@ export function TeamMemberActions({
               {error}
             </Banner>
           ) : null}
-          <div className="flex flex-wrap gap-2">
+          {/* The destructive action on the right (DESIGN_SYSTEM §7.4). */}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button onClick={() => setOpen(null)} variant="ghost">
+              {t('team.cancel')}
+            </Button>
             <Button
               loading={busy}
               onClick={() => void confirm()}
@@ -120,9 +146,6 @@ export function TeamMemberActions({
               {open === 'revoke'
                 ? t('team.revoke_sessions.submit')
                 : t('team.deactivate.submit')}
-            </Button>
-            <Button onClick={() => setOpen(null)} variant="ghost">
-              {t('team.cancel')}
             </Button>
           </div>
         </div>
