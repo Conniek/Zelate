@@ -486,17 +486,24 @@ test('the manager sees the new time before changing the stylist (DEV-7, S-13)', 
   await panel
     .getByRole('button', { name: /Confirmer|Envoyer la demande/ })
     .click();
-  await expect
-    .poll(async () => {
-      const { data } = await db
-        .from('tickets')
-        .select('requested_member_id, reassignment_member_id')
-        .eq('id', ticket.id)
-        .single();
-      return (
-        data?.requested_member_id === managerMemberId ||
-        data?.reassignment_member_id === managerMemberId
-      );
-    })
-    .toBe(true);
+  try {
+    await expect
+      .poll(async () => {
+        const { data } = await db
+          .from('tickets')
+          .select('requested_member_id, reassignment_member_id')
+          .eq('id', ticket.id)
+          .single();
+        return (
+          data?.requested_member_id === managerMemberId ||
+          data?.reassignment_member_id === managerMemberId
+        );
+      })
+      .toBe(true);
+  } catch (error) {
+    const shown = (await page.locator('body').innerText()).slice(0, 800);
+    throw new Error(`reassignment not written; page shows: ${shown}`, {
+      cause: error,
+    });
+  }
 });
