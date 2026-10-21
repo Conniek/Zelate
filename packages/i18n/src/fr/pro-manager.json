@@ -225,7 +225,11 @@
       "reassignment_refused": "Réaffectation refusée par le client",
       "reassignment_expired": "Réaffectation sans réponse du client"
     },
-    "empty": "Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct."
+    "empty": "Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct.",
+    "page_title": "File du salon – {app}",
+    "columns_label": "Coiffeurs",
+    "menu_label": "Menu du salon",
+    "setup_link": "Préparer mon salon"
   },
   "walk_in": {
     "open": "+ Client à l'accueil",
@@ -361,9 +365,11 @@
       "announced_time": "Rendez-vous annoncé à {time}",
       "unknown_stylist": "Coiffeur non précisé par le client",
       "merge_suggestion": "Rapprocher du rendez-vous déjà saisi : {first_name}, {time}, avec {stylist_name}",
-      "reminder": "Signalé il y a plus de 10 min : confirmez ou refusez."
+      "reminder": "Signalé il y a plus de 10 min : confirmez ou refusez.",
+      "reject": "Refuser"
     },
-    "warning_stylist_absent": "{stylist_name} est déclaré absent aujourd'hui. Le rendez-vous est enregistré, pensez à le réaffecter."
+    "warning_stylist_absent": "{stylist_name} est déclaré absent aujourd'hui. Le rendez-vous est enregistré, pensez à le réaffecter.",
+    "back_to_board": "Retour à la file"
   },
   "summary": {
     "title": "Récapitulatif du jour",
@@ -563,5 +569,11 @@
     "submit": "Se connecter",
     "magic_link": "Recevoir un lien de connexion",
     "link_sent": "Lien envoyé. Ouvrez-le sur cet appareil."
+  },
+  "nav": {
+    "board": "File",
+    "team": "Équipe",
+    "services": "Prestations",
+    "hours": "Horaires"
   }
 }

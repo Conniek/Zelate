@@ -44,6 +44,7 @@ export function useCommand() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.queue }),
         queryClient.invalidateQueries({ queryKey: queryKeys.context }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.board }),
       ]);
       return outcome;
     },

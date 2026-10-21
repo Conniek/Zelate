@@ -19,6 +19,7 @@ export const LIVE_POLL_MS = 60_000;
 export const queryKeys = {
   context: ['stylist-context'] as const,
   queue: ['stylist-queue'] as const,
+  board: ['salon-board'] as const,
 };
 
 export type SignInReason = 'sessions_revoked' | 'access_revoked';
@@ -90,6 +91,7 @@ export function useSalonRealtime(salonId: string | undefined): boolean {
         .on('broadcast', { event: '*' }, () => {
           void queryClient.invalidateQueries({ queryKey: queryKeys.queue });
           void queryClient.invalidateQueries({ queryKey: queryKeys.context });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.board });
         })
         .subscribe((status) => setSubscribed(status === 'SUBSCRIBED'));
     });
