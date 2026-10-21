@@ -70,7 +70,7 @@ Policy: **PRD §5.4**; texts: `packages/i18n/src/fr/notifications.json`; keys: T
 
 - Push first; SMS only without active push, except « votre tour » (push **and** SMS, always, even past the cap, E1).
 - Cap: 3 SMS per ticket, excluding `your_turn`, `cancelled_by_salon` and `no_show_warning` (E28).
-- Consent « Me prévenir » is per ticket (`tickets.notifications_consent_at`, K18), unticked by default. It only governs the four **anticipation** messages: `turn_approaching`, `get_ready`, `estimate_changed`, `end_of_day_risk`. Every other client message is essential and always sent (E17). Consent and the SMS cap apply to clients only, never to salon members.
+- Consent « Me prévenir » is per ticket (`tickets.notifications_consent_at`, K18), unticked by default. It only governs the four **anticipation** messages: `turn_approaching`, `get_ready`, `estimate_changed`, `end_of_day_risk`. Every other client message is essential and always sent (E17), and so is the `estimate_changed` sent to a called client put back at the head (E36). The engine computes `requires_consent` per notification; `send-notifications` only applies it. Consent and the SMS cap apply to clients only, never to salon members.
 - Every change of 10 min or more, measured from `last_notified_start_at`, is explained with a reason from `estimate_change_reason` (E11, K19, K26).
 - SMS: 160 GSM-7 characters at maximum variable length (TRD §9, K5, K20).
 
