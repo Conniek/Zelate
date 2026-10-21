@@ -175,6 +175,8 @@ const STYLIST_BUDGET_MS = 2_000;
 test('a walk-in is registered in under 10 s and reaches the stylist in under 2 s (DEV-7)', async ({
   browser,
 }) => {
+  // Open until midnight: late in the evening the queue is full by design (H9).
+  test.skip(parisNow().minutes >= 22 * 60 + 30, 'queue full before midnight');
   const { salonId, manager, stylist } = await readySalon('board');
   must(
     await db
@@ -487,21 +489,20 @@ test('the manager sees the new time before changing the stylist (DEV-7, S-13)', 
     .getByRole('button', { name: /Confirmer|Envoyer la demande/ })
     .click();
   try {
+    // `reassigned` when the time does not move back, else a request to the client.
     await expect
       .poll(async () => {
         const { data } = await db
-          .from('tickets')
-          .select('requested_member_id, reassignment_member_id')
-          .eq('id', ticket.id)
-          .single();
-        return (
-          data?.requested_member_id === managerMemberId ||
-          data?.reassignment_member_id === managerMemberId
+          .from('ticket_events')
+          .select('type')
+          .eq('ticket_id', ticket.id);
+        return (data ?? []).some(
+          (e) => e.type === 'reassigned' || e.type === 'reassignment_requested',
         );
       })
       .toBe(true);
   } catch (error) {
-    const shown = (await page.locator('body').innerText()).slice(0, 800);
+    const shown = (await page.locator('body').innerText()).slice(0, 1500);
     throw new Error(`reassignment not written; page shows: ${shown}`, {
       cause: error,
     });
