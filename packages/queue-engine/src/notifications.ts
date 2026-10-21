@@ -33,14 +33,15 @@ function intent(
   template: NotificationTemplate,
   dedupe_key: string,
   params: NotificationParams,
-  options: { variant?: string; announces?: boolean } = {},
+  options: { variant?: string; announces?: boolean; essential?: boolean } = {},
 ): NotificationIntent {
   return {
     ticket_id: ticket.id,
     template,
     variant: options.variant ?? null,
     dedupe_key,
-    requires_consent: ANTICIPATION_TEMPLATES.includes(template),
+    requires_consent:
+      !options.essential && ANTICIPATION_TEMPLATES.includes(template),
     params,
     on_sent:
       options.announces && ticket.estimated_start_at !== null
@@ -205,27 +206,33 @@ function estimateChange(
   before: TicketState,
   after: TicketState,
 ): NotificationIntent | null {
-  if (after.status !== 'waiting' || after.estimated_start_at === null)
-    return null;
-  if (after.estimate_version === before.estimate_version) return null;
-  const backToHead =
-    before.status === 'called' && after.priority_since !== null;
+  if (after.status !== 'waiting') return null;
   const reference = after.last_notified_start_at;
-  let reason: EstimateChangeReason;
-  if (backToHead) {
-    // E6 / E36 default: a called client put back at the head is always told.
-    reason = 'stylist_unavailable';
-  } else {
-    if (before.status !== 'waiting' || reference === null) return null;
-    const delta = after.estimated_start_at - reference;
-    if (Math.abs(delta) < ESTIMATE_NOTIFY_THRESHOLD_MINUTES * MINUTE)
-      return null;
-    const selfDeclared =
-      before.eta_response !== after.eta_response ||
-      before.declared_arrival_at !== after.declared_arrival_at;
-    if (selfDeclared) return null;
-    reason = inferReason(context, before, after, delta > 0);
+  if (before.status === 'called' && after.priority_since !== null) {
+    // E6 / E36: a called client put back at the head is always told. The
+    // message concerns his place and ends his call, so it is essential (E17),
+    // even when no stylist can give him a time yet.
+    return intent(
+      after,
+      'estimate_changed',
+      `estimate_changed:requeued:${after.call_count}`,
+      {
+        estimated_start_at: after.estimated_start_at,
+        previous_start_at: before.last_notified_start_at,
+        reason: 'stylist_unavailable',
+      },
+      { announces: true, essential: true },
+    );
   }
+  if (after.estimated_start_at === null) return null;
+  if (after.estimate_version === before.estimate_version) return null;
+  if (before.status !== 'waiting' || reference === null) return null;
+  const delta = after.estimated_start_at - reference;
+  if (Math.abs(delta) < ESTIMATE_NOTIFY_THRESHOLD_MINUTES * MINUTE) return null;
+  const selfDeclared =
+    before.eta_response !== after.eta_response ||
+    before.declared_arrival_at !== after.declared_arrival_at;
+  if (selfDeclared) return null;
   return intent(
     after,
     'estimate_changed',
@@ -233,7 +240,7 @@ function estimateChange(
     {
       estimated_start_at: after.estimated_start_at,
       previous_start_at: reference,
-      reason,
+      reason: inferReason(context, before, after, delta > 0),
     },
     { announces: true },
   );

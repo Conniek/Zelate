@@ -19,6 +19,8 @@ import { finalize, withVersion } from './output.ts';
 import { refresh } from './refresh.ts';
 import {
   busyTicketOf,
+  canServe,
+  compareQueueOrder,
   durationOf,
   findMember,
   findService,
@@ -27,6 +29,7 @@ import {
   isActiveStatus,
   lastClosingAt,
   masters,
+  orderedQueue,
   shiftEndOf,
   waitOffered,
   worksToday,
@@ -162,14 +165,13 @@ function callPatch(
  * (`priority_since`), without countdown and without a requested stylist, to
  * be taken by the first free stylist who masters his service.
  */
-function returnToHead(ticket: TicketState, now: Instant): Partial<TicketState> {
+function returnToHead(now: Instant): Partial<TicketState> {
   return {
     status: 'waiting',
     priority_since: now,
     assigned_member_id: null,
     requested_member_id: null,
     stylist_change_pending_since: null,
-    estimate_version: ticket.estimate_version + 1,
     ...CLEARED_CALL,
   };
 }
@@ -534,10 +536,57 @@ function completeService(
 }
 
 /**
- * Transition 3 (H5): the late client goes back to `waiting` behind at most
- * `2 − postpone_count` of the tickets this stylist could call after him, and
- * the next one is called. Ranks are permuted inside the moved slice only, so
- * no other ticket moves back.
+ * Where « Prendre le suivant » puts the late client. He is reinserted right
+ * after a ticket that follows him in the effective queue order (priority
+ * tickets, E6, are already ahead of him), so the relative order of every
+ * other ticket is kept. The places he loses are counted at every stylist who
+ * could take him: none may exceed what is left of his 2 places (H5). Among
+ * the tickets he lets pass there must be one this stylist can call now. The
+ * furthest valid position is chosen. Null when no position qualifies.
+ */
+function postponement(
+  state: QueueState,
+  member: MemberState,
+  ticket: TicketState,
+  now: Instant,
+): { places: number; target: TicketState } | null {
+  const remaining = MAX_POSTPONE - ticket.postpone_count;
+  const after = orderedQueue(state).filter(
+    (t) => compareQueueOrder(ticket, t) < 0,
+  );
+  const servers = state.members.filter(
+    (m) =>
+      m.id === member.id ||
+      (m.status === 'active' &&
+        m.is_hairdressing &&
+        canServe(state, m, ticket)),
+  );
+  const callable = new Set(
+    callableTickets(state, member.id, now).map((t) => t.id),
+  );
+  const lost = new Map(servers.map((m) => [m.id, 0]));
+  let canCall = false;
+  let best: { places: number; target: TicketState } | null = null;
+  for (const candidate of after) {
+    let counted = false;
+    for (const server of servers) {
+      if (canServe(state, server, candidate)) {
+        lost.set(server.id, (lost.get(server.id) ?? 0) + 1);
+        counted = true;
+      }
+    }
+    const places = Math.max(...lost.values());
+    if (places > remaining) break;
+    canCall ||= callable.has(candidate.id);
+    if (canCall && counted) best = { places, target: candidate };
+  }
+  return best;
+}
+
+/**
+ * Transition 3 (H5): the late client goes back to `waiting` at the position
+ * chosen by `postponement`, and this stylist's next ticket is called. Ranks
+ * are permuted inside the moved slice only, so no other ticket moves back.
  */
 function takeNext(
   state: QueueState,
@@ -551,12 +600,9 @@ function takeNext(
   if (ticket.assigned_member_id !== member.id) return 'not_assigned_to_you';
   if (ticket.eta_response !== 'late') return 'invalid_transition';
   if (ticket.postpone_count >= MAX_POSTPONE) return 'postpone_limit_reached';
-  const behind = callableTickets(state, member.id, now).filter(
-    (t) => t.queue_rank > ticket.queue_rank,
-  );
-  if (behind.length === 0) return 'no_eligible_ticket';
-  const places = Math.min(MAX_POSTPONE - ticket.postpone_count, behind.length);
-  const target = behind[places - 1] as TicketState;
+  const move = postponement(state, member, ticket, now);
+  if (!move) return 'no_eligible_ticket';
+  const { places, target } = move;
 
   const slice = state.tickets
     .filter(
@@ -877,7 +923,7 @@ function setPresence(
     status === 'late' ||
     (status === 'off_duty' && (presence.shift_end_at ?? now) <= now);
   if (busy?.status === 'called' && unavailableNow) {
-    next = patchTicket(next, busy.id, returnToHead(busy, now));
+    next = patchTicket(next, busy.id, returnToHead(now));
   }
 
   let choice: Step | null = null;
