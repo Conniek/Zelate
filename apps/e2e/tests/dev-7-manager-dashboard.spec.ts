@@ -216,8 +216,8 @@ test('a walk-in is registered in under 10 s and reaches the stylist in under 2 s
     .getByRole('button', { name: fr('pro-stylist', 'presence.ready') })
     .click();
   await expect(page.getByText(/Statut : Hors ligne/)).toHaveCount(0);
-  // Let the realtime channel subscribe before the measure.
-  await page.waitForTimeout(2_000);
+  // The measure starts once the phone listens to the salon channel.
+  await expect(page.locator('[data-realtime="on"]')).toBeVisible();
 
   // The stopwatch starts when the manager opens the form.
   const started = Date.now();
@@ -229,9 +229,24 @@ test('a walk-in is registered in under 10 s and reaches the stylist in under 2 s
     .getByLabel(fr('pro-manager', 'walk_in.first_name'), { exact: true })
     .fill(firstName);
   await dialog.getByLabel(fr('pro-manager', 'walk_in.phone')).fill(digits);
+  // The server's answer is the moment the client is in the queue.
+  const written = managerPage.waitForResponse(
+    (response) =>
+      response.url().includes('/functions/v1/queue-command') &&
+      response.request().postData()?.includes('register_walk_in') === true,
+  );
   await dialog
     .getByRole('button', { name: fr('pro-manager', 'walk_in.submit') })
     .click();
+  expect((await written).ok()).toBe(true);
+  const writtenAt = Date.now();
+  expect(writtenAt - started).toBeLessThan(WALK_IN_BUDGET_MS);
+
+  // Stylist side: measured from the write, not from the board's own re-read.
+  await expect(page.getByText(firstName).first()).toBeVisible({
+    timeout: STYLIST_BUDGET_MS,
+  });
+  expect(Date.now() - writtenAt).toBeLessThan(STYLIST_BUDGET_MS);
   await expect(
     managerPage.getByRole('status').filter({
       hasText: fr('pro-manager', 'walk_in.success', {
@@ -239,15 +254,6 @@ test('a walk-in is registered in under 10 s and reaches the stylist in under 2 s
       }),
     }),
   ).toBeVisible();
-  const registeredIn = Date.now() - started;
-  expect(registeredIn).toBeLessThan(WALK_IN_BUDGET_MS);
-
-  // Stylist side: measured from the confirmation on the board.
-  const confirmed = Date.now();
-  await expect(page.getByText(firstName).first()).toBeVisible({
-    timeout: STYLIST_BUDGET_MS,
-  });
-  expect(Date.now() - confirmed).toBeLessThan(STYLIST_BUDGET_MS);
 
   // The board shows him in the stylist's column.
   await expect(managerPage.getByText(firstName).first()).toBeVisible();
@@ -313,4 +319,93 @@ test('absence preview is shown before it is confirmed (DEV-7, S-11)', async ({
       return data?.map((row) => row.status);
     })
     .toContain('absent');
+});
+
+/** Paris wall clock: ISO weekday (Monday = 1), date and minutes since midnight. */
+function parisNow() {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Paris',
+      weekday: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(new Date())
+      .map((part) => [part.type, part.value]),
+  );
+  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return {
+    weekday: weekdays.indexOf(parts.weekday ?? '') + 1,
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    minutes: Number(parts.hour) * 60 + Number(parts.minute),
+  };
+}
+
+test('at closing, the manager decides for each client still waiting (DEV-7, S-15)', async ({
+  browser,
+}) => {
+  const now = parisNow();
+  // The salon closed 3 minutes ago, today: impossible in the first minutes of the day.
+  test.skip(now.minutes < 10, 'too close to midnight in Paris');
+  const { salonId, manager } = await readySalon('closing');
+  const closesAt = now.minutes - 3;
+  const hhmm = `${String(Math.floor(closesAt / 60)).padStart(2, '0')}:${String(closesAt % 60).padStart(2, '0')}`;
+  must(
+    await db
+      .from('opening_hours')
+      .update({ opens_at: '00:00', closes_at: hhmm })
+      .eq('salon_id', salonId)
+      .eq('weekday', now.weekday),
+    'closing time',
+  );
+  must(
+    await db
+      .from('salons')
+      .update({ status: 'published', published_at: new Date().toISOString() })
+      .eq('id', salonId),
+    'publish',
+  );
+  must(
+    await db.from('tickets').insert({
+      salon_id: salonId,
+      service_date: now.date,
+      short_code: 'KLMNP',
+      tracking_token: `tok-closing-${run}`,
+      tracking_short_code: `c${run}`.slice(0, 8).padEnd(8, 'x'),
+      display_name: 'Inès',
+      channel: 'front_desk',
+      planned_duration_minutes: 30,
+      queue_rank: 1,
+      status: 'waiting',
+    }),
+    'waiting ticket',
+  );
+
+  const page = await browser.newPage();
+  await signIn(page, manager, '/dashboard');
+  const box = page.getByRole('region', {
+    name: fr('pro-manager', 'end_of_day.closing.title', { count: 1 }),
+  });
+  await expect(box).toBeVisible();
+  await expect(box.getByText('Inès')).toBeVisible();
+  await box
+    .getByRole('button', {
+      name: fr('pro-manager', 'end_of_day.closing.serve'),
+    })
+    .click();
+  await expect
+    .poll(async () => {
+      const { data } = await db
+        .from('tickets')
+        .select('status, closing_decision')
+        .eq('salon_id', salonId)
+        .single();
+      return `${data?.status}/${data?.closing_decision}`;
+    })
+    .toBe('waiting/serve');
+  await expect(box).toHaveCount(0);
 });

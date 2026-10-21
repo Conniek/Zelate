@@ -296,7 +296,7 @@
       "called_back_to_top": "{first_name} (appel en cours) passe en tête de file pour le premier coiffeur libre.",
       "service_to_complete": "Prestation en cours pour {first_name} : à terminer par vous depuis le panneau du ticket.",
       "nobody_notified_yet": "Aucun client n'est prévenu avant votre confirmation.",
-      "summary": "{count, plural, one {# client touché} other {# clients touchés}}"
+      "summary": "{count, plural, =0 {Aperçu prêt : aucun client touché.} one {Aperçu prêt : # client touché.} other {Aperçu prêt : # clients touchés.}}"
     },
     "confirm": "Confirmer",
     "done": "{stylist_name} : {status} enregistré."

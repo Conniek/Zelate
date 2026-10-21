@@ -213,9 +213,7 @@ export function PresenceDialog({
           {/* Only the result is read out, once it is known. */}
           <p aria-live="polite" className="sr-only">
             {change !== null && preview.isSuccess
-              ? impact.length === 0
-                ? t('presence.impact.none')
-                : t('presence.impact.summary', { count: impact.length })
+              ? t('presence.impact.summary', { count: impact.length })
               : ''}
           </p>
           {change === null ? null : preview.isPending ? (

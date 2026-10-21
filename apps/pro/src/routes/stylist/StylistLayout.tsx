@@ -146,7 +146,11 @@ export function StylistLayout() {
   ];
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col">
+    // `data-realtime`: lets the end-to-end tests wait for the channel instead of sleeping.
+    <div
+      className="mx-auto flex min-h-dvh w-full max-w-xl flex-col"
+      data-realtime={live ? 'on' : 'off'}
+    >
       <header className="grid gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <p className="font-display text-body-lg font-bold">
