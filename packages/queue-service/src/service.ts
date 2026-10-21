@@ -223,6 +223,12 @@ interface Extras {
   broadcasts: Broadcast[];
   salon: Record<string, DbValue>;
   data: Record<string, unknown>;
+  /**
+   * Checks on phone numbers, run only once the engine has accepted the
+   * command (ticket, status and caller checked): before that, they would let
+   * any member test whether a number is queued somewhere (H6).
+   */
+  afterEngine: (() => Promise<CommandResponse | null>)[];
 }
 
 function emptyExtras(): Extras {
@@ -236,6 +242,7 @@ function emptyExtras(): Extras {
     broadcasts: [],
     salon: {},
     data: {},
+    afterEngine: [],
   };
 }
 
@@ -416,15 +423,19 @@ const PREPARE: { [K in CommandName]?: Prepare<K> } = {
     delete payload.first_name;
     delete payload.phone;
     if (phone) {
-      const others = await run.tx.salonsWithActivePhone(
-        phone.hash,
-        payload.ticket_id,
-      );
-      if (others.length > 0) return errorResponse('already_has_active_ticket');
-      run.extras.contactReplaces.push({
-        ticket_id: payload.ticket_id,
-        phone_e164: phone.e164,
-        phone_hash: phone.hash,
+      run.extras.afterEngine.push(async () => {
+        const others = await run.tx.salonsWithActivePhone(
+          phone.hash,
+          payload.ticket_id,
+        );
+        if (others.length > 0)
+          return errorResponse('already_has_active_ticket');
+        run.extras.contactReplaces.push({
+          ticket_id: payload.ticket_id,
+          phone_e164: phone.e164,
+          phone_hash: phone.hash,
+        });
+        return null;
       });
     }
     if (first_name) run.extras.displayNames.set(payload.ticket_id, first_name);
@@ -499,13 +510,13 @@ const PREPARE: { [K in CommandName]?: Prepare<K> } = {
       } else {
         // Without merge, the number must not already hold an active ticket
         // (unique index of ADR-011).
-        const hash = await run.tx.contactHash(p.ticket_id);
-        if (
-          hash &&
-          (await run.tx.salonsWithActivePhone(hash, p.ticket_id)).length > 0
-        ) {
-          return errorResponse('already_has_active_ticket');
-        }
+        run.extras.afterEngine.push(async () => {
+          const hash = await run.tx.contactHash(p.ticket_id);
+          return hash &&
+            (await run.tx.salonsWithActivePhone(hash, p.ticket_id)).length > 0
+            ? errorResponse('already_has_active_ticket')
+            : null;
+        });
       }
     }
     return { command: 'confirm_appointment', actor: run.ctx.actor, payload: p };
@@ -929,6 +940,10 @@ async function execute(
     if ('status' in command) return command;
     const result = applyCommand(run.state, command, run.now);
     if (!result.ok) return errorResponse(result.error.code);
+    for (const check of run.extras.afterEngine) {
+      const refused = await check();
+      if (refused) return refused;
+    }
     outcome = { output: result, extraEvents: [] };
   }
   if ('status' in outcome) return outcome;

@@ -101,6 +101,9 @@ describe('random values and phone hash', () => {
 
   it('refuses a short secret', () => {
     expect(() => hmacPhoneHasher('short')).toThrow(/32/);
+    expect(() =>
+      hmacPhoneHasher('REPLACE_ME_WITH_32_CHARACTERS_OR_MORE'),
+    ).toThrow(/real secret/);
   });
 });
 

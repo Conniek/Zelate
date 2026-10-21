@@ -54,8 +54,11 @@ export const cryptoRandom: Random = {
 };
 
 export function hmacPhoneHasher(secret: string): PhoneHasher {
-  if (secret.length < 32) {
-    throw new Error('PHONE_HASH_SECRET must be at least 32 characters');
+  // The example value of .env.example is long enough: refuse it explicitly.
+  if (secret.length < 32 || secret.startsWith('REPLACE_ME')) {
+    throw new Error(
+      'PHONE_HASH_SECRET must be a real secret of 32 characters or more',
+    );
   }
   const key = crypto.subtle.importKey(
     'raw',

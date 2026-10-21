@@ -307,7 +307,7 @@ describe.skipIf(!sql)('queue-command on Postgres', () => {
           decision: 'confirm',
         }),
       ),
-    ).toBe('already_has_active_ticket');
+    ).toBe('appointment_overlap');
     ok(
       await send(manager.user, 'confirm_appointment', {
         ticket_id: signalled.ticket_id,

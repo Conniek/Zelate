@@ -17,7 +17,13 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return json(405, { ok: false });
   const secret = Deno.env.get('CRON_SECRET');
   const given = request.headers.get('authorization')?.replace(/^Bearer /i, '');
-  if (!secret || !given || !sameSecret(given, secret)) {
+  // The example value of .env.example is never accepted.
+  if (
+    !secret ||
+    secret.startsWith('REPLACE_ME') ||
+    !given ||
+    !sameSecret(given, secret)
+  ) {
     return json(401, { ok: false });
   }
   try {

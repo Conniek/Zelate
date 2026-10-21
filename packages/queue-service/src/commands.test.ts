@@ -525,6 +525,37 @@ describe('appointments (H10)', () => {
     });
   });
 
+  it('never answers about a phone number before the caller and ticket are checked (H6)', async () => {
+    data(await walkIn('0611111111'));
+    const benAppointment = data(await create({ member_id: BEN })).ticket_id;
+    // Anna is neither manager nor the stylist of this appointment.
+    expect(
+      code(
+        await h.send(ANNA_PROFILE, 'update_appointment', {
+          ticket_id: benAppointment,
+          phone: '0611111111',
+        }),
+      ),
+    ).not.toBe('already_has_active_ticket');
+    // A ticket that does not exist in the caller's salon.
+    expect(
+      code(
+        await h.send(MANAGER_PROFILE, 'update_appointment', {
+          ticket_id: '00000000-0000-4000-8000-0000000000ee',
+          phone: '0611111111',
+        }),
+      ),
+    ).not.toBe('already_has_active_ticket');
+    expect(
+      code(
+        await h.send(OTHER_PROFILE, 'confirm_appointment', {
+          ticket_id: benAppointment,
+          decision: 'confirm',
+        }),
+      ),
+    ).not.toBe('already_has_active_ticket');
+  });
+
   it('a stylist enters appointments for himself only', async () => {
     data(
       await h.send(ANNA_PROFILE, 'create_appointment', {
@@ -631,7 +662,7 @@ describe('appointments (H10)', () => {
       }),
     ).ticket_id as string;
 
-    // Confirming without merge would give the number two active tickets.
+    // Same stylist, same slot: the engine refuses first.
     expect(
       code(
         await h.send(MANAGER_PROFILE, 'confirm_appointment', {
@@ -639,7 +670,7 @@ describe('appointments (H10)', () => {
           decision: 'confirm',
         }),
       ),
-    ).toBe('already_has_active_ticket');
+    ).toBe('appointment_overlap');
 
     data(
       await h.send(MANAGER_PROFILE, 'confirm_appointment', {
@@ -661,6 +692,34 @@ describe('appointments (H10)', () => {
       is_active: true,
       phone_e164: '+33612345678',
     });
+  });
+
+  it('confirming without merge a number that already has a ticket is refused', async () => {
+    data(
+      await create({
+        phone: '0612345678',
+        scheduled_at: '2026-10-19T16:30:00+02:00',
+      }),
+    );
+    const signalled = data(
+      await h.send(CLIENT, 'check_in_appointment', {
+        salon_id: SALON,
+        qr_token: QR,
+        scheduled_time: '14:30',
+        member_id: ANNA,
+      }),
+    ).ticket_id;
+    expect(
+      code(
+        await h.send(MANAGER_PROFILE, 'confirm_appointment', {
+          ticket_id: signalled,
+          decision: 'confirm',
+        }),
+      ),
+    ).toBe('already_has_active_ticket');
+    expect(h.db.ticket(signalled as string).status).toBe(
+      'pending_confirmation',
+    );
   });
 
   it('a check-in elsewhere while a ticket is active is refused', async () => {
