@@ -2,13 +2,20 @@ import { useQuery } from '@tanstack/react-query';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { Skeleton } from '@zelate/ui';
 import { DashboardNav } from './DashboardNav';
+import { loadStylistContext } from '../lib/queue-api';
 import { loadOwnSalon } from '../lib/setup-api';
 import type { SetupSalon } from '../lib/setup-api';
 import { supabase } from '../lib/supabase';
 
-async function loadAccess(): Promise<'signin' | 'signup' | SetupSalon> {
+async function loadAccess(): Promise<
+  'signin' | 'signup' | 'stylist' | SetupSalon
+> {
   const { data } = await supabase.auth.getSession();
   if (!data.session) return 'signin';
+  // A stylist can read his salon, but the dashboard is the manager's (K9):
+  // he goes to his own space instead of looping on a refused board.
+  const ctx = await loadStylistContext().catch(() => null);
+  if (ctx?.access === 'active' && ctx.role !== 'manager') return 'stylist';
   return (await loadOwnSalon()) ?? 'signup';
 }
 
@@ -35,6 +42,7 @@ export function DashboardGuard() {
     );
   }
   if (data === 'signup') return <Navigate replace to="/signup" />;
+  if (data === 'stylist') return <Navigate replace to="/stylist/queue" />;
   return (
     <>
       <DashboardNav />

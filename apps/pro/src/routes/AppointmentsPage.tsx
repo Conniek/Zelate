@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Navigate, useOutletContext } from 'react-router';
+import { Link, useOutletContext } from 'react-router';
 import { parisInstant } from '@zelate/queue-service/time';
 import {
   Banner,
@@ -12,19 +12,12 @@ import {
   Skeleton,
   TextField,
 } from '@zelate/ui';
-import { boardColumns, loadBoard, ticketStylistId } from '../lib/board-api';
+import { boardColumns, ticketStylistId } from '../lib/board-api';
 import type { BoardTicket } from '../lib/board-api';
-import { AccessLost, loadServiceOptions } from '../lib/queue-api';
+import { loadServiceOptions } from '../lib/queue-api';
 import type { SetupSalon } from '../lib/setup-api';
-import {
-  LIVE_POLL_MS,
-  POLL_MS,
-  queryKeys,
-  timeParts,
-  todayInParis,
-  useOnline,
-  useSalonRealtime,
-} from '../lib/stylist';
+import { timeParts, todayInParis } from '../lib/stylist';
+import { useBoard } from '../lib/use-board';
 import { useCommand } from '../lib/use-command';
 import { REMOVAL_REASONS } from './stylist/PendingAppointment';
 import type { RemovalReason } from './stylist/PendingAppointment';
@@ -39,6 +32,11 @@ interface Form {
 }
 
 const LATE_AFTER_MINUTES = 10;
+const FIELD_IDS = {
+  firstName: 'appointment-first-name',
+  time: 'appointment-time',
+  memberId: 'appointment-stylist',
+} as const;
 
 function hhmm(iso: string): string {
   const { hours, minutes } = timeParts(iso);
@@ -80,20 +78,15 @@ export function AppointmentsPage() {
   const { t: tCommon } = useTranslation('common');
   const { t: tErrors } = useTranslation('errors');
   const command = useCommand();
-  const online = useOnline();
-  const [live, setLive] = useState(false);
-  const realtime = useSalonRealtime(salon.id);
-  useEffect(() => setLive(realtime), [realtime]);
+  const { board, lost } = useBoard(salon.id);
+  const [message, setMessage] = useState('');
+  const announce = useCallback((text: string) => {
+    setMessage('');
+    window.setTimeout(() => setMessage(text), 50);
+  }, []);
   useEffect(() => {
     document.title = `${t('appointments.title')} – ${tCommon('brand.pro_name')}`;
   }, [t, tCommon]);
-  const board = useQuery({
-    queryKey: queryKeys.board,
-    queryFn: () => loadBoard(salon.id),
-    refetchInterval: live ? LIVE_POLL_MS : POLL_MS,
-    refetchOnWindowFocus: true,
-    retry: (count, error) => !(error instanceof AccessLost) && count < 2,
-  });
   const services = useQuery({
     queryKey: ['service-options', salon.id],
     queryFn: () => loadServiceOptions(salon.id),
@@ -102,15 +95,15 @@ export function AppointmentsPage() {
   const [fieldErrors, setFieldErrors] = useState<{
     firstName?: string;
     time?: string;
+    memberId?: string;
   }>({});
   const [warning, setWarning] = useState(false);
   const [cancelling, setCancelling] = useState<BoardTicket | null>(null);
   const [rejecting, setRejecting] = useState<BoardTicket | null>(null);
   const [reason, setReason] = useState<RemovalReason>('other');
+  // Stylist chosen on a pending card when the client named nobody (E29).
+  const [chosen, setChosen] = useState<Record<string, string>>({});
 
-  if (board.error instanceof AccessLost) {
-    return <Navigate replace to="/signin?next=%2Fdashboard%2Fappointments" />;
-  }
   if (!board.data) {
     return (
       <main aria-busy="true" className="mx-auto w-full max-w-5xl px-5 py-10">
@@ -119,7 +112,6 @@ export function AppointmentsPage() {
     );
   }
 
-  const lost = !online || (!live && board.isError);
   const columns = boardColumns(board.data.stylists);
   const stylistName = (ticket: BoardTicket) =>
     columns.find((c) => c.member_id === ticketStylistId(ticket))?.first_name;
@@ -152,9 +144,18 @@ export function AppointmentsPage() {
       ...(!/^\d{2}:\d{2}$/.test(form.time)
         ? { time: t('appointments.form.time_hint') }
         : {}),
+      ...(form.memberId === ''
+        ? { memberId: tErrors('validation.required') }
+        : {}),
     };
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0 || form.memberId === '') return;
+    const firstInvalid = (['firstName', 'time', 'memberId'] as const).find(
+      (key) => errors[key] !== undefined,
+    );
+    if (firstInvalid) {
+      document.getElementById(FIELD_IDS[firstInvalid])?.focus();
+      return;
+    }
     const scheduledAt = new Date(
       parisInstant(todayInParis(), form.time),
     ).toISOString();
@@ -186,6 +187,14 @@ export function AppointmentsPage() {
     if (!outcome.ok) return;
     const warnings = outcome.data.warnings;
     setWarning(Array.isArray(warnings) && warnings.includes('stylist_absent'));
+    announce(
+      t(
+        form.ticket ? 'appointments.done.updated' : 'appointments.done.created',
+        {
+          first_name: form.firstName.trim(),
+        },
+      ),
+    );
     setForm(null);
   }
 
@@ -196,16 +205,42 @@ export function AppointmentsPage() {
       { ticket_id: cancelling.id, reason_code: reason },
       salon.id,
     );
-    if (outcome.ok) setCancelling(null);
+    if (outcome.ok) {
+      announce(
+        t('appointments.done.cancelled', {
+          first_name: cancelling.display_name,
+        }),
+      );
+      setCancelling(null);
+    }
   }
 
   async function decide(ticket: BoardTicket, payload: Record<string, unknown>) {
+    if (lost || command.busy !== null) return;
     const outcome = await command.run(
       'confirm_appointment',
       { ticket_id: ticket.id, ...payload },
       salon.id,
     );
-    if (outcome.ok) setRejecting(null);
+    if (!outcome.ok) return;
+    announce(
+      t(
+        payload.decision === 'reject'
+          ? 'appointments.done.rejected'
+          : 'appointments.done.confirmed',
+        { first_name: ticket.display_name },
+      ),
+    );
+    setRejecting(null);
+  }
+
+  function openReason(ticket: BoardTicket, kind: 'cancel' | 'reject') {
+    if (lost) return;
+    command.setError(null);
+    // Never the reason of the previous dialog: it is sent to the client.
+    setReason('other');
+    if (kind === 'cancel') setCancelling(ticket);
+    else setRejecting(ticket);
   }
 
   return (
@@ -221,6 +256,14 @@ export function AppointmentsPage() {
           </Link>
         </div>
         <ConnectionBanner lost={lost} lostLabel={t('board.offline_banner')} />
+        {lost ? (
+          <p className="sr-only" id="board-offline">
+            {t('board.offline_banner')}
+          </p>
+        ) : null}
+        <p aria-live="polite" className="sr-only" role="status">
+          {message}
+        </p>
         {warning ? (
           <Banner tone="warning">
             {t('appointments.warning_stylist_absent')}
@@ -228,8 +271,10 @@ export function AppointmentsPage() {
         ) : null}
         <div>
           <Button
-            disabled={lost}
+            aria-describedby={lost ? 'board-offline' : undefined}
+            aria-disabled={lost || undefined}
             onClick={() =>
+              !lost &&
               open({
                 ticket: null,
                 firstName: '',
@@ -251,12 +296,22 @@ export function AppointmentsPage() {
             {t('appointments.pending.title')}
           </h2>
           {pending.map((ticket) => {
+            // Only an appointment still to come can absorb this one (engine: invalid_merge_target).
             const twin = planned.find(
               (x) =>
+                x.status === 'waiting' &&
                 x.scheduled_at === ticket.scheduled_at &&
                 ticketStylistId(x) === ticketStylistId(ticket),
             );
             const name = stylistName(ticket);
+            const needsStylist = ticket.requested_member_id === null;
+            const memberId = chosen[ticket.id] ?? columns[0]?.member_id ?? '';
+            const confirmPayload = {
+              decision: 'confirm',
+              ...(needsStylist && memberId !== ''
+                ? { member_id: memberId }
+                : {}),
+            };
             return (
               <article
                 className="grid gap-2 rounded-xl border border-warning bg-warning-subtle p-4"
@@ -284,25 +339,58 @@ export function AppointmentsPage() {
                     })}
                   </p>
                 ) : null}
+                {needsStylist ? (
+                  <label className="grid gap-2">
+                    <span className="font-semibold text-body-sm">
+                      {t('appointments.form.stylist')}
+                    </span>
+                    <select
+                      className="min-h-12 rounded-lg border border-border-strong bg-surface px-3"
+                      onChange={(e) =>
+                        setChosen({ ...chosen, [ticket.id]: e.target.value })
+                      }
+                      value={memberId}
+                    >
+                      {columns.map((c) => (
+                        <option key={c.member_id} value={c.member_id}>
+                          {c.first_name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
                 <div className="flex flex-wrap gap-2">
+                  {twin ? (
+                    <Button
+                      aria-describedby={lost ? 'board-offline' : undefined}
+                      aria-disabled={lost || undefined}
+                      loading={command.busy === 'confirm_appointment'}
+                      onClick={() =>
+                        void decide(ticket, {
+                          ...confirmPayload,
+                          merge_into_ticket_id: twin.id,
+                        })
+                      }
+                      variant="success"
+                    >
+                      {t('appointments.pending.confirm_merge')}
+                    </Button>
+                  ) : null}
                   <Button
-                    disabled={lost || command.busy !== null}
-                    onClick={() =>
-                      void decide(ticket, {
-                        decision: 'confirm',
-                        ...(twin ? { merge_into_ticket_id: twin.id } : {}),
-                      })
-                    }
-                    variant="success"
+                    aria-describedby={lost ? 'board-offline' : undefined}
+                    aria-disabled={lost || undefined}
+                    loading={!twin && command.busy === 'confirm_appointment'}
+                    onClick={() => void decide(ticket, confirmPayload)}
+                    variant={twin ? 'secondary' : 'success'}
                   >
-                    {tCommon('actions.confirm')}
+                    {twin
+                      ? t('appointments.pending.confirm_alone')
+                      : tCommon('actions.confirm')}
                   </Button>
                   <Button
-                    disabled={lost}
-                    onClick={() => {
-                      command.setError(null);
-                      setRejecting(ticket);
-                    }}
+                    aria-describedby={lost ? 'board-offline' : undefined}
+                    aria-disabled={lost || undefined}
+                    onClick={() => openReason(ticket, 'reject')}
                     variant="secondary"
                   >
                     {t('appointments.pending.reject')}
@@ -362,8 +450,10 @@ export function AppointmentsPage() {
               {ticket.status === 'waiting' ? (
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    disabled={lost}
+                    aria-describedby={lost ? 'board-offline' : undefined}
+                    aria-disabled={lost || undefined}
                     onClick={() =>
+                      !lost &&
                       open({
                         ticket,
                         firstName: ticket.display_name,
@@ -381,11 +471,9 @@ export function AppointmentsPage() {
                     {t('appointments.edit')}
                   </Button>
                   <Button
-                    disabled={lost}
-                    onClick={() => {
-                      command.setError(null);
-                      setCancelling(ticket);
-                    }}
+                    aria-describedby={lost ? 'board-offline' : undefined}
+                    aria-disabled={lost || undefined}
+                    onClick={() => openReason(ticket, 'cancel')}
                     size="sm"
                     variant="ghost"
                   >
@@ -411,7 +499,9 @@ export function AppointmentsPage() {
         {form ? (
           <div className="grid gap-4">
             <TextField
+              autoComplete="off"
               error={fieldErrors.firstName}
+              id={FIELD_IDS.firstName}
               label={t('appointments.form.first_name')}
               maxLength={30}
               onChange={(e) => setForm({ ...form, firstName: e.target.value })}
@@ -420,6 +510,7 @@ export function AppointmentsPage() {
             <TextField
               error={fieldErrors.time}
               helpText={t('appointments.form.time_hint')}
+              id={FIELD_IDS.time}
               label={t('appointments.form.time')}
               onChange={(e) => setForm({ ...form, time: e.target.value })}
               step={300}
@@ -431,7 +522,12 @@ export function AppointmentsPage() {
                 {t('appointments.form.stylist')}
               </span>
               <select
+                aria-describedby={
+                  fieldErrors.memberId ? 'appointment-stylist-error' : undefined
+                }
+                aria-invalid={fieldErrors.memberId ? true : undefined}
                 className="min-h-12 rounded-lg border border-border-strong bg-surface px-3"
+                id={FIELD_IDS.memberId}
                 onChange={(e) => setForm({ ...form, memberId: e.target.value })}
                 value={form.memberId}
               >
@@ -441,6 +537,14 @@ export function AppointmentsPage() {
                   </option>
                 ))}
               </select>
+              {fieldErrors.memberId ? (
+                <span
+                  className="text-body-sm text-danger-text"
+                  id="appointment-stylist-error"
+                >
+                  {fieldErrors.memberId}
+                </span>
+              ) : null}
             </label>
             <label className="grid gap-2">
               <span className="font-semibold text-body-sm">
@@ -453,7 +557,7 @@ export function AppointmentsPage() {
                 }
                 value={form.serviceId}
               >
-                <option value="">{tCommon('first_available')}</option>
+                <option value="">{t('appointments.form.no_service')}</option>
                 {(services.data ?? []).map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -461,8 +565,11 @@ export function AppointmentsPage() {
                 ))}
               </select>
             </label>
+            {/* Someone else's number: the browser must not keep it (H6, ADR-007). */}
             <PhoneField
+              autoComplete="off"
               helpText={t('appointments.form.phone_hint')}
+              name="appointment-contact"
               label={t('appointments.form.phone')}
               onChange={(digits) => setForm({ ...form, phone: digits })}
               prefix="+33"
@@ -474,10 +581,11 @@ export function AppointmentsPage() {
               </Banner>
             ) : null}
             <Button
-              disabled={lost}
+              aria-describedby={lost ? 'board-offline' : undefined}
+              aria-disabled={lost || undefined}
               fullWidth
               loading={command.busy !== null}
-              onClick={() => void save()}
+              onClick={() => !lost && void save()}
             >
               {form.ticket
                 ? t('appointments.form.submit_edit')
@@ -513,14 +621,14 @@ export function AppointmentsPage() {
                 {command.error}
               </Banner>
             ) : null}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
               <Button onClick={() => setCancelling(null)} variant="ghost">
                 {t('appointments.cancel_dialog.keep')}
               </Button>
               <Button
-                disabled={lost}
+                aria-disabled={lost || undefined}
                 loading={command.busy === 'cancel_appointment'}
-                onClick={() => void cancel()}
+                onClick={() => !lost && void cancel()}
                 variant="danger"
               >
                 {t('appointments.cancel_dialog.submit')}
@@ -544,19 +652,24 @@ export function AppointmentsPage() {
                 {command.error}
               </Banner>
             ) : null}
-            <Button
-              disabled={lost}
-              loading={command.busy === 'confirm_appointment'}
-              onClick={() =>
-                void decide(rejecting, {
-                  decision: 'reject',
-                  reason_code: reason,
-                })
-              }
-              variant="danger"
-            >
-              {t('appointments.pending.reject')}
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button onClick={() => setRejecting(null)} variant="ghost">
+                {tCommon('actions.cancel')}
+              </Button>
+              <Button
+                aria-disabled={lost || undefined}
+                loading={command.busy === 'confirm_appointment'}
+                onClick={() =>
+                  void decide(rejecting, {
+                    decision: 'reject',
+                    reason_code: reason,
+                  })
+                }
+                variant="danger"
+              >
+                {t('appointments.pending.reject')}
+              </Button>
+            </div>
           </div>
         ) : null}
       </Dialog>

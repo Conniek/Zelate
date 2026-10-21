@@ -2,6 +2,13 @@ import { useId } from 'react';
 import type { ChangeEvent } from 'react';
 
 export interface PhoneFieldProps {
+  /**
+   * `tel-national` when a client types their own number. On a staff screen,
+   * where someone else's number is typed, pass `off` with a `name` of its own,
+   * so that the browser keeps no client number (H6, ADR-007).
+   */
+  autoComplete?: 'tel-national' | 'off' | undefined;
+  name?: string | undefined;
   disabled?: boolean | undefined;
   error?: string | undefined;
   helpText?: string | undefined;
@@ -26,6 +33,8 @@ export function toNationalDigits(raw: string): string {
 }
 
 export function PhoneField({
+  autoComplete = 'tel-national',
+  name = 'phone',
   disabled,
   error,
   helpText,
@@ -65,12 +74,12 @@ export function PhoneField({
         <input
           aria-describedby={description ? descriptionId : undefined}
           aria-invalid={error ? true : undefined}
-          autoComplete="tel-national"
+          autoComplete={autoComplete}
           className="min-h-12 flex-1 bg-transparent px-2 outline-none"
           disabled={disabled}
           id={inputId}
           inputMode="tel"
-          name="phone"
+          name={name}
           onChange={handleChange}
           type="tel"
           value={value}

@@ -19,6 +19,20 @@ export async function loadTeam(salonId: string): Promise<TeamMember[]> {
   return data;
 }
 
+/** Everyone who may appear in the salon's journal: manager included, deactivated too (S-17). */
+export async function loadJournalMembers(
+  salonId: string,
+): Promise<{ id: string; first_name: string }[]> {
+  const { data, error } = await supabase
+    .from('salon_members')
+    .select('id, first_name')
+    .eq('salon_id', salonId)
+    .neq('status', 'invited')
+    .order('first_name');
+  if (error) throw error;
+  return data;
+}
+
 export type TeamOutcome = { ok: true } | { ok: false; messageKey: string };
 
 async function call(

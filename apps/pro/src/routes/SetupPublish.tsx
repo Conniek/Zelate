@@ -87,7 +87,7 @@ export function SetupPublish({
         </Banner>
       ) : null}
       <Button
-        disabled={!ready}
+        aria-disabled={!ready || undefined}
         loading={busy === 'publish'}
         onClick={() => void run('publish_salon')}
         size="lg"

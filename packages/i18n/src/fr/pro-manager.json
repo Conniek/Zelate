@@ -200,7 +200,12 @@
     "close": "Fermer",
     "close_confirm_title": "Fermer la file ?",
     "close_confirm": "Aucun nouveau client ne pourra rejoindre la file. {count, plural, =0 {Aucun client n'attend en ce moment.} one {Le client en attente sera servi jusqu'à la fin de journée.} other {Les # clients en attente seront servis jusqu'à la fin de journée.}}",
-    "close_confirm_submit": "Fermer la file"
+    "close_confirm_submit": "Fermer la file",
+    "done": {
+      "open": "La file est ouverte.",
+      "paused": "La file est en pause.",
+      "closed": "La file est fermée."
+    }
   },
   "board": {
     "header": {
@@ -210,7 +215,9 @@
     },
     "offline_banner": "Connexion perdue : les actions sont bloquées jusqu'au retour du réseau.",
     "hairdressing": {
-      "label": "Je coiffe"
+      "label": "Je coiffe",
+      "on": "« Je coiffe » activé : vous recevez des clients.",
+      "off": "« Je coiffe » coupé : vous ne recevez plus de clients."
     },
     "take_next": "Je prends le prochain",
     "appointments": "Rendez-vous",
@@ -229,11 +236,18 @@
     "page_title": "File du salon – {app}",
     "columns_label": "Coiffeurs",
     "menu_label": "Menu du salon",
-    "setup_link": "Préparer mon salon"
+    "setup_link": "Préparer mon salon",
+    "take_next_done": "Prochain client appelé pour vous.",
+    "announce": {
+      "joined": "{first_name} rejoint la file.",
+      "arrived": "{first_name} est arrivé au salon.",
+      "pending": "Rendez-vous à confirmer : {first_name}.",
+      "panel_closed": "La fiche de {first_name} est fermée : le ticket n'est plus dans la file."
+    }
   },
   "walk_in": {
     "open": "+ Client à l'accueil",
-    "shortcut": "Raccourci clavier : N",
+    "shortcut": "Raccourci clavier : Alt + Maj + N",
     "title": "Client à l'accueil",
     "first_name": "Prénom",
     "phone": "Téléphone",
@@ -248,7 +262,8 @@
     "complete": "Terminer la prestation",
     "complete_confirm": "Terminer la prestation pour {first_name} ? L'action sera inscrite au journal à votre nom.",
     "remove": "Retirer de la file",
-    "reassign": "Changer de coiffeur"
+    "reassign": "Changer de coiffeur",
+    "completed": "Prestation terminée pour {first_name}."
   },
   "presence": {
     "menu": {
@@ -268,7 +283,8 @@
       "expected_back_at": "Heure d'arrivée prévue",
       "shift_end_at": "Heure de départ",
       "break_type": "Type de pause",
-      "break_duration": "Durée de la pause"
+      "break_duration": "Durée de la pause",
+      "time_future": "Choisissez une heure à venir."
     },
     "impact": {
       "title": "Clients touchés",
@@ -279,9 +295,11 @@
       "appointments_to_reassign": "{count, plural, one {# rendez-vous à réaffecter} other {# rendez-vous à réaffecter}}",
       "called_back_to_top": "{first_name} (appel en cours) passe en tête de file pour le premier coiffeur libre.",
       "service_to_complete": "Prestation en cours pour {first_name} : à terminer par vous depuis le panneau du ticket.",
-      "nobody_notified_yet": "Aucun client n'est prévenu avant votre confirmation."
+      "nobody_notified_yet": "Aucun client n'est prévenu avant votre confirmation.",
+      "summary": "{count, plural, one {# client touché} other {# clients touchés}}"
     },
-    "confirm": "Confirmer"
+    "confirm": "Confirmer",
+    "done": "{stylist_name} : {status} enregistré."
   },
   "remove": {
     "title": "Retirer {first_name} de la file",
@@ -296,14 +314,17 @@
     "note": "Précision (facultative)",
     "note_hint": "200 caractères maximum.",
     "client_notice": "Le client sera prévenu avec ce motif, des excuses et des salons proches.",
-    "submit": "Retirer"
+    "submit": "Retirer",
+    "reason_required": "Choisissez un motif pour retirer le client.",
+    "done": "{first_name} est retiré de la file."
   },
   "reassign": {
     "title": "Changer de coiffeur pour {first_name}",
     "new_time": "Passage estimé à {time}",
     "delay_warning": "L'heure du client reculerait de {minutes} min : il recevra une demande.",
     "send_request": "Envoyer la demande",
-    "request_sent": "Demande envoyée. Sans réponse du client en 10 min, rien ne change."
+    "request_sent": "Demande envoyée. Sans réponse du client en 10 min, rien ne change.",
+    "done": "{first_name} passe chez {stylist_name}."
   },
   "end_of_day": {
     "banner": {
@@ -324,6 +345,10 @@
       "cancel": "Annuler avec excuses",
       "all": "Tous",
       "cancel_all_confirm": "{count, plural, one {Annuler avec excuses le client restant ? Il recevra un message d'excuse et des salons proches.} other {Annuler avec excuses les # clients restants ? Ils recevront un message d'excuse et des salons proches.}}"
+    },
+    "done": {
+      "serve": "{count, plural, one {# client sera servi} other {# clients seront servis}}.",
+      "cancel": "{count, plural, one {# client annulé avec excuses} other {# clients annulés avec excuses}}."
     }
   },
   "appointments": {
@@ -341,7 +366,8 @@
       "phone": "Téléphone (facultatif)",
       "phone_hint": "Avec un numéro, le client reçoit son lien de suivi par SMS. Le numéro est masqué dès l'enregistrement.",
       "submit": "Ajouter le rendez-vous",
-      "submit_edit": "Enregistrer les modifications"
+      "submit_edit": "Enregistrer les modifications",
+      "no_service": "Prestation non précisée"
     },
     "edit": "Modifier",
     "cancel": "Annuler le rendez-vous",
@@ -366,10 +392,19 @@
       "unknown_stylist": "Coiffeur non précisé par le client",
       "merge_suggestion": "Rapprocher du rendez-vous déjà saisi : {first_name}, {time}, avec {stylist_name}",
       "reminder": "Signalé il y a plus de 10 min : confirmez ou refusez.",
-      "reject": "Refuser"
+      "reject": "Refuser",
+      "confirm_merge": "Confirmer et rapprocher",
+      "confirm_alone": "Confirmer sans rapprocher"
     },
     "warning_stylist_absent": "{stylist_name} est déclaré absent aujourd'hui. Le rendez-vous est enregistré, pensez à le réaffecter.",
-    "back_to_board": "Retour à la file"
+    "back_to_board": "Retour à la file",
+    "done": {
+      "created": "Rendez-vous ajouté pour {first_name}.",
+      "updated": "Rendez-vous de {first_name} modifié.",
+      "cancelled": "Rendez-vous de {first_name} annulé.",
+      "confirmed": "Rendez-vous de {first_name} confirmé.",
+      "rejected": "Rendez-vous de {first_name} refusé."
+    }
   },
   "summary": {
     "title": "Récapitulatif du jour",

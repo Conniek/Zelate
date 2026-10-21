@@ -163,7 +163,7 @@ export function SetupServices({ salonId }: { salonId: string }) {
             </label>
           ))}
           <Button
-            disabled={picked.length === 0}
+            aria-disabled={picked.length === 0 || undefined}
             onClick={() => void addSuggestions()}
           >
             {t('services.suggested_add')}

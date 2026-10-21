@@ -15,8 +15,13 @@ interface Props {
 }
 
 const EMPTY = { firstName: '', phone: '', serviceId: '', stylistId: '' };
+const FIRST_NAME_ID = 'walkin-first-name';
+const PHONE_ID = 'walkin-contact';
 
-/** F-M7: « Client à l'accueil », opened by the button or the `N` key. */
+/**
+ * F-M7: « Client à l'accueil », opened by the button or Alt+Shift+N. A single
+ * letter would fire while typing elsewhere or with voice control (WCAG 2.1.4).
+ */
 export function WalkInDialog({
   announce,
   disabled,
@@ -37,12 +42,10 @@ export function WalkInDialog({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== 'n' || event.ctrlKey || event.metaKey) {
-        return;
-      }
-      if (event.altKey || disabled) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('input, textarea, select, [contenteditable]')) return;
+      if (event.code !== 'KeyN' || !event.altKey || !event.shiftKey) return;
+      if (event.ctrlKey || event.metaKey || disabled) return;
+      // Never over another dialog (ticket panel, absence form).
+      if (document.querySelector('[role="dialog"]')) return;
       event.preventDefault();
       setOpen(true);
     };
@@ -70,7 +73,12 @@ export function WalkInDialog({
         : {}),
     };
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    if (errors.firstName || errors.phone) {
+      document
+        .getElementById(errors.firstName ? FIRST_NAME_ID : PHONE_ID)
+        ?.focus();
+      return;
+    }
     const outcome = await run(
       'register_walk_in',
       {
@@ -83,14 +91,16 @@ export function WalkInDialog({
     );
     if (!outcome.ok) return;
     announce(t('walk_in.success', { first_name: form.firstName.trim() }));
+    // Typed by the salon for someone else: nothing of it stays on screen.
     change(false);
   }
 
   return (
     <>
       <Button
-        aria-keyshortcuts="N"
-        disabled={disabled}
+        aria-describedby={disabled ? 'board-offline' : undefined}
+        aria-disabled={disabled || undefined}
+        aria-keyshortcuts="Alt+Shift+N"
         onClick={() => setOpen(true)}
       >
         {t('walk_in.open')}
@@ -102,17 +112,27 @@ export function WalkInDialog({
         open={open}
         title={t('walk_in.title')}
       >
-        <form className="grid gap-4" noValidate onSubmit={submit}>
+        <form
+          autoComplete="off"
+          className="grid gap-4"
+          noValidate
+          onSubmit={submit}
+        >
           <TextField
             autoComplete="off"
             error={fieldErrors.firstName}
+            id={FIRST_NAME_ID}
             label={t('walk_in.first_name')}
             maxLength={30}
             onChange={(e) => setForm({ ...form, firstName: e.target.value })}
             value={form.firstName}
           />
+          {/* Someone else's number: the browser must not keep it (H6, ADR-007). */}
           <PhoneField
+            autoComplete="off"
             error={fieldErrors.phone}
+            id={PHONE_ID}
+            name={PHONE_ID}
             helpText={t('walk_in.phone_hint')}
             label={t('walk_in.phone')}
             onChange={(digits) => setForm({ ...form, phone: digits })}
@@ -161,7 +181,7 @@ export function WalkInDialog({
             <Button onClick={() => change(false)} variant="secondary">
               {tCommon('actions.cancel')}
             </Button>
-            <Button disabled={busy !== null} type="submit">
+            <Button loading={busy !== null} type="submit">
               {t('walk_in.submit')}
             </Button>
           </div>

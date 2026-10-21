@@ -281,7 +281,7 @@ export function SignupPage() {
             value={password}
           />
           <Button
-            disabled={email.trim() === '' || password === ''}
+            aria-disabled={email.trim() === '' || password === '' || undefined}
             fullWidth
             loading={busy}
             size="lg"
@@ -440,7 +440,7 @@ export function SignupPage() {
               {t('signup.submit')}
             </Button>
             <Button
-              disabled={busy}
+              aria-disabled={busy || undefined}
               fullWidth
               onClick={() => setStep(2)}
               variant="secondary"

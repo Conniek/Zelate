@@ -1,27 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Navigate, useOutletContext } from 'react-router';
+import { Link, useOutletContext } from 'react-router';
 import { Banner, Button, ConnectionBanner, Skeleton } from '@zelate/ui';
 import { BoardControls } from './BoardControls';
+import { EndOfDay } from './EndOfDay';
 import { PresenceDialog } from './PresenceDialog';
 import type { PresenceAction } from './PresenceDialog';
 import { TicketPanel } from './TicketPanel';
 import { WalkInDialog } from './WalkInDialog';
-import { boardColumns, loadBoard, ticketStylistId } from '../lib/board-api';
+import { boardColumns, liveColumns, ticketStylistId } from '../lib/board-api';
 import type { BoardStylist, BoardTicket } from '../lib/board-api';
-import { useCommand } from '../lib/use-command';
-import { AccessLost, loadServiceOptions } from '../lib/queue-api';
+import { loadServiceOptions } from '../lib/queue-api';
 import type { PresenceStatus } from '../lib/queue-api';
 import type { SetupSalon } from '../lib/setup-api';
-import {
-  LIVE_POLL_MS,
-  POLL_MS,
-  queryKeys,
-  timeParts,
-  useOnline,
-  useSalonRealtime,
-} from '../lib/stylist';
+import { timeParts } from '../lib/stylist';
+import { useBoard } from '../lib/use-board';
+
+const BOARD_HEADING = 'board-heading';
 
 function useBoardTitle(): void {
   const { t } = useTranslation('pro-manager');
@@ -29,6 +25,61 @@ function useBoardTitle(): void {
   useEffect(() => {
     document.title = t('board.page_title', { app: tCommon('brand.pro_name') });
   }, [t, tCommon]);
+}
+
+/** One polite message, read again even when the same text comes back. */
+function useAnnouncer() {
+  const [message, setMessage] = useState('');
+  const announce = useCallback((text: string) => {
+    setMessage('');
+    window.setTimeout(() => setMessage(text), 50);
+  }, []);
+  return { message, announce };
+}
+
+/**
+ * Changes made by others (DESIGN_SYSTEM §9): a new client, an arrival, an
+ * appointment to confirm. One message per event, nothing on the first load.
+ */
+function useBoardEvents(
+  tickets: BoardTicket[] | undefined,
+  announce: (text: string) => void,
+) {
+  const { t } = useTranslation('pro-manager');
+  const seen = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!tickets) return;
+    const events = tickets.flatMap((ticket) => {
+      const name = { first_name: ticket.display_name };
+      return [
+        { key: `new:${ticket.id}`, text: t('board.announce.joined', name) },
+        ...(ticket.arrived_at !== null
+          ? [
+              {
+                key: `in:${ticket.id}`,
+                text: t('board.announce.arrived', name),
+              },
+            ]
+          : []),
+        ...(ticket.status === 'pending_confirmation'
+          ? [
+              {
+                key: `rdv:${ticket.id}`,
+                text: t('board.announce.pending', name),
+              },
+            ]
+          : []),
+      ];
+    });
+    const first = seen.current === null;
+    const known = seen.current ?? new Set<string>();
+    const fresh = events.filter((e) => !known.has(e.key));
+    for (const e of events) known.add(e.key);
+    seen.current = known;
+    if (!first && fresh.length > 0) {
+      announce(fresh.map((e) => e.text).join(' '));
+    }
+  }, [announce, t, tickets]);
 }
 
 function TicketLine({
@@ -57,6 +108,7 @@ function TicketLine({
     <li>
       <button
         className="grid min-h-11 w-full gap-0.5 rounded-lg border border-border px-3 py-2 text-left"
+        data-ticket={ticket.id}
         onClick={() => onOpen(ticket)}
         type="button"
       >
@@ -92,7 +144,6 @@ function StylistColumn({
   disabled,
   onAction,
   onOpen,
-  onTakeNext,
   serviceNames,
   stylist,
   tickets,
@@ -100,7 +151,6 @@ function StylistColumn({
   disabled: boolean;
   onAction: (action: PresenceAction) => void;
   onOpen: (ticket: BoardTicket) => void;
-  onTakeNext: (ticket: BoardTicket) => void;
   serviceNames: Map<string, string>;
   stylist: BoardStylist;
   tickets: BoardTicket[];
@@ -108,20 +158,16 @@ function StylistColumn({
   const { t } = useTranslation('pro-manager');
   const { t: tCommon } = useTranslation('common');
   const status: PresenceStatus = stylist.status ?? 'offline';
-  const next =
-    stylist.role === 'manager' &&
-    stylist.is_hairdressing &&
-    !tickets.some((x) => x.status === 'called' || x.status === 'in_service')
-      ? tickets
-          .filter((x) => x.status === 'waiting' && x.kind === 'queue')
-          .sort((a, b) => a.queue_rank - b.queue_rank)[0]
-      : undefined;
   return (
     <section
       aria-labelledby={`col-${stylist.member_id}`}
       className="grid content-start gap-2 rounded-lg border border-border p-3"
     >
-      <h3 className="text-h3" id={`col-${stylist.member_id}`}>
+      <h3
+        className="text-h3 focus:outline-none"
+        id={`col-${stylist.member_id}`}
+        tabIndex={-1}
+      >
         {stylist.first_name}
       </h3>
       <p className="text-body-sm text-text-muted">
@@ -136,9 +182,10 @@ function StylistColumn({
       >
         {ACTIONS.map((action) => (
           <Button
-            disabled={disabled}
+            aria-describedby={disabled ? 'board-offline' : undefined}
+            aria-disabled={disabled || undefined}
             key={action}
-            onClick={() => onAction(action)}
+            onClick={() => !disabled && onAction(action)}
             size="sm"
             variant="secondary"
           >
@@ -146,11 +193,6 @@ function StylistColumn({
           </Button>
         ))}
       </div>
-      {next ? (
-        <Button disabled={disabled} onClick={() => onTakeNext(next)} size="sm">
-          {t('board.take_next')}
-        </Button>
-      ) : null}
       <ul className="grid gap-2">
         {tickets.map((ticket) => (
           <TicketLine
@@ -169,43 +211,54 @@ function StylistColumn({
   );
 }
 
-/** `/dashboard` (F-M6): the live board of the salon, read-only for now. */
+/** Moves the focus once the dialog has handed it back (Radix restores it first). */
+function focusLater(id: string) {
+  window.setTimeout(() => {
+    (
+      document.getElementById(id) ?? document.getElementById(BOARD_HEADING)
+    )?.focus();
+  }, 0);
+}
+
+/** `/dashboard` (F-M6 to F-M10, F-M12): the live board of the salon. */
 export function DashboardPage() {
   const salon = useOutletContext<SetupSalon>();
   const { t } = useTranslation('pro-manager');
   const { t: tCommon } = useTranslation('common');
   useBoardTitle();
-  const [live, setLive] = useState(false);
-  const [message, setMessage] = useState('');
+  const { message, announce } = useAnnouncer();
   const [presence, setPresence] = useState<{
     action: PresenceAction;
     memberId: string;
   } | null>(null);
   const [openTicketId, setOpenTicketId] = useState<string | null>(null);
-  const command = useCommand();
-  const realtime = useSalonRealtime(salon.id);
-  useEffect(() => setLive(realtime), [realtime]);
-  const online = useOnline();
-  const board = useQuery({
-    queryKey: queryKeys.board,
-    queryFn: () => loadBoard(salon.id),
-    refetchInterval: live ? LIVE_POLL_MS : POLL_MS,
-    refetchOnWindowFocus: true,
-    retry: (count, error) => !(error instanceof AccessLost) && count < 2,
-  });
+  const { board, live, lost } = useBoard(salon.id);
   const services = useQuery({
     queryKey: ['service-options', salon.id],
     queryFn: () => loadServiceOptions(salon.id),
   });
+  useBoardEvents(board.data?.tickets, announce);
 
-  async function takeNext(ticket: BoardTicket) {
-    const outcome = await command.run('take_next', { ticket_id: ticket.id });
-    if (outcome.ok) setMessage(t('board.take_next'));
-  }
+  // The open ticket left the board (served, cancelled elsewhere): say why the panel closed.
+  const openTicket =
+    board.data?.tickets.find((x) => x.id === openTicketId) ?? null;
+  const lastOpen = useRef<BoardTicket | null>(null);
+  useEffect(() => {
+    if (openTicket) {
+      lastOpen.current = openTicket;
+      return;
+    }
+    if (openTicketId && board.data && lastOpen.current) {
+      announce(
+        t('board.announce.panel_closed', {
+          first_name: lastOpen.current.display_name,
+        }),
+      );
+      setOpenTicketId(null);
+      focusLater(BOARD_HEADING);
+    }
+  }, [announce, board.data, openTicket, openTicketId, t]);
 
-  if (board.error instanceof AccessLost) {
-    return <Navigate replace to="/signin?next=%2Fdashboard" />;
-  }
   if (!board.data) {
     return (
       <main aria-busy="true" className="mx-auto w-full max-w-5xl px-5 py-10">
@@ -218,8 +271,19 @@ export function DashboardPage() {
   const serviceNames = new Map(
     (services.data ?? []).map((service) => [service.id, service.name]),
   );
-  const lost = !online || (!live && board.isError);
-  const columns = boardColumns(stylists);
+  const cutters = boardColumns(stylists);
+  const columns = liveColumns(stylists, tickets);
+  const manager = stylists.find((s) => s.role === 'manager');
+  const managerBusy = tickets.some(
+    (x) =>
+      x.assigned_member_id === manager?.member_id &&
+      (x.status === 'called' || x.status === 'in_service'),
+  );
+  const canTakeNext =
+    manager !== undefined &&
+    !manager.is_hairdressing &&
+    !managerBusy &&
+    tickets.some((x) => x.status === 'waiting' && x.kind === 'queue');
   const pendingCount = tickets.filter(
     (x) => x.status === 'pending_confirmation',
   ).length;
@@ -227,11 +291,20 @@ export function DashboardPage() {
     const id = ticketStylistId(ticket);
     return id === null || !columns.some((c) => c.member_id === id);
   });
+  const presenceStylist = presence
+    ? columns.find((c) => c.member_id === presence.memberId)
+    : undefined;
 
   return (
     <main className="mx-auto grid w-full max-w-5xl gap-6 px-5 py-8">
       <header className="grid gap-2">
-        <h1 className="text-h1">{salon.name}</h1>
+        <h1
+          className="text-h1 focus:outline-none"
+          id={BOARD_HEADING}
+          tabIndex={-1}
+        >
+          {salon.name}
+        </h1>
         <p className="flex flex-wrap gap-x-4 gap-y-1 text-body-sm">
           <span>
             {tCommon(
@@ -255,19 +328,26 @@ export function DashboardPage() {
           ) : null}
         </p>
         <ConnectionBanner lost={lost} lostLabel={t('board.offline_banner')} />
+        {lost ? (
+          <p className="sr-only" id="board-offline">
+            {t('board.offline_banner')}
+          </p>
+        ) : null}
         <BoardControls
+          announce={announce}
+          canTakeNext={canTakeNext}
           disabled={lost}
           indicators={indicators}
-          manager={stylists.find((s) => s.role === 'manager')}
+          manager={manager}
           salonId={salon.id}
         />
         <div>
           <WalkInDialog
-            announce={setMessage}
+            announce={announce}
             disabled={lost}
             salonId={salon.id}
             services={services.data ?? []}
-            stylists={columns}
+            stylists={cutters}
           />
         </div>
         <p aria-live="polite" className="sr-only" role="status">
@@ -285,28 +365,37 @@ export function DashboardPage() {
         ) : null}
       </header>
 
+      <EndOfDay
+        announce={announce}
+        disabled={lost}
+        indicators={indicators}
+        salonId={salon.id}
+        tickets={tickets}
+      />
+
       {tickets.length === 0 ? <Banner>{t('board.empty')}</Banner> : null}
 
-      <section
-        aria-label={t('board.columns_label')}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-      >
-        {columns.map((stylist) => (
-          <StylistColumn
-            disabled={lost}
-            key={stylist.member_id}
-            onAction={(action) =>
-              setPresence({ action, memberId: stylist.member_id })
-            }
-            onOpen={(ticket) => setOpenTicketId(ticket.id)}
-            onTakeNext={(ticket) => void takeNext(ticket)}
-            serviceNames={serviceNames}
-            stylist={stylist}
-            tickets={tickets.filter(
-              (ticket) => ticketStylistId(ticket) === stylist.member_id,
-            )}
-          />
-        ))}
+      <section aria-labelledby="columns-title" className="grid gap-3">
+        <h2 className="sr-only" id="columns-title">
+          {t('board.columns_label')}
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {columns.map((stylist) => (
+            <StylistColumn
+              disabled={lost}
+              key={stylist.member_id}
+              onAction={(action) =>
+                setPresence({ action, memberId: stylist.member_id })
+              }
+              onOpen={(ticket) => setOpenTicketId(ticket.id)}
+              serviceNames={serviceNames}
+              stylist={stylist}
+              tickets={tickets.filter(
+                (ticket) => ticketStylistId(ticket) === stylist.member_id,
+              )}
+            />
+          ))}
+        </div>
       </section>
 
       {unassigned.length > 0 ? (
@@ -330,24 +419,28 @@ export function DashboardPage() {
           </ul>
         </section>
       ) : null}
-      {command.error ? (
-        <Banner role="alert" tone="danger">
-          {command.error}
-        </Banner>
-      ) : null}
-      {openTicketId && tickets.find((x) => x.id === openTicketId) ? (
+      {openTicket ? (
         <TicketPanel
-          announce={setMessage}
           onClose={() => setOpenTicketId(null)}
-          stylists={columns}
-          ticket={tickets.find((x) => x.id === openTicketId)!}
+          onDone={(text, memberId) => {
+            lastOpen.current = null;
+            setOpenTicketId(null);
+            announce(text);
+            focusLater(memberId ? `col-${memberId}` : BOARD_HEADING);
+          }}
+          salonId={salon.id}
+          stylists={cutters}
+          ticket={openTicket}
         />
       ) : null}
-      {presence && columns.find((c) => c.member_id === presence.memberId) ? (
+      {presence && presenceStylist ? (
         <PresenceDialog
           action={presence.action}
+          announce={announce}
           onClose={() => setPresence(null)}
-          stylist={columns.find((c) => c.member_id === presence.memberId)!}
+          queueVersion={indicators.queue_version}
+          salonId={salon.id}
+          stylist={presenceStylist}
           tickets={tickets}
         />
       ) : null}

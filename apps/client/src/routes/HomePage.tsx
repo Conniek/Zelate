@@ -19,10 +19,10 @@ export function HomePage() {
         <p className="text-body text-text-muted">
           {t('home.geolocation.explanation')}
         </p>
-        <Button disabled fullWidth size="lg">
+        <Button aria-disabled fullWidth size="lg">
           {t('home.geolocation.allow')}
         </Button>
-        <Button disabled fullWidth size="lg" variant="secondary">
+        <Button aria-disabled fullWidth size="lg" variant="secondary">
           {t('home.geolocation.use_address')}
         </Button>
       </section>

@@ -44,6 +44,10 @@ export interface BoardTicket {
   reassignment_member_id: string | null;
   reassignment_proposed_start_at: string | null;
   reassignment_resolved: Record<string, unknown> | null;
+  /** H9: warned of the end-of-day risk, the client's answer, the manager's decision. */
+  end_of_day_warned_at: string | null;
+  end_of_day_choice: 'stay' | 'cancel' | null;
+  closing_decision: 'serve' | 'cancel' | null;
 }
 
 export interface BoardIndicators {
@@ -53,6 +57,10 @@ export interface BoardIndicators {
   current_wait_minutes: number | null;
   estimate_updated_at: string | null;
   queue_version: number;
+  /** Last closing of today in Paris, null when the salon is closed today (F-M12). */
+  last_closing_at: string | null;
+  end_of_day_warning_minutes: number;
+  closing_grace_minutes: number;
 }
 
 export interface SalonBoard {
@@ -83,9 +91,49 @@ export function ticketStylistId(ticket: BoardTicket): string | null {
   );
 }
 
-/** Columns of the board: stylists, and the manager only when they cut hair. */
+/** Who can receive clients: stylists, and the manager only when they cut hair. */
 export function boardColumns(stylists: BoardStylist[]): BoardStylist[] {
   return stylists.filter((s) => s.role === 'stylist' || s.is_hairdressing);
+}
+
+/**
+ * Columns of the live board: the people above, plus the manager when, without
+ * cutting hair, he took a client with « Je prends le prochain » (F-M6).
+ */
+export function liveColumns(
+  stylists: BoardStylist[],
+  tickets: BoardTicket[],
+): BoardStylist[] {
+  return stylists.filter(
+    (s) =>
+      s.role === 'stylist' ||
+      s.is_hairdressing ||
+      tickets.some(
+        (t) =>
+          t.assigned_member_id === s.member_id &&
+          (t.status === 'called' || t.status === 'in_service'),
+      ),
+  );
+}
+
+/** F-M12: the end-of-day window, from the warning until the automatic cancellation. */
+export type EndOfDayPhase = 'before' | 'warning' | 'closing' | 'after';
+
+export function endOfDayPhase(
+  indicators: BoardIndicators,
+  now: number,
+): EndOfDayPhase {
+  if (indicators.last_closing_at === null) return 'before';
+  const closing = Date.parse(indicators.last_closing_at);
+  const minute = 60_000;
+  if (now < closing - indicators.end_of_day_warning_minutes * minute) {
+    return 'before';
+  }
+  if (now < closing) return 'warning';
+  if (now < closing + indicators.closing_grace_minutes * minute) {
+    return 'closing';
+  }
+  return 'after';
 }
 
 export interface PresenceChange {

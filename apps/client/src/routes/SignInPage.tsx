@@ -112,7 +112,7 @@ export function SignInPage() {
             value={phone}
           />
           <Button
-            disabled={phone.length !== 9}
+            aria-disabled={phone.length !== 9 || undefined}
             fullWidth
             loading={busy}
             size="lg"
@@ -135,7 +135,7 @@ export function SignInPage() {
             value={code}
           />
           <Button
-            disabled={countdown.isRunning || busy}
+            aria-disabled={countdown.isRunning || busy || undefined}
             fullWidth
             onClick={() => void sendCode()}
             variant="secondary"
@@ -158,7 +158,7 @@ export function SignInPage() {
             value={firstName}
           />
           <Button
-            disabled={firstName.trim().length === 0}
+            aria-disabled={firstName.trim().length === 0 || undefined}
             fullWidth
             loading={busy}
             size="lg"
