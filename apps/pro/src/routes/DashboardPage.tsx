@@ -6,9 +6,11 @@ import { Banner, Button, ConnectionBanner, Skeleton } from '@zelate/ui';
 import { BoardControls } from './BoardControls';
 import { PresenceDialog } from './PresenceDialog';
 import type { PresenceAction } from './PresenceDialog';
+import { TicketPanel } from './TicketPanel';
 import { WalkInDialog } from './WalkInDialog';
 import { boardColumns, loadBoard, ticketStylistId } from '../lib/board-api';
 import type { BoardStylist, BoardTicket } from '../lib/board-api';
+import { useCommand } from '../lib/use-command';
 import { AccessLost, loadServiceOptions } from '../lib/queue-api';
 import type { PresenceStatus } from '../lib/queue-api';
 import type { SetupSalon } from '../lib/setup-api';
@@ -30,9 +32,11 @@ function useBoardTitle(): void {
 }
 
 function TicketLine({
+  onOpen,
   serviceName,
   ticket,
 }: {
+  onOpen: (ticket: BoardTicket) => void;
   serviceName: string | undefined;
   ticket: BoardTicket;
 }) {
@@ -50,28 +54,34 @@ function TicketLine({
           ? tCommon('approach_status.confirmed')
           : null;
   return (
-    <li className="grid gap-0.5 rounded-lg border border-border px-3 py-2">
-      <p className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="font-semibold">{ticket.display_name}</span>
-        <span className="text-body-sm text-text-muted">
-          {tCommon(`ticket_status.${ticket.status}`)}
+    <li>
+      <button
+        className="grid min-h-11 w-full gap-0.5 rounded-lg border border-border px-3 py-2 text-left"
+        onClick={() => onOpen(ticket)}
+        type="button"
+      >
+        <span className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="font-semibold">{ticket.display_name}</span>
+          <span className="text-body-sm text-text-muted">
+            {tCommon(`ticket_status.${ticket.status}`)}
+          </span>
         </span>
-      </p>
-      <p className="text-body-sm text-text-muted">
-        {[
-          serviceName,
-          ticket.kind === 'appointment' && ticket.scheduled_at
-            ? t('board.ticket.appointment_time', {
-                time: time(ticket.scheduled_at),
-              })
-            : ticket.estimated_start_at
-              ? time(ticket.estimated_start_at)
-              : null,
-          approach,
-        ]
-          .filter((part): part is string => Boolean(part))
-          .join(' · ')}
-      </p>
+        <span className="block text-body-sm text-text-muted">
+          {[
+            serviceName,
+            ticket.kind === 'appointment' && ticket.scheduled_at
+              ? t('board.ticket.appointment_time', {
+                  time: time(ticket.scheduled_at),
+                })
+              : ticket.estimated_start_at
+                ? time(ticket.estimated_start_at)
+                : null,
+            approach,
+          ]
+            .filter((part): part is string => Boolean(part))
+            .join(' · ')}
+        </span>
+      </button>
     </li>
   );
 }
@@ -81,12 +91,16 @@ const ACTIONS: PresenceAction[] = ['absent', 'late', 'leaving_early', 'break'];
 function StylistColumn({
   disabled,
   onAction,
+  onOpen,
+  onTakeNext,
   serviceNames,
   stylist,
   tickets,
 }: {
   disabled: boolean;
   onAction: (action: PresenceAction) => void;
+  onOpen: (ticket: BoardTicket) => void;
+  onTakeNext: (ticket: BoardTicket) => void;
   serviceNames: Map<string, string>;
   stylist: BoardStylist;
   tickets: BoardTicket[];
@@ -94,6 +108,14 @@ function StylistColumn({
   const { t } = useTranslation('pro-manager');
   const { t: tCommon } = useTranslation('common');
   const status: PresenceStatus = stylist.status ?? 'offline';
+  const next =
+    stylist.role === 'manager' &&
+    stylist.is_hairdressing &&
+    !tickets.some((x) => x.status === 'called' || x.status === 'in_service')
+      ? tickets
+          .filter((x) => x.status === 'waiting' && x.kind === 'queue')
+          .sort((a, b) => a.queue_rank - b.queue_rank)[0]
+      : undefined;
   return (
     <section
       aria-labelledby={`col-${stylist.member_id}`}
@@ -124,10 +146,16 @@ function StylistColumn({
           </Button>
         ))}
       </div>
+      {next ? (
+        <Button disabled={disabled} onClick={() => onTakeNext(next)} size="sm">
+          {t('board.take_next')}
+        </Button>
+      ) : null}
       <ul className="grid gap-2">
         {tickets.map((ticket) => (
           <TicketLine
             key={ticket.id}
+            onOpen={onOpen}
             serviceName={
               ticket.service_id
                 ? serviceNames.get(ticket.service_id)
@@ -153,6 +181,8 @@ export function DashboardPage() {
     action: PresenceAction;
     memberId: string;
   } | null>(null);
+  const [openTicketId, setOpenTicketId] = useState<string | null>(null);
+  const command = useCommand();
   const realtime = useSalonRealtime(salon.id);
   useEffect(() => setLive(realtime), [realtime]);
   const online = useOnline();
@@ -167,6 +197,11 @@ export function DashboardPage() {
     queryKey: ['service-options', salon.id],
     queryFn: () => loadServiceOptions(salon.id),
   });
+
+  async function takeNext(ticket: BoardTicket) {
+    const outcome = await command.run('take_next', { ticket_id: ticket.id });
+    if (outcome.ok) setMessage(t('board.take_next'));
+  }
 
   if (board.error instanceof AccessLost) {
     return <Navigate replace to="/signin?next=%2Fdashboard" />;
@@ -258,6 +293,8 @@ export function DashboardPage() {
             onAction={(action) =>
               setPresence({ action, memberId: stylist.member_id })
             }
+            onOpen={(ticket) => setOpenTicketId(ticket.id)}
+            onTakeNext={(ticket) => void takeNext(ticket)}
             serviceNames={serviceNames}
             stylist={stylist}
             tickets={tickets.filter(
@@ -276,6 +313,7 @@ export function DashboardPage() {
             {unassigned.map((ticket) => (
               <TicketLine
                 key={ticket.id}
+                onOpen={(ticket) => setOpenTicketId(ticket.id)}
                 serviceName={
                   ticket.service_id
                     ? serviceNames.get(ticket.service_id)
@@ -286,6 +324,19 @@ export function DashboardPage() {
             ))}
           </ul>
         </section>
+      ) : null}
+      {command.error ? (
+        <Banner role="alert" tone="danger">
+          {command.error}
+        </Banner>
+      ) : null}
+      {openTicketId && tickets.find((x) => x.id === openTicketId) ? (
+        <TicketPanel
+          announce={setMessage}
+          onClose={() => setOpenTicketId(null)}
+          stylists={columns}
+          ticket={tickets.find((x) => x.id === openTicketId)!}
+        />
       ) : null}
       {presence && columns.find((c) => c.member_id === presence.memberId) ? (
         <PresenceDialog
