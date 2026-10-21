@@ -99,7 +99,8 @@ export function StylistLayout() {
         ? 'access_revoked'
         : undefined;
   useEffect(() => {
-    if (reason === undefined) return;
+    // Once only: the reads that fail after sign-out must not change the reason.
+    if (reason === undefined || leaving.current) return;
     leaving.current = true;
     exitReason.current = reason;
     rememberStaff(false);
