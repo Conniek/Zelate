@@ -7,6 +7,9 @@ import { useCommand } from '../lib/use-command';
 type QueueStatus = BoardIndicators['queue_status'];
 
 interface Props {
+  announce: (message: string) => void;
+  /** « Je prends le prochain »: the manager, not cutting hair, is free and clients wait (F-M6). */
+  canTakeNext: boolean;
   disabled: boolean;
   indicators: BoardIndicators;
   manager: BoardStylist | undefined;
@@ -15,6 +18,8 @@ interface Props {
 
 /** F-M5 (open, pause, close) and the « Je coiffe » switch (S-02, F-M6). */
 export function BoardControls({
+  announce,
+  canTakeNext,
   disabled,
   indicators,
   manager,
@@ -25,9 +30,35 @@ export function BoardControls({
   const { busy, error, run } = useCommand();
   const [confirmClose, setConfirmClose] = useState(false);
 
+  const blocked = disabled || busy !== null;
+  const offline = disabled ? 'board-offline' : undefined;
+
   const setStatus = async (status: QueueStatus) => {
-    await run('set_queue_status', { salon_id: salonId, status });
+    const outcome = await run(
+      'set_queue_status',
+      { salon_id: salonId, status },
+      salonId,
+    );
     setConfirmClose(false);
+    if (outcome.ok) announce(t(`queue_status.done.${status}`));
+  };
+
+  const setHairdressing = async (on: boolean) => {
+    if (blocked) return;
+    const outcome = await run(
+      'set_hairdressing',
+      { is_hairdressing: on },
+      salonId,
+    );
+    if (outcome.ok)
+      announce(t(on ? 'board.hairdressing.on' : 'board.hairdressing.off'));
+  };
+
+  // `call_ticket` in the manager's name: the engine lets him call while not cutting hair.
+  const takeNext = async () => {
+    if (blocked) return;
+    const outcome = await run('call_ticket', {}, salonId);
+    if (outcome.ok) announce(t('board.take_next_done'));
   };
   const choices: { status: QueueStatus; label: string }[] = [
     { status: 'open', label: t('queue_status.open') },
@@ -45,13 +76,17 @@ export function BoardControls({
         >
           {choices.map(({ label, status }) => (
             <Button
+              aria-describedby={offline}
+              aria-disabled={disabled || undefined}
               aria-pressed={indicators.queue_status === status}
-              disabled={disabled || busy !== null}
               key={status}
+              loading={busy === 'set_queue_status' && status !== 'closed'}
               onClick={() =>
-                status === 'closed'
-                  ? setConfirmClose(true)
-                  : void setStatus(status)
+                blocked || indicators.queue_status === status
+                  ? undefined
+                  : status === 'closed'
+                    ? setConfirmClose(true)
+                    : void setStatus(status)
               }
               size="sm"
               variant={
@@ -65,18 +100,26 @@ export function BoardControls({
         {manager ? (
           <label className="flex min-h-11 items-center gap-2 text-body-sm font-semibold">
             <input
+              aria-describedby={offline}
+              aria-disabled={disabled || undefined}
               checked={manager.is_hairdressing}
               className="size-5"
-              disabled={disabled || busy !== null}
-              onChange={(event) =>
-                void run('set_hairdressing', {
-                  is_hairdressing: event.target.checked,
-                })
-              }
+              onChange={(event) => void setHairdressing(event.target.checked)}
               type="checkbox"
             />
             {t('board.hairdressing.label')}
           </label>
+        ) : null}
+        {canTakeNext ? (
+          <Button
+            aria-describedby={offline}
+            aria-disabled={disabled || undefined}
+            loading={busy === 'call_ticket'}
+            onClick={() => void takeNext()}
+            size="sm"
+          >
+            {t('board.take_next')}
+          </Button>
         ) : null}
       </div>
       {indicators.queue_status === 'paused' ? (
@@ -103,7 +146,7 @@ export function BoardControls({
             {tCommon('actions.cancel')}
           </Button>
           <Button
-            disabled={busy !== null}
+            loading={busy === 'set_queue_status'}
             onClick={() => void setStatus('closed')}
           >
             {t('queue_status.close_confirm_submit')}

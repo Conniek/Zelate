@@ -5,7 +5,7 @@ Zelaté is a virtual queue for hair salons: clients join a nearby salon's queue 
 ## Current state
 
 - **Phase 2 is closed (19/10/2026).** All business and technical questions are decided: E1-E39 (Ely) and K1-K45 (Koni). For E32-E39 and K42-K45 the written proposals are the default decisions (`docs/stories/README.md`); Ely may still revise one, nothing waits for her.
-- **DEV-0 to DEV-6 are merged; DEV-7 (manager dashboard `/dashboard/*`: live board, walk-in, absence preview, ticket panel, appointments, summary, audit, config) is on `feat/dev-7-manager-dashboard`, see `docs/reviews/2026-10-21-dev-7.md`; end of day F-M12 and `/dashboard/salon` are open.** Next: DEV-8. The pilot is built in two steps: first the core loop (a client joins, a stylist calls, starts and finishes, every wait is recalculated: PRD §2 goal 1), then salon appointments (H10). Figma mockups (DES-1, DES-2) go on in parallel and do not block the code.
+- **DEV-0 to DEV-7 are merged; the DEV-7 review fixes and the end of day F-M12 are on `fix/dev-7-review`, see `docs/reviews/2026-10-21-dev-7.md`; `/dashboard/salon` is open.** Next: DEV-8. The pilot is built in two steps: first the core loop (a client joins, a stylist calls, starts and finishes, every wait is recalculated: PRD §2 goal 1), then salon appointments (H10). Figma mockups (DES-1, DES-2) go on in parallel and do not block the code.
 - Supabase local is running and its API, Studio and Mailpit endpoints respond. Some ports bind to `0.0.0.0`; Studio, pgMeta and analytics have no authentication. Keep the stack on a trusted local network only; never use its shared default keys in production or share `supabase status` output.
 
 ## Read before working

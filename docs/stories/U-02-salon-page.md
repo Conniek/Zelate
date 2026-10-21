@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Fiche d'un salon à la file ouverte
+
 - **Étant donné** un salon publié dont la file est ouverte et non complète
 - **Quand** j'ouvre sa fiche depuis la liste, la carte ou l'adresse `/salons/:slug`
 - **Alors** je vois ses photos
@@ -21,11 +22,13 @@
 - **Et** le bouton « Rejoindre la file » est actif
 
 ### 2. Rejoindre la file depuis la fiche
+
 - **Étant donné** que la fiche d'un salon ouvert et non complet est affichée
 - **Quand** je touche « Rejoindre la file »
 - **Alors** l'étape 1 du parcours « Rejoindre la file » s'ouvre (F-C3)
 
 ### 3. Galerie de photos
+
 - **Étant donné** que le salon a des photos (6 au maximum)
 - **Quand** je touche une photo de la galerie défilante
 - **Alors** elle s'affiche en plein écran
@@ -33,32 +36,38 @@
 - **Alors** le plein écran se ferme et la fiche réapparaît
 
 ### 4. Horaires sur plusieurs plages
+
 - **Étant donné** que le salon a plusieurs plages d'ouverture certains jours
 - **Quand** je déplie les horaires
 - **Alors** chaque jour de la semaine affiche toutes ses plages
 
 ### 5. Données des coiffeurs limitées au prénom
+
 - **Étant donné** que le salon a des coiffeurs actifs qui coiffent aujourd'hui
 - **Quand** la section « Coiffeurs » s'affiche
 - **Alors** chaque coiffeur est présenté par son prénom, sa photo et ses spécialités
 - **Et** aucun nom de famille ni adresse e-mail de coiffeur n'est affiché
 
 ### 6. Itinéraire
+
 - **Étant donné** que la fiche est affichée sur un smartphone
 - **Quand** je touche « Itinéraire »
 - **Alors** l'application de cartes de l'appareil s'ouvre sur l'adresse du salon
 
 ### 7. File fermée
+
 - **Étant donné** un salon publié dont la file est fermée
 - **Quand** j'ouvre sa fiche
 - **Alors** le bouton est désactivé et affiche « Fermé » suivi de la prochaine ouverture (exemple : « Fermé · ouvre demain à 9h00 »)
 
 ### 8. File en pause
+
 - **Étant donné** un salon publié dont la file est en pause
 - **Quand** j'ouvre sa fiche
 - **Alors** le bouton est désactivé et affiche « File en pause, réessayez dans quelques minutes »
 
 ### 9. File complète
+
 - **Étant donné** un salon dont la prochaine prestation finirait après la fermeture (file complète, `is_full` vrai, K36)
 - **Quand** j'ouvre sa fiche
 - **Alors** le bouton est désactivé et affiche « Complet pour aujourd'hui »
@@ -67,6 +76,7 @@
 - **Alors** l'accueil des salons s'ouvre (F-C1)
 
 ### 9 bis. Prochain créneau libre par prestation (renvoi vers U-16)
+
 - **Étant donné** un salon dont deux prestations tiennent dans un trou de la journée d'un coiffeur qui les maîtrise, et une troisième qui ne tient dans aucun trou
 - **Quand** j'ouvre sa fiche
 - **Alors** chacune des deux premières prestations affiche son prochain créneau libre (exemple PRD §5.2 : « prochain créneau libre à 15h20 »)
@@ -74,12 +84,14 @@
 - **Et** aucun prénom de coiffeur n'est associé au créneau
 
 ### 9 bis b. Aucun créneau libre si la file n'est pas ouverte (E22)
+
 - **Étant donné** un salon publié dont la file est fermée ou en pause
 - **Quand** j'ouvre sa fiche
 - **Alors** aucune prestation n'affiche de créneau libre
 - **Et** `next_free_slots` est vide (`[]`)
 
 ### 9 ter. Fiche à jour sans compte ni ticket
+
 - **Étant donné** que la fiche d'un salon ouvert est affichée sur l'appareil d'un visiteur sans compte et sans ticket
 - **Quand** le gérant met la file en pause
 - **Alors** en moins de 2 s, le bouton devient « File en pause, réessayez dans quelques minutes » sans rechargement de la page
@@ -87,43 +99,48 @@
 - **Et** ce message ne contient aucune donnée personnelle (seulement `{ version }`)
 
 ### 9 quater. Repli sans temps réel
+
 - **Étant donné** que le canal temps réel n'est pas disponible sur l'appareil
 - **Quand** la fiche reste ouverte
 - **Alors** l'attente, le statut de la file et les créneaux libres sont relus toutes les 30 s
 - **Et** ils sont relus aussi au retour de l'app au premier plan
 
 ### 10. Fermer le panneau sur mobile
+
 - **Étant donné** que la fiche est ouverte en panneau sur mobile
 - **Quand** je glisse le panneau vers le bas ou que je touche « Fermer »
 - **Alors** le panneau se ferme et l'accueil réapparaît (F-C1)
 
 ### 11. Temps de chargement
+
 - **Étant donné** un smartphone connecté
 - **Quand** j'ouvre la fiche d'un salon
 - **Alors** la fiche est chargée en moins de 2 s
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `client.salon.wait.people_ahead` | {count, plural, =0 {Personne n'attend en ce moment} one {# personne avant vous} other {# personnes avant vous}} | Pluriel ICU ; `count` = `waiting_count` (E31) |
-| `client.salon.wait.estimated_time` | Passage estimé vers {time} | Variable `time` ; heure pour « premier disponible » (E31) |
-| `client.salon.hours.title` | « Horaires » | — |
-| `client.salon.services.title` | « Prestations » | — |
-| `client.salon.services.next_free_slot` | Prochain créneau libre à {time} | Variable `time` ; partagé avec U-16 |
-| `client.salon.free_slot_hint` | Ce créneau est indicatif : il n'est pas réservé pour vous. | « Ce n'est pas une réservation » (E22) ; emplacement non décrit par APP_FLOW F-C2 |
-| `client.salon.stylists.title` | « Coiffeurs » | — |
-| `client.salon.stylist.status.available` | « disponible » | — |
-| `client.salon.stylist.status.busy` | « en prestation » | — |
-| `client.salon.stylist.status.away` | indisponible pour le moment | — |
-| `common.actions.directions` | « Itinéraire » | Partagé avec U-06 |
-| `common.actions.close` | « Fermer » | — |
-| `client.salon.join` | « Rejoindre la file » | — |
-| `common.queue.closed_with_next_opening` | « Fermé · ouvre {day} à {time} » | Partagé avec U-01 |
-| `client.salon.join_disabled.paused` | « File en pause, réessayez dans quelques minutes » | — |
-| `client.salon.join_disabled.full` | « Complet pour aujourd'hui » | — |
-| `client.nearby_salons.link` | « Salons proches » | Partagé avec U-04, U-11 |
+
+| Clé (anglais)                           | Texte (français)                                                                                                | Contrainte                                                                        |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `client.salon.wait.people_ahead`        | {count, plural, =0 {Personne n'attend en ce moment} one {# personne avant vous} other {# personnes avant vous}} | Pluriel ICU ; `count` = `waiting_count` (E31)                                     |
+| `client.salon.wait.estimated_time`      | Passage estimé vers {time}                                                                                      | Variable `time` ; heure pour « premier disponible » (E31)                         |
+| `client.salon.hours.title`              | « Horaires »                                                                                                    | —                                                                                 |
+| `client.salon.services.title`           | « Prestations »                                                                                                 | —                                                                                 |
+| `client.salon.services.next_free_slot`  | Prochain créneau libre à {time}                                                                                 | Variable `time` ; partagé avec U-16                                               |
+| `client.salon.free_slot_hint`           | Ce créneau est indicatif : il n'est pas réservé pour vous.                                                      | « Ce n'est pas une réservation » (E22) ; emplacement non décrit par APP_FLOW F-C2 |
+| `client.salon.stylists.title`           | « Coiffeurs »                                                                                                   | —                                                                                 |
+| `client.salon.stylist.status.available` | « disponible »                                                                                                  | —                                                                                 |
+| `client.salon.stylist.status.busy`      | « en prestation »                                                                                               | —                                                                                 |
+| `client.salon.stylist.status.away`      | indisponible pour le moment                                                                                     | —                                                                                 |
+| `common.actions.directions`             | « Itinéraire »                                                                                                  | Partagé avec U-06                                                                 |
+| `common.actions.close`                  | « Fermer »                                                                                                      | —                                                                                 |
+| `client.salon.join`                     | « Rejoindre la file »                                                                                           | —                                                                                 |
+| `common.queue.closed_with_next_opening` | « Fermé · ouvre {day} à {time} »                                                                                | Partagé avec U-01                                                                 |
+| `client.salon.join_disabled.paused`     | « File en pause, réessayez dans quelques minutes »                                                              | —                                                                                 |
+| `client.salon.join_disabled.full`       | « Complet pour aujourd'hui »                                                                                    | —                                                                                 |
+| `client.nearby_salons.link`             | « Salons proches »                                                                                              | Partagé avec U-04, U-11                                                           |
 
 ## Questions ouvertes
+
 - **APP_FLOW F-C2 / BACKEND_SCHEMA §6** : la vue `public_stylists` a trois statuts simplifiés (`available`, `busy`, `away`), alors que la fiche n'affiche que « disponible » ou « en prestation ». Le dictionnaire a un texte pour `away` (« indisponible pour le moment »), mais APP_FLOW ne dit pas si ce coiffeur est affiché avec ce texte ou masqué.
 - **Résolu le 18/10** (K6) — Mise à jour d'une fiche ouverte sans ticket : canal public `salon-public:{salon_id}` sans donnée personnelle (TRD ADR-018), repli à 30 s ; voir scénarios 9 ter et 9 quater.
 - **APP_FLOW F-C2** : qu'affiche `/salons/:slug` pour un slug inconnu ou pour un salon qui n'est pas (ou plus) publié ?

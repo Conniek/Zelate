@@ -160,7 +160,7 @@ export function AdminSalonPage() {
             {t('admin.salon.approve')}
           </Button>
           <Button
-            disabled={busy}
+            aria-disabled={busy || undefined}
             onClick={() => setRejecting(true)}
             size="lg"
             variant="secondary"

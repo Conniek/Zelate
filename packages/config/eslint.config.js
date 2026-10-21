@@ -63,4 +63,20 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // DESIGN_SYSTEM §9: a native `disabled` drops the focus of the button that
+    // was just pressed (WCAG 2.4.3). Use `loading` or `aria-disabled` instead.
+    files: ['apps/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='disabled']",
+          message:
+            'Button: use `loading` or `aria-disabled` (with the reason in aria-describedby), never `disabled`.',
+        },
+      ],
+    },
+  },
 );

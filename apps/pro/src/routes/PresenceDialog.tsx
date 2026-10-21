@@ -17,8 +17,14 @@ export type PresenceAction = 'absent' | 'late' | 'leaving_early' | 'break';
 const BREAK_TYPES = ['meal', 'short', 'unexpected'] as const;
 const BREAK_MINUTES = [5, 10, 15, 30, 45, 60] as const;
 
+const TIME_FIELD = 'presence-time';
+
 interface Props {
+  announce: (message: string) => void;
   action: PresenceAction;
+  /** Seen in the preview key: the impact is read again when the queue moved. */
+  queueVersion: number;
+  salonId: string;
   onClose: () => void;
   stylist: BoardStylist;
   tickets: BoardTicket[];
@@ -63,7 +69,15 @@ function buildChange(
 }
 
 /** F-M8 (S-11): the form, the impact preview, then « Confirmer » (`set_presence`). */
-export function PresenceDialog({ action, onClose, stylist, tickets }: Props) {
+export function PresenceDialog({
+  action,
+  announce,
+  onClose,
+  queueVersion,
+  salonId,
+  stylist,
+  tickets,
+}: Props) {
   const { t } = useTranslation('pro-manager');
   const { t: tCommon } = useTranslation('common');
   const { t: tErrors } = useTranslation('errors');
@@ -72,6 +86,7 @@ export function PresenceDialog({ action, onClose, stylist, tickets }: Props) {
   const [breakType, setBreakType] =
     useState<(typeof BREAK_TYPES)[number]>('short');
   const [breakMinutes, setBreakMinutes] = useState<number>(15);
+  const [timeError, setTimeError] = useState<string | null>(null);
 
   const change = buildChange(
     action,
@@ -84,12 +99,14 @@ export function PresenceDialog({ action, onClose, stylist, tickets }: Props) {
   const previewKey = change
     ? [change.status, change.break_type, time, breakMinutes]
     : null;
+  // Never reused: a preview read before the queue moved would be wrong.
   const preview = useQuery({
-    queryKey: ['presence-preview', stylist.member_id, previewKey],
+    queryKey: ['presence-preview', stylist.member_id, previewKey, queueVersion],
     queryFn: () => previewPresence(change!),
     enabled: change !== null,
     retry: false,
-    staleTime: Infinity,
+    staleTime: 0,
+    gcTime: 0,
   });
   const names = new Map(tickets.map((ticket) => [ticket.id, ticket]));
   const impact = preview.data ?? [];
@@ -97,9 +114,28 @@ export function PresenceDialog({ action, onClose, stylist, tickets }: Props) {
   const needsTime = action === 'late' || action === 'leaving_early';
 
   async function confirm() {
-    if (!change) return;
-    const outcome = await run('set_presence', { ...change });
-    if (outcome.ok) onClose();
+    if (!change) {
+      if (needsTime) {
+        setTimeError(
+          time === ''
+            ? tErrors('validation.required')
+            : t('presence.form.time_future'),
+        );
+        document.getElementById(TIME_FIELD)?.focus();
+      }
+      return;
+    }
+    if (!preview.isSuccess) return;
+    const outcome = await run('set_presence', { ...change }, salonId);
+    if (outcome.ok) {
+      announce(
+        t('presence.done', {
+          stylist_name: stylist.first_name,
+          status: t(`presence.menu.${action}`),
+        }),
+      );
+      onClose();
+    }
   }
 
   return (
@@ -114,12 +150,17 @@ export function PresenceDialog({ action, onClose, stylist, tickets }: Props) {
       <div className="grid gap-4">
         {needsTime ? (
           <TextField
+            error={timeError ?? undefined}
+            id={TIME_FIELD}
             label={t(
               action === 'late'
                 ? 'presence.form.expected_back_at'
                 : 'presence.form.shift_end_at',
             )}
-            onChange={(e) => setTime(e.target.value)}
+            onChange={(e) => {
+              setTimeError(null);
+              setTime(e.target.value);
+            }}
             step={300}
             type="time"
             value={time}
@@ -167,8 +208,14 @@ export function PresenceDialog({ action, onClose, stylist, tickets }: Props) {
           </>
         ) : null}
 
-        <section aria-live="polite" className="grid gap-2">
+        <section className="grid gap-2">
           <h3 className="font-semibold">{t('presence.impact.title')}</h3>
+          {/* Only the result is read out, once it is known. */}
+          <p aria-live="polite" className="sr-only">
+            {change !== null && preview.isSuccess
+              ? t('presence.impact.summary', { count: impact.length })
+              : ''}
+          </p>
           {change === null ? null : preview.isPending ? (
             <p className="text-body-sm text-text-muted">…</p>
           ) : preview.isError ? (
@@ -221,7 +268,8 @@ export function PresenceDialog({ action, onClose, stylist, tickets }: Props) {
             {tCommon('actions.cancel')}
           </Button>
           <Button
-            disabled={change === null || !preview.isSuccess || busy !== null}
+            aria-disabled={(change !== null && !preview.isSuccess) || undefined}
+            loading={busy !== null}
             onClick={() => void confirm()}
           >
             {t('presence.confirm')}

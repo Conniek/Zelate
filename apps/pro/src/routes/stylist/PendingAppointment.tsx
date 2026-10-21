@@ -102,7 +102,7 @@ export function PendingAppointment({
       <div className="flex flex-wrap gap-2">
         {twin ? (
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             loading={command.busy === 'confirm_appointment'}
             onClick={() =>
               void decide({
@@ -117,7 +117,7 @@ export function PendingAppointment({
           </Button>
         ) : (
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             loading={command.busy === 'confirm_appointment'}
             onClick={() => void decide({ decision: 'confirm' })}
             size="xl"
@@ -127,7 +127,7 @@ export function PendingAppointment({
           </Button>
         )}
         <Button
-          disabled={disabled}
+          aria-disabled={disabled || undefined}
           onClick={() => {
             command.setError(null);
             setRejecting(true);
@@ -154,7 +154,7 @@ export function PendingAppointment({
             </Banner>
           ) : null}
           <Button
-            disabled={disabled}
+            aria-disabled={disabled || undefined}
             fullWidth
             loading={command.busy === 'confirm_appointment'}
             onClick={() =>

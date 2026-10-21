@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Alerte à partir de 2 h avant la fermeture
+
 - **Étant donné** un salon qui ferme à 19h00, avec le réglage par défaut de 2 h (120 min), j'ai coché « Me prévenir », et mon ticket dont la fin estimée est 19h10
 - **Quand** il est 17h00 et qu'un événement relance le calcul
 - **Alors** je reçois une notification push avec le texte « Vous risquez de ne pas être pris avant la fermeture » et les choix « Je reste » et « J'annule »
@@ -18,11 +19,13 @@
 - **Et** l'envoi de l'alerte est enregistré sur le ticket (`end_of_day_warned_at`) et au journal (`end_of_day_warned`)
 
 ### 2. Pas d'alerte avant la fenêtre
+
 - **Étant donné** le même salon qui ferme à 19h00 et mon ticket dont la fin estimée est 19h10
 - **Quand** il est 16h59
 - **Alors** aucune alerte de fin de journée ne m'est envoyée
 
 ### 2 bis. Plusieurs plages : seule la dernière fermeture compte (E5)
+
 - **Étant donné** un salon ouvert de 9h00 à 12h00 et de 14h00 à 19h00 ce jour-là
 - **Quand** il est 10h30 et que la fin estimée de mon ticket est 12h20
 - **Alors** aucune alerte de fin de journée ne m'est envoyée, la fenêtre de 2 h se calculant avant 19h00
@@ -30,33 +33,39 @@
 - **Alors** l'alerte du scénario 1 m'est envoyée
 
 ### 2 ter. Horaires modifiés dans la journée (E16)
+
 - **Étant donné** un salon qui fermait à 19h00 et dont le gérant avance la fermeture du jour à 18h00
 - **Quand** il est 16h00 et que la fin estimée de mon ticket est 18h10
 - **Alors** l'alerte de fin de journée m'est envoyée, la fenêtre de 2 h se calculant avant 18h00
 
 ### 2 quater. La coupure de midi n'annule rien (E24)
+
 - **Étant donné** un salon ouvert de 9h00 à 12h00 et de 14h00 à 19h00, et mon ticket encore en attente à 12h00
 - **Quand** la plage du matin se termine
 - **Alors** mon ticket n'est pas annulé et reste à son rang
 - **Et** la file reprend à la plage de 14h00
 
 ### 3. Pas d'alerte si la fin estimée est avant la fermeture
+
 - **Étant donné** que nous sommes dans les 2 h avant la fermeture et que la fin estimée de mon ticket est avant l'heure de fermeture
 - **Quand** le calcul est relancé
 - **Alors** aucune alerte de fin de journée ne m'est envoyée
 
 ### 4. Une seule alerte
+
 - **Étant donné** que j'ai déjà reçu l'alerte de fin de journée
 - **Quand** de nouveaux événements relancent le calcul et que ma fin estimée reste après la fermeture
 - **Alors** je ne reçois pas de seconde alerte
 
 ### 5. Heure redevenue sûre
+
 - **Étant donné** que j'ai reçu l'alerte de fin de journée
 - **Quand** ma fin estimée repasse avant l'heure de fermeture
 - **Alors** je ne reçois que la notification de changement d'heure, selon la règle des 10 min (voir U-10)
 - **Et** aucune nouvelle alerte de fin de journée n'est envoyée
 
 ### 6. « Je reste »
+
 - **Étant donné** que l'alerte de fin de journée est affichée
 - **Quand** je touche « Je reste »
 - **Alors** mon choix `stay` est enregistré sur le ticket
@@ -65,6 +74,7 @@
 - **Et** le gérant voit « reste » pour moi dans la liste des clients à risque
 
 ### 7. « J'annule »
+
 - **Étant donné** que l'alerte de fin de journée est affichée
 - **Quand** je touche « J'annule »
 - **Alors** mon ticket passe au statut « Annulé » avec le motif `client_cancelled` (BACKEND_SCHEMA §3)
@@ -73,18 +83,21 @@
 - **Et** le gérant voit « annule » pour moi dans la liste des clients à risque
 
 ### 8. Sans réponse
+
 - **Étant donné** que j'ai reçu l'alerte et que je ne réponds pas
 - **Quand** l'heure de fermeture approche
 - **Alors** mon ticket reste dans la file
 - **Et** le gérant voit « sans réponse » pour moi dans la liste des clients à risque
 
 ### 8 bis. Le gérant voit tous les clients restants (E5)
+
 - **Étant donné** qu'à l'heure de fermeture trois clients attendent encore : l'un a répondu « Je reste », l'autre n'a pas répondu, le troisième n'a jamais reçu l'alerte
-- **Quand** la boîte « *n* clients attendent encore » s'ouvre sur le dashboard
+- **Quand** la boîte « _n_ clients attendent encore » s'ouvre sur le dashboard
 - **Alors** les trois clients y figurent, avec leur réponse éventuelle
 - **Et** un client avec rendez-vous qui attend encore y figure comme les autres (E24)
 
 ### 9. À la fermeture, le gérant choisit « Servir »
+
 - **Étant donné** que j'attends encore à l'heure de fermeture
 - **Quand** le gérant choisit « Servir » pour moi (ou pour tous)
 - **Alors** mon ticket reste dans la file
@@ -92,6 +105,7 @@
 - **Et** je ne suis pas annulé automatiquement 15 min après la fermeture
 
 ### 10. À la fermeture, le gérant choisit « Annuler avec excuses »
+
 - **Étant donné** que j'attends encore à l'heure de fermeture
 - **Quand** le gérant choisit « Annuler avec excuses » pour moi (ou pour tous)
 - **Alors** mon ticket passe au statut « Annulé » avec le motif `end_of_day`
@@ -100,6 +114,7 @@
 - **Et** ce message part même si je n'ai pas coché « Me prévenir » (message indispensable, E17)
 
 ### 11. Sans décision du gérant : annulation automatique 15 min après la fermeture
+
 - **Étant donné** que j'attends encore à 19h00, heure de fermeture, et que le gérant n'a rien décidé pour moi
 - **Quand** il est 19h15
 - **Alors** mon ticket passe au statut « Annulé » avec le motif `end_of_day`
@@ -107,6 +122,7 @@
 - **Et** à 19h14, mon ticket est encore actif
 
 ### 12. « Servi » mais non pris avant minuit (E5, E24)
+
 - **Étant donné** que le gérant a choisi « Servir » pour moi et que je n'ai pas été pris
 - **Quand** il est 23h59, heure de Paris
 - **Alors** mon ticket est encore actif
@@ -116,18 +132,21 @@
 - **Et** mon ticket n'apparaît pas dans la file du lendemain
 
 ### 12 bis. Rendez-vous encore à confirmer à la fermeture (E19)
+
 - **Étant donné** que je me suis signalé pour un rendez-vous et que le salon ne l'a ni confirmé ni refusé
 - **Quand** la dernière fermeture de la journée arrive
 - **Alors** mon ticket passe au statut « Annulé » avec le motif `end_of_day`
 - **Et** je reçois un message d'excuse
 
 ### 13. Plafond SMS atteint sans push
+
 - **Étant donné** que je n'ai pas de push actif et que 3 SMS ont déjà été envoyés pour mon ticket
 - **Quand** l'alerte de fin de journée est déclenchée
 - **Alors** aucun SMS d'alerte n'est envoyé (marqué `skipped`, motif `sms_cap_reached`)
 - **Et** le bandeau d'alerte s'affiche à l'ouverture de ma page de suivi
 
 ### 13 bis. Sans la case « Me prévenir » (E17)
+
 - **Étant donné** que je n'ai pas coché « Me prévenir » et que la fin estimée de mon ticket dépasse la fermeture dans la fenêtre de 2 h
 - **Quand** l'alerte de fin de journée est déclenchée
 - **Alors** ni push ni SMS ne part (`skipped`, motif `no_consent`) : c'est un message d'anticipation
@@ -136,50 +155,57 @@
 - **Alors** la notification d'annulation par le salon part quand même, par push et par SMS (message indispensable, E17)
 
 ### 14. Réponse depuis le lien SMS
+
 - **Étant donné** que je suis mon ticket par `/t/:shortCode`, sans session
 - **Quand** je touche « Je reste »
 - **Alors** mon choix est enregistré comme depuis l'app
 
 ### 15. Erreur `queue.already_resolved`
+
 - **Étant donné** que j'ai déjà répondu « Je reste » à l'alerte
 - **Quand** j'envoie de nouveau une réponse depuis une notification ou une autre page restée ouverte
 - **Alors** la réponse est refusée et le ticket n'est pas modifié
 - **Et** le message d'erreur `queue.already_resolved` s'affiche
 
 ### 15 bis. Erreur `queue.invalid_transition`
+
 - **Étant donné** que mon ticket a déjà été annulé (par le gérant ou automatiquement)
 - **Quand** je réponds « Je reste » depuis une notification ou une page restée ouverte
 - **Alors** la réponse est refusée et le ticket n'est pas modifié
 - **Et** le message d'erreur `queue.invalid_transition` s'affiche
 
 ### 16. Confidentialité de la liste des clients à risque
+
 - **Étant donné** que je suis dans la liste des clients à risque du dashboard
 - **Quand** le gérant la consulte
 - **Alors** il voit mon prénom et ma réponse
 - **Et** il ne voit pas mon numéro de téléphone
 
 ### 17. Les SMS de fin de journée tiennent en un seul SMS
+
 - **Étant donné** les modèles de SMS « Risque de fin de journée » et « Annulation par le salon » (fin de journée)
 - **Quand** ils sont remplis avec des valeurs de longueur maximale
 - **Alors** chaque texte fait 160 caractères GSM-7 au plus
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `client.ticket.end_of_day.banner` | « Vous risquez de ne pas être pris avant la fermeture » | — |
-| `client.ticket.end_of_day.hint` | Si vous restez, le salon décidera à la fermeture s'il peut encore vous prendre. | Sous le bandeau |
-| `client.ticket.end_of_day.stay` | « Je reste » | — |
-| `client.ticket.end_of_day.cancel` | « J'annule » | — |
-| `notifications.end_of_day_risk.push` | Voir `notifications.end_of_day_risk.push.*` dans le dictionnaire (2 textes : « Le salon ferme bientôt » ; « {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? ») | Push avec actions `notifications.end_of_day_risk.actions.stay` et `.cancel` ; message d'anticipation (E17) |
-| `notifications.end_of_day_risk.sms` | {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link} | SMS : 160 caractères GSM-7 au plus (au plus 142 avec un nom de salon de 40 et le lien court) ; dans le plafond de 3 SMS ; « ê » translittéré |
-| `notifications.cancelled_by_salon.end_of_day.push` | Voir `notifications.cancelled_by_salon.end_of_day.push.*` dans le dictionnaire (2 textes) | Motif, excuses, salons proches ; message indispensable (E17) |
-| `notifications.cancelled_by_salon.end_of_day.sms` | {salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. Salons proches : {link} | SMS : 160 caractères GSM-7 au plus (cible du lien « Salons proches » : voir questions ouvertes) ; hors plafond (E28) |
-| `client.ticket.end.reason.end_of_day` | Le salon ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. | — |
-| `client.nearby_salons.link` | « Salons proches » | Partagé avec U-02, U-04 |
-| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Partagé avec U-08, U-12 |
-| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Partagé avec U-07, U-08, U-12 |
+
+| Clé (anglais)                                      | Texte (français)                                                                                                                                                                                 | Contrainte                                                                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `client.ticket.end_of_day.banner`                  | « Vous risquez de ne pas être pris avant la fermeture »                                                                                                                                          | —                                                                                                                                            |
+| `client.ticket.end_of_day.hint`                    | Si vous restez, le salon décidera à la fermeture s'il peut encore vous prendre.                                                                                                                  | Sous le bandeau                                                                                                                              |
+| `client.ticket.end_of_day.stay`                    | « Je reste »                                                                                                                                                                                     | —                                                                                                                                            |
+| `client.ticket.end_of_day.cancel`                  | « J'annule »                                                                                                                                                                                     | —                                                                                                                                            |
+| `notifications.end_of_day_risk.push`               | Voir `notifications.end_of_day_risk.push.*` dans le dictionnaire (2 textes : « Le salon ferme bientôt » ; « {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? ») | Push avec actions `notifications.end_of_day_risk.actions.stay` et `.cancel` ; message d'anticipation (E17)                                   |
+| `notifications.end_of_day_risk.sms`                | {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link}                                                                                              | SMS : 160 caractères GSM-7 au plus (au plus 142 avec un nom de salon de 40 et le lien court) ; dans le plafond de 3 SMS ; « ê » translittéré |
+| `notifications.cancelled_by_salon.end_of_day.push` | Voir `notifications.cancelled_by_salon.end_of_day.push.*` dans le dictionnaire (2 textes)                                                                                                        | Motif, excuses, salons proches ; message indispensable (E17)                                                                                 |
+| `notifications.cancelled_by_salon.end_of_day.sms`  | {salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. Salons proches : {link}                                                                                           | SMS : 160 caractères GSM-7 au plus (cible du lien « Salons proches » : voir questions ouvertes) ; hors plafond (E28)                         |
+| `client.ticket.end.reason.end_of_day`              | Le salon ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses.                                                                                                                       | —                                                                                                                                            |
+| `client.nearby_salons.link`                        | « Salons proches »                                                                                                                                                                               | Partagé avec U-02, U-04                                                                                                                      |
+| `errors.queue.already_resolved`                    | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran.                                                                                                               | Partagé avec U-08, U-12                                                                                                                      |
+| `errors.queue.invalid_transition`                  | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran.                                                                                                                   | Partagé avec U-07, U-08, U-12                                                                                                                |
 
 ## Questions ouvertes
+
 - **Résolu le 18/10** (E5) — Heure de fermeture : la fin de la dernière plage de la journée ; voir scénario 2 bis.
 - **Résolu le 19/10** (E24) — Coupure de midi : elle n'annule rien, la file reprend à la plage suivante ; voir scénario 2 quater.
 - **Résolu le 18/10** (PRD §5.2, H9) — Réglage des 2 h : valeur par défaut au pilote, réglable par salon après le pilote ; cohérent avec APP_FLOW F-M11.

@@ -50,7 +50,7 @@ function CodeForm({
         value={code}
       />
       <Button
-        disabled={code.length !== 6}
+        aria-disabled={code.length !== 6 || undefined}
         fullWidth
         loading={busy}
         size="lg"

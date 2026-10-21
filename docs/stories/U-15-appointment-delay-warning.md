@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. SMS avec le lien de suivi à la saisie du rendez-vous
+
 - **Étant donné** que le gérant saisit mon rendez-vous de 14h00 avec Léa et mon numéro de téléphone
 - **Quand** le rendez-vous est enregistré
 - **Alors** je reçois un SMS (`ticket_created`, variante `appointment`) avec l'heure du rendez-vous, l'heure de passage, le code du ticket et le lien court de suivi `zelate.fr/t/xxxxxxxx`
@@ -17,18 +18,21 @@
 - **Et** mon numéro n'est plus jamais réaffiché au salon après l'enregistrement
 
 ### 1 bis. Activer « Me prévenir » depuis le lien (E17, K34)
+
 - **Étant donné** que j'ai ouvert le lien de suivi de mon rendez-vous saisi par le salon
 - **Quand** j'active « Me prévenir »
 - **Alors** mon consentement est enregistré sur le ticket (`set_notifications_consent`, `notifications_consent_at`)
 - **Et** je recevrai aussi les messages d'anticipation (votre tour approche, préparez-vous, changement d'heure, fin de journée)
 
 ### 2. Suivre mon rendez-vous par le lien
+
 - **Étant donné** que j'ai reçu le SMS de mon rendez-vous de 14h00
 - **Quand** j'ouvre le lien sans session
 - **Alors** je vois l'heure du rendez-vous et l'heure de passage réelle (exemple « Rendez-vous à 14h00 · passage prévu vers 14h20 »)
 - **Et** aucune position n'est affichée
 
 ### 3. Première alerte : 10 min de retard
+
 - **Étant donné** que mon rendez-vous est à 14h00, que je n'ai pas de push actif, avec ou sans la case « Me prévenir » (E17)
 - **Quand** mon heure de passage estimée passe à 14h10
 - **Alors** je reçois un SMS `appointment_delay` qui m'indique de venir vers 14h10 (« venez vers », E23)
@@ -37,11 +41,13 @@
 - **Et** un événement `appointment_delay_warned` est ajouté au journal du ticket
 
 ### 4. Pas d'alerte sous 10 min de retard
+
 - **Étant donné** que mon rendez-vous est à 14h00
 - **Quand** mon heure de passage estimée passe à 14h09
 - **Alors** aucune notification `appointment_delay` n'est créée
 
 ### 5. Nouvelle alerte à chaque nouvel écart de 10 min
+
 - **Étant donné** que j'ai déjà été prévenu pour 10 min de retard sur mon rendez-vous de 14h00
 - **Quand** mon heure de passage estimée passe à 14h15
 - **Alors** aucune nouvelle alerte n'est envoyée
@@ -50,6 +56,7 @@
 - **Et** le nombre d'alertes envoyées passe à 2
 
 ### 5 bis. Saut de plusieurs paliers : une seule alerte (E23)
+
 - **Étant donné** que mon rendez-vous est à 14h00 et que je n'ai encore reçu aucune alerte (heure de passage prévue à 14h05)
 - **Quand** mon heure de passage passe d'un coup à 14h25
 - **Alors** je reçois une seule alerte, qui m'indique de venir vers 14h25
@@ -57,27 +64,32 @@
 - **Et** aucune alerte n'est envoyée pour le palier de 10 min
 
 ### 5 ter. Pas d'alerte quand le salon rattrape son retard (E23)
+
 - **Étant donné** que j'ai été prévenu de venir vers 14h20
 - **Quand** mon heure de passage revient à 14h05
 - **Alors** aucune notification `appointment_delay` n'est envoyée
 
 ### 5 quater. Plus d'alerte une fois arrivé ou appelé (E23)
+
 - **Étant donné** que mon arrivée a été validée, ou que Léa m'a appelé
 - **Quand** mon heure de passage dépasse un nouveau palier de 10 min
 - **Alors** aucune notification `appointment_delay` n'est envoyée
 
 ### 6. Une seule alerte par palier
+
 - **Étant donné** que j'ai été prévenu pour 10 min de retard
 - **Quand** mon heure de passage oscille entre 14h10 et 14h19 au fil des recalculs
 - **Alors** aucune autre alerte n'est envoyée pour ce palier
 
 ### 7. Push actif : pas de SMS
+
 - **Étant donné** que j'ai activé le push depuis la page `/t/:shortCode` (abonnement lié à mon ticket)
 - **Quand** mon heure de passage atteint 10 min de retard
 - **Alors** je reçois l'alerte par push
 - **Et** aucun SMS n'est envoyé pour cette alerte (marqué `skipped`, motif `push_active`)
 
 ### 8. Plafond de 3 SMS atteint
+
 - **Étant donné** que je n'ai pas de push actif et que 3 SMS ont déjà été envoyés pour mon ticket
 - **Quand** mon heure de passage atteint un nouveau palier de 10 min de retard
 - **Alors** aucun SMS n'est envoyé (marqué `skipped`, motif `sms_cap_reached`)
@@ -85,12 +97,14 @@
 - **Et** le SMS « votre tour » partira quand même quand Léa m'appellera
 
 ### 9. Sans téléphone saisi : aucune alerte
+
 - **Étant donné** que le salon a saisi mon rendez-vous sans numéro de téléphone
 - **Quand** son heure de passage dépasse l'heure du rendez-vous de 10 min
 - **Alors** aucune notification `appointment_delay` n'est envoyée
 - **Et** je peux me signaler à mon arrivée en scannant le QR de l'affiche (F-C12, U-14)
 
 ### 10. Le retard est visible au salon
+
 - **Étant donné** que l'heure de passage de mon rendez-vous de 14h30 dépasse de 20 min l'heure prévue
 - **Quand** le gérant consulte le dashboard
 - **Alors** le rendez-vous affiche son heure et le retard du salon (exemple « RDV 14h30 · +20 min », E30)
@@ -98,12 +112,14 @@
 - **Alors** aucun retard n'est affiché : il s'affiche dès 10 min (E30)
 
 ### 11. Mise à jour de ma page de suivi
+
 - **Étant donné** que ma page `/t/:shortCode` est ouverte
 - **Quand** mon heure de passage change
 - **Alors** l'heure affichée se met à jour en moins de 2 s
 - **Et** sinon, elle est relue au plus tard 30 s après, ou dès que je reviens sur la page
 
 ### 12. Sans consentement : l'alerte part quand même (E17)
+
 - **Étant donné** que le salon a saisi mon rendez-vous avec mon numéro et que je n'ai jamais activé « Me prévenir »
 - **Quand** mon heure de passage atteint 10 min de retard
 - **Alors** l'alerte `appointment_delay` part comme un message indispensable (push, ou SMS sans push actif, dans la limite du plafond)
@@ -111,6 +127,7 @@
 - **Et** la règle reste soumise à l'avis RGPD demandé au PRD §9 n° 9
 
 ### 13. Confidentialité : aucun numéro côté salon
+
 - **Étant donné** que mon rendez-vous a été saisi avec mon numéro
 - **Quand** le gérant ou Léa consulte le rendez-vous, la file ou le dashboard
 - **Alors** mon prénom et l'heure du rendez-vous sont affichés
@@ -118,11 +135,13 @@
 - **Et** la notification enregistrée ne contient pas mon numéro dans ses variables (`params`)
 
 ### 14. Le SMS de retard tient en un seul SMS
+
 - **Étant donné** le modèle de SMS « Retard sur un rendez-vous »
 - **Quand** il est rempli avec une heure et un nom de salon de longueur maximale (40 caractères dans les SMS)
 - **Alors** le texte fait 160 caractères GSM-7 au plus
 
 ### 15. Erreur `queue.invalid_phone` à la saisie
+
 - **Étant donné** que le gérant saisit un rendez-vous avec un numéro mal formé ou hors +33
 - **Quand** il enregistre (`create_appointment`)
 - **Alors** le rendez-vous n'est pas créé
@@ -130,26 +149,29 @@
 - **Et** aucun SMS n'est envoyé
 
 ### 16. Erreur `queue.already_has_active_ticket` à la saisie
+
 - **Étant donné** que mon numéro a déjà un ticket actif, dans ce salon ou dans un autre
 - **Quand** le gérant saisit un rendez-vous avec ce numéro
 - **Alors** le rendez-vous n'est pas créé
 - **Et** le message d'erreur `queue.already_has_active_ticket` s'affiche, sans révéler dans quel salon est mon autre ticket
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `notifications.ticket_created.appointment.push` | Voir `notifications.ticket_created.appointment.push.*` dans le dictionnaire (2 textes) | Message indispensable (E17) |
-| `notifications.ticket_created.appointment.sms` | {salon_name} : rendez-vous de {appointment_time} enregistré, passage prévu vers {time}. Code {code}. Suivi : {link} | SMS : 160 caractères GSM-7 au plus (au plus 142 avec un nom de salon de 40 et le lien court `zelate.fr/t/xxxxxxxx`) ; accents translittérés (K5) |
-| `notifications.appointment_delay.push` | Voir `notifications.appointment_delay.push.*` dans le dictionnaire (2 textes : « Le salon a du retard » ; « {salon_name} a du retard sur votre rendez-vous de {appointment_time}. Venez vers {time}. ») | Variables `salon_name`, `appointment_time`, `time` ; message indispensable (E17) |
-| `notifications.appointment_delay.sms` | {salon_name} a du retard sur votre rendez-vous de {appointment_time} : venez vers {time}. Suivi : {link} | SMS : 160 caractères GSM-7 au plus (au plus 132 avec un nom de salon de 40 et le lien court), nom de salon tronqué à 40, accents translittérés ; dans le plafond de 3 SMS |
-| `client.ticket.appointment.summary` | Rendez-vous à {appointment_time} · passage prévu vers {start_time} | Exemple APP_FLOW F-C5 ; partagé avec U-14 |
-| `pro-manager.appointments.status.late` | En retard de {minutes} min | Retard du salon, dès 10 min (E30) |
-| `legal.consent.tracking_notifications.switch` | Notifications de suivi | Interrupteur « Me prévenir » du lien de suivi (E17, K34) |
-| `common.appointment.badge_late` | « RDV {time} · +{minutes} min » | Exemple DESIGN_SYSTEM §2.4 « RDV 14h30 · +20 min » |
-| `errors.queue.invalid_phone` | Ce numéro n'est pas valide. Saisissez un numéro de téléphone français. | Côté salon ; partagé avec S-10 |
-| `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | Côté salon : ne nomme pas l'autre salon |
+
+| Clé (anglais)                                   | Texte (français)                                                                                                                                                                                        | Contrainte                                                                                                                                                                |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `notifications.ticket_created.appointment.push` | Voir `notifications.ticket_created.appointment.push.*` dans le dictionnaire (2 textes)                                                                                                                  | Message indispensable (E17)                                                                                                                                               |
+| `notifications.ticket_created.appointment.sms`  | {salon_name} : rendez-vous de {appointment_time} enregistré, passage prévu vers {time}. Code {code}. Suivi : {link}                                                                                     | SMS : 160 caractères GSM-7 au plus (au plus 142 avec un nom de salon de 40 et le lien court `zelate.fr/t/xxxxxxxx`) ; accents translittérés (K5)                          |
+| `notifications.appointment_delay.push`          | Voir `notifications.appointment_delay.push.*` dans le dictionnaire (2 textes : « Le salon a du retard » ; « {salon_name} a du retard sur votre rendez-vous de {appointment_time}. Venez vers {time}. ») | Variables `salon_name`, `appointment_time`, `time` ; message indispensable (E17)                                                                                          |
+| `notifications.appointment_delay.sms`           | {salon_name} a du retard sur votre rendez-vous de {appointment_time} : venez vers {time}. Suivi : {link}                                                                                                | SMS : 160 caractères GSM-7 au plus (au plus 132 avec un nom de salon de 40 et le lien court), nom de salon tronqué à 40, accents translittérés ; dans le plafond de 3 SMS |
+| `client.ticket.appointment.summary`             | Rendez-vous à {appointment_time} · passage prévu vers {start_time}                                                                                                                                      | Exemple APP_FLOW F-C5 ; partagé avec U-14                                                                                                                                 |
+| `pro-manager.appointments.status.late`          | En retard de {minutes} min                                                                                                                                                                              | Retard du salon, dès 10 min (E30)                                                                                                                                         |
+| `legal.consent.tracking_notifications.switch`   | Notifications de suivi                                                                                                                                                                                  | Interrupteur « Me prévenir » du lien de suivi (E17, K34)                                                                                                                  |
+| `common.appointment.badge_late`                 | « RDV {time} · +{minutes} min »                                                                                                                                                                         | Exemple DESIGN_SYSTEM §2.4 « RDV 14h30 · +20 min »                                                                                                                        |
+| `errors.queue.invalid_phone`                    | Ce numéro n'est pas valide. Saisissez un numéro de téléphone français.                                                                                                                                  | Côté salon ; partagé avec S-10                                                                                                                                            |
+| `errors.queue.already_has_active_ticket`        | Ce numéro a déjà une place en cours. Une seule place à la fois est possible.                                                                                                                            | Côté salon : ne nomme pas l'autre salon                                                                                                                                   |
 
 ## Questions ouvertes
+
 - **Résolu le 19/10** (E17) — Consentement : l'alerte de retard est un message indispensable, envoyée sans case cochée ; le client reçoit un lien pour activer « Me prévenir » ; voir scénarios 1, 1 bis, 3 et 12. Avis RGPD encore à obtenir (PRD §9 n° 9).
 - **Résolu en partie le 19/10** (E23) — Texte : « venez vers 14h20 ». Reste ouvert (PRD §5.2) : l'heure annoncée est-elle l'heure de passage exacte ou arrondie (aux 5 min, comme l'attente affichée) ?
 - **Résolu le 19/10** (E23) — Saut de plusieurs paliers : une seule alerte avec le retard du moment ; voir scénario 5 bis. Reste ouvert (BACKEND_SCHEMA §4.13) : `appointment_delay_warned_steps` est décrit comme « nombre d'alertes envoyées » mais sert de palier atteint ; à préciser.

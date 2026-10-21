@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Rejoindre la file avec « Premier disponible » et « Dès que possible »
+
 - **Étant donné** que je suis connecté, que je n'ai aucun ticket actif et que la file du salon est ouverte et non complète
 - **Quand** je choisis une prestation, je garde « Premier disponible » et « Dès que possible », je coche « Me prévenir quand mon tour approche » et je touche « Confirmer ma place »
 - **Alors** un ticket au statut « En attente » est créé avec le canal `app`
@@ -23,12 +24,14 @@
 - **Et** le ticket apparaît dans la liste « Ensuite » du coiffeur pressenti et sur le dashboard du salon
 
 ### 2. Indicateur de progression et retour arrière
+
 - **Étant donné** que je suis à l'étape 3 « Heure d'arrivée » après avoir choisi une prestation et un coiffeur
 - **Quand** je reviens à l'étape 1 puis que j'avance de nouveau
 - **Alors** l'indicateur de progression affiche l'étape en cours (exemple « 1/5 »)
 - **Et** la prestation et le coiffeur choisis sont toujours sélectionnés
 
 ### 3. Prestation obligatoire pour avancer
+
 - **Étant donné** que je suis à l'étape 1 « Prestation »
 - **Quand** je n'ai encore rien sélectionné
 - **Alors** « Suivant » est inactif
@@ -36,6 +39,7 @@
 - **Alors** « Suivant » s'active
 
 ### 4. « Je ne sais pas encore » : 30 min pour le calcul
+
 - **Étant donné** que je choisis « Je ne sais pas encore » à l'étape 1
 - **Quand** je confirme ma place
 - **Alors** le ticket est créé sans prestation
@@ -43,12 +47,14 @@
 - **Et** tous les coiffeurs du salon sont éligibles pour ce ticket, quelle que soit leur spécialité (E12)
 
 ### 5. Heure estimée affichée pour chaque coiffeur
+
 - **Étant donné** que je suis à l'étape 2 « Coiffeur »
 - **Quand** la liste s'affiche
 - **Alors** « Premier disponible » est présélectionné
 - **Et** chaque option (« Premier disponible » et chaque coiffeur) affiche l'heure de passage estimée qui lui correspond
 
 ### 6. Demander un coiffeur précis
+
 - **Étant donné** qu'un coiffeur travaille aujourd'hui dans ce salon
 - **Quand** je le choisis à l'étape 2 et que je confirme ma place
 - **Alors** le ticket est réservé à ce coiffeur (`requested_member_id`)
@@ -57,12 +63,14 @@
 - **Et** dans l'espace de ce coiffeur, le ticket porte la mention « vous a demandé »
 
 ### 7. Coiffeur demandé absent ce jour-là
+
 - **Étant donné** qu'un coiffeur du salon est absent aujourd'hui
 - **Quand** je le choisis à l'étape 2
 - **Alors** un message m'indique qu'il est absent aujourd'hui
 - **Et** la sélection revient sur « Premier disponible »
 
 ### 8. Heure d'arrivée déclarée
+
 - **Étant donné** que je suis à l'étape 3 « Heure d'arrivée »
 - **Quand** je choisis « J'arrive vers… » puis 15h00 dans le sélecteur
 - **Alors** le sélecteur ne propose que des heures par pas de 5 min, comprises dans la journée d'ouverture du salon
@@ -70,6 +78,7 @@
 - **Et** l'attente affichée est calculée à partir de l'heure la plus tardive entre mon heure de passage simulée et 15h00, arrondie aux 5 min supérieures
 
 ### 9. Tour arrivé avant l'heure déclarée (H8 ; dernier « Alors » en attente de E34)
+
 - **Étant donné** que j'ai déclaré arriver vers 15h00 et que mon rang me ferait passer avant 15h00
 - **Quand** un coiffeur se libère avant mon arrivée
 - **Alors** le ticket éligible suivant est appelé à ma place
@@ -77,6 +86,7 @@
 - **Et** je reprends la tête de file « dès mon arrivée » (PRD H8) : arrivée physique ou heure déclarée, à trancher par Ely (E34)
 
 ### 10. Récapitulatif avec la règle des 10 min
+
 - **Étant donné** que j'ai terminé les étapes 1 à 4
 - **Quand** l'étape 5 « Récapitulatif » s'affiche
 - **Alors** je vois le salon, la prestation, le coiffeur (ou « Premier disponible ») et l'heure estimée
@@ -85,6 +95,7 @@
 - **Et** une explication indique que, sans elle, je reçois seulement les messages indispensables et pas les messages d'anticipation (APP_FLOW F-C3, E17)
 
 ### 11. Consentement aux notifications enregistré
+
 - **Étant donné** que j'ai coché la case « Me prévenir quand mon tour approche »
 - **Quand** je confirme ma place
 - **Alors** la commande `join_queue` part avec `notifications_consent` vrai
@@ -92,6 +103,7 @@
 - **Et** mon dernier choix est recopié sur mon profil pour information (`profiles.tracking_consent_at`), sans servir à l'envoi
 
 ### 11 bis b. Case décochée à chaque inscription (K18)
+
 - **Étant donné** que j'avais coché « Me prévenir » pour mon ticket précédent, aujourd'hui terminé
 - **Quand** j'arrive au récapitulatif d'une nouvelle inscription
 - **Alors** la case est de nouveau décochée
@@ -100,6 +112,7 @@
 - **Et** le consentement de mon ticket précédent ne s'applique pas au nouveau
 
 ### 11 bis. Case laissée décochée : seulement les messages indispensables (E17)
+
 - **Étant donné** que je n'ai jamais donné mon consentement et que je laisse la case « Me prévenir quand mon tour approche » décochée
 - **Quand** je confirme ma place
 - **Alors** le ticket est créé comme au scénario 1
@@ -109,6 +122,7 @@
 - **Et** les autres notifications de suivi de ce ticket (« votre tour approche », « préparez-vous », changement d'heure…) ne partent pas : seuls ces quatre messages d'anticipation (`turn_approaching`, `get_ready`, `estimate_changed`, `end_of_day_risk`) sont enregistrés `skipped` avec le motif `no_consent`
 
 ### 11 quater. Premier passage : prénom obligatoire, profil créé (K30)
+
 - **Étant donné** que mon compte vient d'être créé par le code SMS et n'a pas encore de profil
 - **Quand** je confirme ma place avec mon prénom
 - **Alors** mon profil est créé avec ce prénom (`is_guest = true`) en même temps que le ticket
@@ -116,11 +130,13 @@
 - **Alors** elle est refusée avec `queue.invalid_payload` et aucun ticket n'est créé
 
 ### 12. Étape d'identification sautée si je suis déjà connecté
+
 - **Étant donné** que je suis déjà connecté
 - **Quand** je passe l'étape 3
 - **Alors** l'étape 4 « Identification » n'est pas affichée et j'arrive directement au récapitulatif
 
 ### 13. Erreur `queue.already_has_active_ticket`
+
 - **Étant donné** que j'ai déjà un ticket actif dans un autre salon, créé depuis l'app ou par une inscription à l'accueil avec mon numéro
 - **Quand** je touche « Confirmer ma place »
 - **Alors** aucun second ticket n'est créé
@@ -129,36 +145,42 @@
 - **Alors** mon ticket actif s'ouvre (F-C5)
 
 ### 14. Garde de navigation : ticket déjà actif
+
 - **Étant donné** que je suis connecté avec un ticket actif
 - **Quand** j'ouvre `/salons/:slug/join`
 - **Alors** je suis redirigé vers `/ticket`
 - **Et** le message « Vous avez déjà une place » s'affiche
 
 ### 15. Erreur `queue.queue_closed`
+
 - **Étant donné** que le gérant a fermé la file pendant que je remplissais les étapes
 - **Quand** je touche « Confirmer ma place »
 - **Alors** aucun ticket n'est créé
 - **Et** un message d'erreur s'affiche avec le bouton « Salons proches », qui ouvre F-C1
 
 ### 16. Erreur `queue.queue_full`
+
 - **Étant donné** que la file est devenue complète (la prochaine prestation finirait après la fermeture)
 - **Quand** je touche « Confirmer ma place »
 - **Alors** aucun ticket n'est créé
 - **Et** un message d'erreur s'affiche avec le bouton « Salons proches », qui ouvre F-C1
 
 ### 17. Erreur `queue.queue_paused`
+
 - **Étant donné** que le gérant a mis la file en pause pendant que je remplissais les étapes
 - **Quand** je touche « Confirmer ma place »
 - **Alors** aucun ticket n'est créé
 - **Et** le message d'erreur `queue.queue_paused` s'affiche avec le bouton « Salons proches », qui ouvre F-C1
 
 ### 17 bis. Erreur `queue.service_unavailable`
+
 - **Étant donné** que la prestation que j'ai choisie à l'étape 1 n'est plus proposée par le salon au moment où je confirme
 - **Quand** je touche « Confirmer ma place »
 - **Alors** aucun ticket n'est créé
 - **Et** le message d'erreur `queue.service_unavailable` s'affiche (suite du parcours : voir questions ouvertes)
 
 ### 17 ter. Erreur `queue.stylist_unavailable`
+
 - **Étant donné** que j'ai demandé un coiffeur à l'étape 2 et qu'il a été déclaré absent avant que je confirme
 - **Quand** je touche « Confirmer ma place »
 - **Alors** aucun ticket n'est créé
@@ -166,24 +188,28 @@
 - **Et** je peux choisir « Premier disponible » avant de confirmer de nouveau (PRD §5.2 distribution, règle 1)
 
 ### 18. Erreur `queue.rate_limited`
+
 - **Étant donné** que le plafond de création de tickets est atteint
 - **Quand** je touche « Confirmer ma place »
 - **Alors** aucun ticket n'est créé
 - **Et** un message m'indique de réessayer plus tard
 
 ### 19. Double appui sur « Confirmer ma place »
+
 - **Étant donné** que je suis au récapitulatif
 - **Quand** je touche deux fois de suite « Confirmer ma place »
 - **Alors** le bouton affiche un état de chargement et se désactive dès le premier appui
 - **Et** un seul ticket est créé
 
 ### 20. Confidentialité : le numéro n'est jamais montré au salon
+
 - **Étant donné** que mon ticket vient d'être créé
 - **Quand** le coiffeur pressenti consulte sa file et que le gérant consulte le dashboard
 - **Alors** ils voient mon prénom et ma prestation
 - **Et** ni l'un ni l'autre ne voit mon numéro de téléphone, ni sur l'écran ni dans les données reçues
 
 ### 21. Le SMS d'inscription tient en un seul SMS
+
 - **Étant donné** le modèle de SMS « Inscription » (SMS 1)
 - **Quand** il est rempli avec un rang, une heure, un code et le lien court `zelate.fr/t/xxxxxxxx`, un prénom de 30 caractères et un nom de salon de 80 caractères
 - **Alors** le nom du salon est tronqué à 40 caractères
@@ -191,35 +217,37 @@
 - **Et** le texte fait 160 caractères GSM-7 au plus
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `client.join.progress` | Étape {step} sur {total} | APP_FLOW F-C3 écrit « 1/5 » (indicatif) |
-| `common.actions.next` | « Suivant » | — |
-| `client.join.service.unknown` | « Je ne sais pas encore » | — |
-| `client.join.stylist.first_available` | « Premier disponible » | Présélectionné |
-| `client.join.stylist.estimated_time` | Passage vers {time} | Variable `time` |
-| `client.join.stylist.absent_today` | {first_name} ne travaille pas aujourd'hui. Nous avons choisi « Premier disponible » pour vous. | Variable `first_name` |
-| `client.join.arrival.asap` | « Dès que possible » | Présélectionné |
-| `client.join.arrival.around` | « J'arrive vers… » | Pas de 5 min |
-| `client.join.summary.call_rule` | Une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min. | Chiffres fixés par H4 |
-| `legal.consent.tracking_notifications.label` | « Me prévenir quand mon tour approche » | Case décochée par défaut, à chaque inscription (K11, K18) |
-| `legal.consent.tracking_notifications.explanation` | Nous vous prévenons 30 min et 10 min avant votre tour, si votre heure change ou si la fermeture approche. Sans cette case, vous recevez seulement les messages indispensables, comme « C'est votre tour ». | Conforme à E17 |
-| `client.join.confirm` | « Confirmer ma place » | — |
-| `client.join.guard.already_has_ticket` | « Vous avez déjà une place » | — |
-| `client.join.view_my_ticket` | « Voir ma place » | — |
-| `client.nearby_salons.link` | « Salons proches » | Partagé avec U-02, U-11 |
-| `errors.queue.already_has_active_ticket` | Ce numéro a déjà une place en cours. Une seule place à la fois est possible. | — |
-| `errors.queue.queue_closed` | La file est fermée : aucune nouvelle inscription n'est possible pour le moment. | — |
-| `errors.queue.queue_full` | La file est complète pour aujourd'hui : les prochaines prestations finiraient après la fermeture. | — |
-| `errors.queue.queue_paused` | La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise. | Partagé avec U-05 |
-| `errors.queue.service_unavailable` | Cette prestation n'est plus proposée pour le moment. Choisissez-en une autre, puis réessayez. | — |
-| `errors.queue.stylist_unavailable` | Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. | — |
-| `errors.queue.rate_limited` | Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez. | Partagé avec P-03 |
-| `notifications.ticket_created.push` | Voir `notifications.ticket_created.push.*` dans le dictionnaire (2 textes) | Variables : rang, heure, code ; message indispensable (part sans consentement, E17) |
-| `errors.queue.invalid_payload` | Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. | Prénom absent au premier passage (K30) |
-| `notifications.ticket_created.sms` | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link} | SMS : 160 caractères GSM-7 au plus, avec rang, heure, code et lien court `zelate.fr/t/xxxxxxxx` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés (K5) |
+
+| Clé (anglais)                                      | Texte (français)                                                                                                                                                                                           | Contrainte                                                                                                                                                           |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `client.join.progress`                             | Étape {step} sur {total}                                                                                                                                                                                   | APP_FLOW F-C3 écrit « 1/5 » (indicatif)                                                                                                                              |
+| `common.actions.next`                              | « Suivant »                                                                                                                                                                                                | —                                                                                                                                                                    |
+| `client.join.service.unknown`                      | « Je ne sais pas encore »                                                                                                                                                                                  | —                                                                                                                                                                    |
+| `client.join.stylist.first_available`              | « Premier disponible »                                                                                                                                                                                     | Présélectionné                                                                                                                                                       |
+| `client.join.stylist.estimated_time`               | Passage vers {time}                                                                                                                                                                                        | Variable `time`                                                                                                                                                      |
+| `client.join.stylist.absent_today`                 | {first_name} ne travaille pas aujourd'hui. Nous avons choisi « Premier disponible » pour vous.                                                                                                             | Variable `first_name`                                                                                                                                                |
+| `client.join.arrival.asap`                         | « Dès que possible »                                                                                                                                                                                       | Présélectionné                                                                                                                                                       |
+| `client.join.arrival.around`                       | « J'arrive vers… »                                                                                                                                                                                         | Pas de 5 min                                                                                                                                                         |
+| `client.join.summary.call_rule`                    | Une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min.                                                                                                                                           | Chiffres fixés par H4                                                                                                                                                |
+| `legal.consent.tracking_notifications.label`       | « Me prévenir quand mon tour approche »                                                                                                                                                                    | Case décochée par défaut, à chaque inscription (K11, K18)                                                                                                            |
+| `legal.consent.tracking_notifications.explanation` | Nous vous prévenons 30 min et 10 min avant votre tour, si votre heure change ou si la fermeture approche. Sans cette case, vous recevez seulement les messages indispensables, comme « C'est votre tour ». | Conforme à E17                                                                                                                                                       |
+| `client.join.confirm`                              | « Confirmer ma place »                                                                                                                                                                                     | —                                                                                                                                                                    |
+| `client.join.guard.already_has_ticket`             | « Vous avez déjà une place »                                                                                                                                                                               | —                                                                                                                                                                    |
+| `client.join.view_my_ticket`                       | « Voir ma place »                                                                                                                                                                                          | —                                                                                                                                                                    |
+| `client.nearby_salons.link`                        | « Salons proches »                                                                                                                                                                                         | Partagé avec U-02, U-11                                                                                                                                              |
+| `errors.queue.already_has_active_ticket`           | Ce numéro a déjà une place en cours. Une seule place à la fois est possible.                                                                                                                               | —                                                                                                                                                                    |
+| `errors.queue.queue_closed`                        | La file est fermée : aucune nouvelle inscription n'est possible pour le moment.                                                                                                                            | —                                                                                                                                                                    |
+| `errors.queue.queue_full`                          | La file est complète pour aujourd'hui : les prochaines prestations finiraient après la fermeture.                                                                                                          | —                                                                                                                                                                    |
+| `errors.queue.queue_paused`                        | La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise.                                                                                                                 | Partagé avec U-05                                                                                                                                                    |
+| `errors.queue.service_unavailable`                 | Cette prestation n'est plus proposée pour le moment. Choisissez-en une autre, puis réessayez.                                                                                                              | —                                                                                                                                                                    |
+| `errors.queue.stylist_unavailable`                 | Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez.                                                                                                                   | —                                                                                                                                                                    |
+| `errors.queue.rate_limited`                        | Trop de demandes en peu de temps. Patientez quelques minutes, puis réessayez.                                                                                                                              | Partagé avec P-03                                                                                                                                                    |
+| `notifications.ticket_created.push`                | Voir `notifications.ticket_created.push.*` dans le dictionnaire (2 textes)                                                                                                                                 | Variables : rang, heure, code ; message indispensable (part sans consentement, E17)                                                                                  |
+| `errors.queue.invalid_payload`                     | Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez.                                                                                                                      | Prénom absent au premier passage (K30)                                                                                                                               |
+| `notifications.ticket_created.sms`                 | {salon_name} : inscription confirmée. {count, plural, =0 {Personne avant vous} one {# client avant vous} other {# clients avant vous}}, passage vers {time}. Code {code}. Suivi : {link}                   | SMS : 160 caractères GSM-7 au plus, avec rang, heure, code et lien court `zelate.fr/t/xxxxxxxx` ; prénom ≤ 30, nom du salon tronqué à 40, accents translittérés (K5) |
 
 ## Questions ouvertes
+
 - **Résolu le 19/10** (E17, remplace K11) — Case de consentement : décochée par défaut ; elle ne règle que les quatre messages d'anticipation ; tous les autres messages au client partent ; voir scénarios 10, 11 et 11 bis.
 - **Résolu le 19/10** (K18, K34 ; TRD §8) — Consentement porté par chaque ticket : case décochée à chaque inscription ; le consentement d'un ticket précédent ne vaut pas pour le suivant ; `profiles.tracking_consent_at` sert seulement d'information ; voir scénarios 11 et 11 bis b.
 - **Résolu le 19/10** (E17) — Annulation par le salon sans consentement : message indispensable, il part toujours (push et SMS, hors plafond, E28).

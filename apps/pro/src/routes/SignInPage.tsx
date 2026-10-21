@@ -95,7 +95,7 @@ export function SignInPage() {
           value={password}
         />
         <Button
-          disabled={email.trim() === '' || password === ''}
+          aria-disabled={email.trim() === '' || password === '' || undefined}
           fullWidth
           loading={busy}
           size="lg"
@@ -104,7 +104,7 @@ export function SignInPage() {
           {t('signin.submit')}
         </Button>
         <Button
-          disabled={email.trim() === '' || busy}
+          aria-disabled={email.trim() === '' || busy || undefined}
           fullWidth
           onClick={() => void sendLink()}
           variant="secondary"

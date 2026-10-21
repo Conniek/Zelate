@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Alerte T-30 envoyée une seule fois
+
 - **Étant donné** que mon ticket est « En attente », que j'ai coché « Me prévenir » et que mon heure de passage arrive à 30 min ou moins
 - **Quand** le moteur détecte ce seuil
 - **Alors** je reçois une notification push « Votre tour approche » avec trois réponses : « Je serai à l'heure », « En retard de… », « J'annule »
@@ -17,28 +18,33 @@
 - **Et** l'heure de passage annoncée à cet instant est enregistrée (`t30_estimated_start_at`)
 
 ### 2. Pas de seconde alerte T-30
+
 - **Étant donné** que j'ai déjà reçu l'alerte T-30
 - **Quand** mon heure de passage remonte au-dessus de 30 min puis redescend à 30 min ou moins
 - **Alors** je ne reçois pas de seconde alerte T-30
 
 ### 3. Bandeau sur la page de suivi
+
 - **Étant donné** que l'alerte T-30 a été déclenchée pour mon ticket et que je n'ai pas encore répondu
 - **Quand** j'ouvre `/ticket` ou `/t/:shortCode`
 - **Alors** un bandeau affiche les trois mêmes réponses
 
 ### 4. Client sans push : réponses sur la page seulement
+
 - **Étant donné** que je n'ai pas de push actif
 - **Quand** mon heure de passage arrive à 30 min ou moins
 - **Alors** aucune notification ni aucun SMS ne m'est envoyé pour T-30
 - **Et** le bandeau de réponse est affiché à l'ouverture de ma page de suivi
 
 ### 4 bis. Sans la case « Me prévenir » (E17 : message d'anticipation)
+
 - **Étant donné** que je n'ai pas coché « Me prévenir » à l'inscription
 - **Quand** mon heure de passage arrive à 30 min ou moins
 - **Alors** la notification T-30 ne part pas (`skipped`, motif `no_consent`)
 - **Et** le bandeau de réponse est affiché à l'ouverture de ma page de suivi
 
 ### 5. « Je serai à l'heure »
+
 - **Étant donné** que l'alerte T-30 est affichée
 - **Quand** je touche « Je serai à l'heure »
 - **Alors** ma réponse `on_time` est enregistrée sur le ticket
@@ -47,6 +53,7 @@
 - **Et** mon ticket garde sa place
 
 ### 6. « En retard de… » : pas de recul immédiat (E2)
+
 - **Étant donné** que l'alerte T-30 est affichée et que mon ticket est 1er chez mon coiffeur
 - **Quand** je choisis « En retard de… » puis 15 min
 - **Alors** ma réponse `late` et un retard de 15 min sont enregistrés sur le ticket
@@ -57,6 +64,7 @@
 - **Et** le coiffeur voit « en retard de 15 min » sur ma carte, dans son espace
 
 ### 6 bis. Recul seulement si le coiffeur choisit « Prendre le suivant » (renvoi vers C-09)
+
 - **Étant donné** que j'ai déclaré un retard de 15 min et que le coiffeur m'appelle
 - **Quand** le coiffeur choisit « Prendre le suivant » (`take_next`)
 - **Alors** mon ticket recule de 2 places au plus
@@ -68,6 +76,7 @@
 - **Alors** mon ticket reste appelé et le compteur continue
 
 ### 6 ter. Libération à l'heure d'arrivée annoncée quand elle est plus tardive (E2, K13)
+
 - **Étant donné** que l'heure annoncée à T-30 était 15h00, que j'ai déclaré un retard de 20 min (heure d'arrivée annoncée 15h20) et que le coiffeur m'appelle à 15h00
 - **Quand** l'appel est enregistré
 - **Alors** l'heure de libération de mon ticket est 15h20, la plus tardive entre 15h10 (appel + 10 min) et 15h20 (`release_due_at`)
@@ -79,17 +88,20 @@
 - **Et** l'heure du rappel dans ce cas (5 min après l'appel, ou 5 min avant la libération) dépend de E33 (en attente d'Ely)
 
 ### 6 quater. Retard déclaré plus court que les 10 min
+
 - **Étant donné** que l'heure annoncée à T-30 était 15h00, que j'ai déclaré un retard de 5 min et que le coiffeur m'appelle à 15h00
 - **Quand** l'appel est enregistré
 - **Alors** l'heure de libération est 15h10 (appel + 10 min), plus tardive que 15h05
 
 ### 7. Durées de retard proposées
+
 - **Étant donné** que je touche « En retard de… »
 - **Quand** le choix de durée s'affiche
 - **Alors** seules les durées 5, 10, 15, 20 et 30 min sont proposées
 - **Et** aucune durée au-delà de 30 min n'est proposée
 
 ### 8. Erreur `queue.invalid_delay` : retard hors des bornes
+
 - **Étant donné** un ticket « En attente »
 - **Quand** une commande `respond_eta` arrive avec `late` et un retard de 35 min (ou de 4 min)
 - **Alors** la commande est refusée avec le code `queue.invalid_delay`
@@ -98,12 +110,14 @@
 - **Alors** la réponse est enregistrée
 
 ### 9. Retard déclaré après 2 places de recul
+
 - **Étant donné** que mon ticket a déjà reculé de 2 places au total (`postpone_count` = 2)
 - **Quand** je déclare un nouveau retard de 10 min
 - **Alors** ma réponse est enregistrée, sans erreur (`respond_eta` n'a pas le code `postpone_limit_reached`, propre à `take_next`, TRD §6.2)
 - **Et** mon ticket ne recule pas
 
 ### 10. « J'annule »
+
 - **Étant donné** que l'alerte T-30 est affichée
 - **Quand** je touche « J'annule » puis que je confirme
 - **Alors** mon ticket passe au statut « Annulé » avec le motif `client_cancelled` (BACKEND_SCHEMA §3), sans absence comptée
@@ -112,57 +126,64 @@
 - **Et** l'écran de fin s'affiche avec « Rejoindre une autre file »
 
 ### 11. Sans réponse
+
 - **Étant donné** que j'ai reçu l'alerte T-30
 - **Quand** je ne réponds pas
 - **Alors** mon ticket reste à sa place
 - **Et** le coiffeur voit « sans réponse » sur ma carte
 
 ### 12. Réponse depuis le lien SMS
+
 - **Étant donné** que je suis mon ticket par `/t/:shortCode`, sans session
 - **Quand** je réponds « Je serai à l'heure » dans le bandeau
 - **Alors** ma réponse est enregistrée comme depuis l'app
 
 ### 13. Erreur `queue.invalid_transition`
+
 - **Étant donné** que mon ticket vient d'être annulé par le salon ou est déjà terminé
 - **Quand** j'envoie une réponse à T-30 depuis une notification ou une page restée ouverte
 - **Alors** la réponse est refusée et le ticket n'est pas modifié
 - **Et** le message d'erreur `queue.invalid_transition` s'affiche
 
 ### 14. Double appui
+
 - **Étant donné** que l'alerte T-30 est affichée
 - **Quand** je touche deux fois de suite « Je serai à l'heure »
 - **Alors** une seule réponse est enregistrée
 - **Et** un seul événement `eta_responded` est ajouté au journal
 
 ### 15. Confidentialité : le coiffeur voit la réponse, pas le numéro
+
 - **Étant donné** que j'ai répondu « En retard de 15 min »
 - **Quand** le coiffeur consulte ma carte et que le gérant consulte le dashboard
 - **Alors** ils voient mon prénom et mon retard de 15 min
 - **Et** ni l'un ni l'autre ne voit mon numéro de téléphone
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `notifications.turn_approaching.push` | Voir `notifications.turn_approaching.push.*` dans le dictionnaire (2 textes) | Push seulement, avec trois actions |
-| `notifications.turn_approaching.actions.on_time` | « Je serai à l'heure » | Action push |
-| `notifications.turn_approaching.actions.late` | « En retard de… » | Action push |
-| `notifications.turn_approaching.actions.cancel` | « J'annule » | Action push |
-| `client.ticket.turn_approaching.banner` | Votre tour approche. Serez-vous à l'heure ? | — |
-| `client.ticket.late.title` | Combien de retard prévoyez-vous ? | — |
-| `client.ticket.late.hint` | Plus de 30 min de retard ? Annulez votre place et réinscrivez-vous plus tard. | Borne de 30 min |
-| `client.ticket.late.sent` | Le salon est prévenu. Si votre tour arrive avant vous, le coiffeur pourra prendre le client suivant. | Après `respond_eta` (`late`) |
-| `client.ticket.end.reason.client_cancelled` | Vous avez annulé votre place. Elle a été donnée au client suivant. | Après « J'annule » ; partagé avec U-08 |
-| `client.ticket.late.option` | « {minutes} min » | Valeurs : 5, 10, 15, 20, 30 |
-| `client.ticket.turn_approaching.cancel_confirm` | Annuler votre place ? Elle sera donnée au client suivant. | — |
-| `common.change_reason.client_late` | « Vous étiez en retard : le suivant est passé. » | Raison affichée du recul (H5) ; partagé avec C-09 |
-| `notifications.postponed.push` | Voir `notifications.postponed.push.*` dans le dictionnaire (2 textes) | Push seulement ; nouvelle position et raison ; envoyé après `take_next` (C-09) ; message indispensable (E17) |
-| `errors.queue.invalid_delay` | Le retard doit être compris entre 5 et 30 min. Choisissez une autre durée. | Retard hors 5 à 30 min |
-| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Partagé avec U-08, U-11, U-12 |
+
+| Clé (anglais)                                    | Texte (français)                                                                                     | Contrainte                                                                                                   |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `notifications.turn_approaching.push`            | Voir `notifications.turn_approaching.push.*` dans le dictionnaire (2 textes)                         | Push seulement, avec trois actions                                                                           |
+| `notifications.turn_approaching.actions.on_time` | « Je serai à l'heure »                                                                               | Action push                                                                                                  |
+| `notifications.turn_approaching.actions.late`    | « En retard de… »                                                                                    | Action push                                                                                                  |
+| `notifications.turn_approaching.actions.cancel`  | « J'annule »                                                                                         | Action push                                                                                                  |
+| `client.ticket.turn_approaching.banner`          | Votre tour approche. Serez-vous à l'heure ?                                                          | —                                                                                                            |
+| `client.ticket.late.title`                       | Combien de retard prévoyez-vous ?                                                                    | —                                                                                                            |
+| `client.ticket.late.hint`                        | Plus de 30 min de retard ? Annulez votre place et réinscrivez-vous plus tard.                        | Borne de 30 min                                                                                              |
+| `client.ticket.late.sent`                        | Le salon est prévenu. Si votre tour arrive avant vous, le coiffeur pourra prendre le client suivant. | Après `respond_eta` (`late`)                                                                                 |
+| `client.ticket.end.reason.client_cancelled`      | Vous avez annulé votre place. Elle a été donnée au client suivant.                                   | Après « J'annule » ; partagé avec U-08                                                                       |
+| `client.ticket.late.option`                      | « {minutes} min »                                                                                    | Valeurs : 5, 10, 15, 20, 30                                                                                  |
+| `client.ticket.turn_approaching.cancel_confirm`  | Annuler votre place ? Elle sera donnée au client suivant.                                            | —                                                                                                            |
+| `common.change_reason.client_late`               | « Vous étiez en retard : le suivant est passé. »                                                     | Raison affichée du recul (H5) ; partagé avec C-09                                                            |
+| `notifications.postponed.push`                   | Voir `notifications.postponed.push.*` dans le dictionnaire (2 textes)                                | Push seulement ; nouvelle position et raison ; envoyé après `take_next` (C-09) ; message indispensable (E17) |
+| `errors.queue.invalid_delay`                     | Le retard doit être compris entre 5 et 30 min. Choisissez une autre durée.                           | Retard hors 5 à 30 min                                                                                       |
+| `errors.queue.invalid_transition`                | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran.                       | Partagé avec U-08, U-11, U-12                                                                                |
 
 ## Questions ouvertes
+
 - **Résolu le 18/10** (E2) — Moment du recul : seulement quand le coiffeur choisit « Prendre le suivant » ; aucun recul à la réponse ; voir scénarios 6 et 6 bis.
 - **Résolu le 19/10** (E2, K13 ; PRD v1.2 §5.1, transition 7 et §11 alignés) — Libération à `release_due_at` = la plus tardive de l'appel + 10 min et de l'heure d'arrivée annoncée ; voir scénarios 6 ter et 6 quater. Question d'origine : l'heure de libération d'un client qui a déclaré un retard diffère selon les documents. PRD : « son compteur de 10 min part de l'heure d'arrivée qu'il a annoncée » (libération à l'heure annoncée + 10 min). TRD et schéma : `release_due_at` = appel + 10 min, ou l'heure d'arrivée annoncée si elle est plus tardive (libération à l'heure annoncée). APP_FLOW F-C7 : « à l'heure d'arrivée annoncée ». Laquelle tester ?
-- **Résolu le 19/10** (K13) — Heure d'arrivée annoncée = `t30_estimated_start_at` + `declared_delay_minutes` ; voir scénario 6. Question d'origine : comment calcule-t-on « l'heure d'arrivée annoncée » à partir d'un retard de *n* min : heure de passage annoncée à T-30 (`t30_estimated_start_at`) + *n*, heure de passage courante + *n*, ou heure de la réponse + *n* ?
+- **Résolu le 19/10** (K13) — Heure d'arrivée annoncée = `t30_estimated_start_at` + `declared_delay_minutes` ; voir scénario 6. Question d'origine : comment calcule-t-on « l'heure d'arrivée annoncée » à partir d'un retard de _n_ min : heure de passage annoncée à T-30 (`t30_estimated_start_at`) + _n_, heure de passage courante + _n_, ou heure de la réponse + _n_ ?
 - **PRD §5.1 / APP_FLOW F-C6** : le PRD autorise un retard « de 5 à 30 min » ; APP_FLOW propose 5, 10, 15, 20 et 30 min, sans 25. Est-ce voulu ?
 - **Résolu le 18/10** (K1) — Retard après 2 places de recul : `respond_eta` n'a que le code `invalid_delay` ; `postpone_limit_reached` est propre à `take_next` ; voir scénario 9.
 - **APP_FLOW F-C5 / F-C6** : peut-on changer de réponse (passer de « à l'heure » à « en retard ») ? « Je serai en retard » est-il utilisable avant T-30, et une fois appelé (C-09 suppose qu'un client appelé a pu déclarer un retard) ? Dans ce cas, quelle heure annoncée sert de base au calcul de K13, `t30_estimated_start_at` étant vide avant T-30 ?

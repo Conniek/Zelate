@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Voir l'impact avant de confirmer
+
 - **Étant donné** le gérant sur `/dashboard`, et un coiffeur avec des tickets demandés et des tickets pressentis
 - **Quand** il ouvre le menu de ce coiffeur, choisit « Absent » et remplit le formulaire
 - **Alors** la lecture `preview_presence_change` est appelée, sans rien écrire (TRD §6.3, K2)
@@ -22,12 +23,14 @@
 - **Alors** aucun ticket ni statut ne change
 
 ### 2. Renoncer après l'aperçu
+
 - **Étant donné** l'aperçu de l'impact affiché
 - **Quand** le gérant ferme le formulaire sans confirmer
 - **Alors** le statut du coiffeur ne change pas
 - **Alors** aucune notification n'est envoyée
 
 ### 3. Confirmer une absence
+
 - **Étant donné** l'aperçu de l'absence d'un coiffeur affiché
 - **Quand** le gérant clique sur « Confirmer »
 - **Alors** la commande `set_presence` (`absent`) est envoyée
@@ -39,6 +42,7 @@
 - **Alors** l'événement `presence_changed` est inscrit au journal du salon, avec le coiffeur concerné
 
 ### 3 bis. Client appelé par le coiffeur déclaré indisponible
+
 - **Étant donné** Léa, qui a appelé Sam (compteur de 10 min en cours)
 - **Quand** le gérant confirme l'absence de Léa
 - **Alors** le ticket de Sam passe en tête de file (PRD §5.1, E6)
@@ -46,6 +50,7 @@
 - La transition exacte (retour à « En attente », compteur annulé, marqueur `priority_since`) attend la réponse d'Ely à E36 ; ce scénario sera complété ensuite.
 
 ### 3 ter. Client en prestation chez le coiffeur déclaré indisponible
+
 - **Étant donné** Léa, qui coiffe Inès
 - **Quand** le gérant confirme l'absence ou le départ de Léa
 - **Alors** la prestation d'Inès reste en cours, à terminer par le gérant (PRD §5.1, E6)
@@ -54,6 +59,7 @@
 - **Alors** l'action est inscrite au journal du ticket avec l'acteur `manager` (E15)
 
 ### 3 quater. Rendez-vous restants du coiffeur déclaré indisponible
+
 - **Étant donné** Léa, avec un rendez-vous à 15:00 et un autre à 16:30
 - **Quand** le gérant confirme l'absence de Léa
 - **Alors** les deux rendez-vous sont présentés au gérant comme « à réaffecter » (F-M8 ; PRD §5.1, E18)
@@ -63,6 +69,7 @@
 - **Alors** la réaffectation suit la règle de S-13 : immédiate si l'heure du client ne recule pas, sinon demande au client (E27) ; `assigned_member_id` passe à Karim une fois la réaffectation faite (K39)
 
 ### 4. Déclarer un retard avec une heure d'arrivée prévue
+
 - **Étant donné** un coiffeur hors ligne en début de journée
 - **Quand** le gérant choisit « En retard », saisit l'heure d'arrivée prévue et confirme
 - **Alors** le coiffeur passe au statut `late` avec cette heure (`expected_back_at`)
@@ -71,6 +78,7 @@
 - **Alors** les clients qui le demandaient doivent choisir « attendre » ou « premier disponible » (transition 8)
 
 ### 5. Déclarer un départ plus tôt
+
 - **Étant donné** un coiffeur disponible avec des clients estimés jusqu'en fin d'après-midi
 - **Quand** le gérant choisit « Part plus tôt », saisit l'heure de fin et confirme
 - **Alors** le coiffeur passe au statut `off_duty` avec cette heure de fin (`shift_end_at`)
@@ -81,6 +89,7 @@
 - **Alors** les clients de ces rendez-vous reçoivent la même demande de choix que les autres clients qui le demandaient (PRD §5.1, E18)
 
 ### 6. Mettre un coiffeur en pause
+
 - **Étant donné** un coiffeur disponible
 - **Quand** le gérant choisit « Pause », indique le type (repas, courte, imprévu) et la durée, puis confirme
 - **Alors** le coiffeur passe au statut `on_break`
@@ -89,6 +98,7 @@
 - **Alors** seuls les clients dont l'heure bouge de 10 min ou plus sont prévenus (scénario 7)
 
 ### 7. Clients prévenus quand leur heure bouge de 10 min ou plus
+
 - **Étant donné** des clients en attente dont l'heure de passage change à cause de la déclaration
 - **Quand** l'écart avec la dernière heure qui leur a été annoncée (`last_notified_start_at`) est de 10 min ou plus, écarts précédents compris (E11)
 - **Alors** le client qui a coché « Me prévenir » reçoit une notification push « changement d'heure » avec la nouvelle heure et la raison
@@ -97,34 +107,40 @@
 - **Alors** aucune notification n'est envoyée
 
 ### 8. Notification de choix et plafond SMS
+
 - **Étant donné** un client qui demandait le coiffeur déclaré absent et qui n'a pas de push actif
 - **Quand** la déclaration est confirmée
 - **Alors** la demande de choix lui est envoyée par SMS si le ticket a reçu moins de 3 SMS
 - **Alors** aucun SMS ne part si le ticket a déjà reçu 3 SMS (la notification est marquée `skipped`, `sms_cap_reached`)
 
 ### 8 bis. Client sans consentement aux notifications de suivi
+
 - **Étant donné** un client qui demandait le coiffeur déclaré absent et qui n'a pas coché « Me prévenir »
 - **Quand** la déclaration est confirmée
 - **Alors** la demande de choix lui est envoyée quand même : c'est un message indispensable (PRD §5.1, E17)
 - **Alors** le bandeau de choix s'affiche sur sa page de suivi (F-C5)
 
 ### 9. Pas de réponse du client en 10 min, coiffeur absent toute la journée
+
 - **Étant donné** un client qui doit choisir parce que son coiffeur est déclaré absent pour la journée
 - **Quand** 10 min passent sans réponse (tolérance des tests ±60 s, TRD §10.1, K7)
 - **Alors** son ticket passe en « premier disponible »
 
 ### 10. Pas de réponse du client en 10 min, coiffeur en retard ou partant plus tôt
+
 - **Étant donné** un client qui doit choisir parce que son coiffeur est en retard ou part plus tôt
 - **Quand** 10 min passent sans réponse (tolérance des tests ±60 s, K7)
 - **Alors** son ticket continue d'attendre ce coiffeur
 
 ### 11. Absence sans alternative
+
 - **Étant donné** un client qui ne peut être servi par aucun autre coiffeur après l'absence déclarée
 - **Quand** la déclaration est confirmée
 - **Alors** son ticket est annulé par le salon
 - **Alors** il reçoit une notification push et un SMS, même au-delà du plafond et même sans « Me prévenir », avec le motif, des excuses et des salons proches (APP_FLOW §7 ; PRD §5.4, E17)
 
 ### 12. Aucun numéro de téléphone (confidentialité)
+
 - **Étant donné** l'aperçu de l'impact affiché
 - **Quand** le gérant consulte la liste des tickets touchés
 - **Alors** seuls les prénoms et les prestations sont affichés, sans numéro de téléphone
@@ -132,43 +148,47 @@
 - **Alors** les messages aux clients partent de la plateforme, jamais du gérant
 
 ### 12 bis. Aperçu réservé au gérant
+
 - **Étant donné** un coiffeur connecté du salon
 - **Quand** il appelle `preview_presence_change` pour un autre membre
 - **Alors** la lecture est refusée (BACKEND_SCHEMA §8.1 : `managed_salon_id()`)
 
 ### 13. Dashboard hors ligne
+
 - **Étant donné** un dashboard qui a perdu la connexion
 - **Quand** le gérant ouvre le menu d'un coiffeur
 - **Alors** le bouton « Confirmer » est désactivé
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.presence.menu.absent` | « Absent » | Libellé indicatif (APP_FLOW F-M8) |
-| `pro-manager.presence.menu.late` | « En retard » | Libellé indicatif (APP_FLOW F-M8) |
-| `pro-manager.presence.menu.leaving_early` | « Part plus tôt » | Libellé indicatif (APP_FLOW F-M8) |
-| `pro-manager.presence.menu.break` | « Pause » | Libellé indicatif (APP_FLOW F-M8) |
-| `common.break_type.meal` | « Repas » | PRD §5.2 |
-| `common.break_type.short` | « Courte » | PRD §5.2 |
-| `common.break_type.unexpected` | « Imprévu » | PRD §5.2 |
-| `pro-manager.presence.impact.reassigned` | « {count, plural, one {# client réassigné automatiquement} other {# clients réassignés automatiquement}} » | Pluriel ICU (APP_FLOW F-M8) |
-| `pro-manager.presence.impact.client_to_confirm` | « {count, plural, one {# client demandait ce coiffeur : à confirmer par le client} other {# clients demandaient ce coiffeur : à confirmer par chaque client}} » | Pluriel ICU (APP_FLOW F-M8) |
-| `pro-manager.presence.impact.nobody_notified_yet` | « Aucun client n'est prévenu avant votre confirmation. » | Scénario 1 |
-| `pro-manager.presence.form.break_type` / `.break_duration` | « Type de pause » / « Durée de la pause » | Formulaire « Pause » côté gérant |
-| `pro-manager.presence.confirm` | « Confirmer » | Libellé indicatif (APP_FLOW F-M8) |
-| `pro-manager.presence.impact.appointments_to_reassign` | « {count, plural, one {# rendez-vous à réaffecter} other {# rendez-vous à réaffecter}} » | Pluriel ICU (APP_FLOW F-M8, E18) |
-| `pro-manager.presence.impact.called_back_to_top` | « {first_name} (appel en cours) passe en tête de file pour le premier coiffeur libre. » | Client appelé repris en tête (F-M8, E6) |
-| `pro-manager.presence.impact.service_to_complete` | « Prestation en cours pour {first_name} : à terminer par vous depuis le panneau du ticket. » | Client en prestation à terminer par le gérant (F-M8, E6) |
-| `notifications.stylist_change_required.push` | Voir `notifications.stylist_change_required.push.*` dans le dictionnaire (2 textes) | Push ; choix « attendre » ou « premier disponible » ; sans « attendre » si le coiffeur est absent toute la journée (E7) |
-| `notifications.stylist_change_required.sms` | « {salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link} » | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
-| `notifications.stylist_change_required.no_wait.push` / `.sms` | Voir `notifications.stylist_change_required.no_wait.*` dans le dictionnaire (3 textes) | Coiffeur absent toute la journée : « premier disponible » ou annuler (E7) ; SMS ≤ 160 caractères GSM-7, mêmes valeurs maximales (K5), dans le plafond |
-| `notifications.cancelled_by_salon.reason.stylist_unavailable` | « aucun coiffeur disponible » | Motif lu par le client (scénario 11) |
-| `common.change_reason.stylist_break` | « Le coiffeur prévu fait une pause. » | Raison montrée au client (scénario 6) |
-| `common.change_reason.stylist_late` | « Le coiffeur prévu arrive plus tard. » | Raison montrée au client (scénario 4) |
-| `common.change_reason.stylist_unavailable` | « Un coiffeur n'est plus disponible aujourd'hui. » | Raison montrée au client |
-| `notifications.cancelled_by_salon.sms` | « {salon_name} a annulé votre place : {reason}. Toutes nos excuses. Salons proches : {link} » | Partagée avec S-12 ; **160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5) |
+
+| Clé (anglais)                                                 | Texte (français)                                                                                                                                                | Contrainte                                                                                                                                                                                                             |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pro-manager.presence.menu.absent`                            | « Absent »                                                                                                                                                      | Libellé indicatif (APP_FLOW F-M8)                                                                                                                                                                                      |
+| `pro-manager.presence.menu.late`                              | « En retard »                                                                                                                                                   | Libellé indicatif (APP_FLOW F-M8)                                                                                                                                                                                      |
+| `pro-manager.presence.menu.leaving_early`                     | « Part plus tôt »                                                                                                                                               | Libellé indicatif (APP_FLOW F-M8)                                                                                                                                                                                      |
+| `pro-manager.presence.menu.break`                             | « Pause »                                                                                                                                                       | Libellé indicatif (APP_FLOW F-M8)                                                                                                                                                                                      |
+| `common.break_type.meal`                                      | « Repas »                                                                                                                                                       | PRD §5.2                                                                                                                                                                                                               |
+| `common.break_type.short`                                     | « Courte »                                                                                                                                                      | PRD §5.2                                                                                                                                                                                                               |
+| `common.break_type.unexpected`                                | « Imprévu »                                                                                                                                                     | PRD §5.2                                                                                                                                                                                                               |
+| `pro-manager.presence.impact.reassigned`                      | « {count, plural, one {# client réassigné automatiquement} other {# clients réassignés automatiquement}} »                                                      | Pluriel ICU (APP_FLOW F-M8)                                                                                                                                                                                            |
+| `pro-manager.presence.impact.client_to_confirm`               | « {count, plural, one {# client demandait ce coiffeur : à confirmer par le client} other {# clients demandaient ce coiffeur : à confirmer par chaque client}} » | Pluriel ICU (APP_FLOW F-M8)                                                                                                                                                                                            |
+| `pro-manager.presence.impact.nobody_notified_yet`             | « Aucun client n'est prévenu avant votre confirmation. »                                                                                                        | Scénario 1                                                                                                                                                                                                             |
+| `pro-manager.presence.form.break_type` / `.break_duration`    | « Type de pause » / « Durée de la pause »                                                                                                                       | Formulaire « Pause » côté gérant                                                                                                                                                                                       |
+| `pro-manager.presence.confirm`                                | « Confirmer »                                                                                                                                                   | Libellé indicatif (APP_FLOW F-M8)                                                                                                                                                                                      |
+| `pro-manager.presence.impact.appointments_to_reassign`        | « {count, plural, one {# rendez-vous à réaffecter} other {# rendez-vous à réaffecter}} »                                                                        | Pluriel ICU (APP_FLOW F-M8, E18)                                                                                                                                                                                       |
+| `pro-manager.presence.impact.called_back_to_top`              | « {first_name} (appel en cours) passe en tête de file pour le premier coiffeur libre. »                                                                         | Client appelé repris en tête (F-M8, E6)                                                                                                                                                                                |
+| `pro-manager.presence.impact.service_to_complete`             | « Prestation en cours pour {first_name} : à terminer par vous depuis le panneau du ticket. »                                                                    | Client en prestation à terminer par le gérant (F-M8, E6)                                                                                                                                                               |
+| `notifications.stylist_change_required.push`                  | Voir `notifications.stylist_change_required.push.*` dans le dictionnaire (2 textes)                                                                             | Push ; choix « attendre » ou « premier disponible » ; sans « attendre » si le coiffeur est absent toute la journée (E7)                                                                                                |
+| `notifications.stylist_change_required.sms`                   | « {salon_name} : {stylist_first_name} a un empêchement. Attendre ou premier disponible ? Choisissez : {link} »                                                  | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
+| `notifications.stylist_change_required.no_wait.push` / `.sms` | Voir `notifications.stylist_change_required.no_wait.*` dans le dictionnaire (3 textes)                                                                          | Coiffeur absent toute la journée : « premier disponible » ou annuler (E7) ; SMS ≤ 160 caractères GSM-7, mêmes valeurs maximales (K5), dans le plafond                                                                  |
+| `notifications.cancelled_by_salon.reason.stylist_unavailable` | « aucun coiffeur disponible »                                                                                                                                   | Motif lu par le client (scénario 11)                                                                                                                                                                                   |
+| `common.change_reason.stylist_break`                          | « Le coiffeur prévu fait une pause. »                                                                                                                           | Raison montrée au client (scénario 6)                                                                                                                                                                                  |
+| `common.change_reason.stylist_late`                           | « Le coiffeur prévu arrive plus tard. »                                                                                                                         | Raison montrée au client (scénario 4)                                                                                                                                                                                  |
+| `common.change_reason.stylist_unavailable`                    | « Un coiffeur n'est plus disponible aujourd'hui. »                                                                                                              | Raison montrée au client                                                                                                                                                                                               |
+| `notifications.cancelled_by_salon.sms`                        | « {salon_name} a annulé votre place : {reason}. Toutes nos excuses. Salons proches : {link} »                                                                   | Partagée avec S-12 ; **160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5)                                                                                                                                    |
 
 ## Questions ouvertes
+
 - **Résolu le 18/10** (K2, TRD §6.3) : l'aperçu est calculé par la lecture `preview_presence_change`, qui exécute le moteur sans rien écrire.
 - **Résolu le 18/10** (correction APP_FLOW F-M8) : le choix proposé au client est « attendre » ou « premier disponible » partout.
 - **Résolu le 18/10** (E6, PRD §5.1) : le client en prestation est terminé par le gérant ; le client appelé passe en tête et est pris par le premier coiffeur libre.

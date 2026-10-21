@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router';
 import { Banner, Button, Skeleton, TextField } from '@zelate/ui';
-import { boardColumns, loadAuditLog, loadBoard } from '../lib/board-api';
+import { loadAuditLog } from '../lib/board-api';
 import type { AuditEvent, AuditFilters } from '../lib/board-api';
 import type { SetupSalon } from '../lib/setup-api';
-import { queryKeys, timeParts } from '../lib/stylist';
+import { timeParts } from '../lib/stylist';
+import { loadJournalMembers } from '../lib/team-api';
 
 const TYPES = [
   'created',
@@ -54,9 +55,13 @@ export function AuditPage() {
   });
   const [more, setMore] = useState<AuditEvent[]>([]);
   const [cursor, setCursor] = useState<Record<string, unknown> | null>(null);
-  const board = useQuery({
-    queryKey: queryKeys.board,
-    queryFn: () => loadBoard(salon.id),
+  const [moreError, setMoreError] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // Bumped at each filter change: a page asked for under old filters is dropped.
+  const generation = useRef(0);
+  const team = useQuery({
+    queryKey: ['journal-members', salon.id],
+    queryFn: () => loadJournalMembers(salon.id),
   });
   const bounds: AuditFilters = {
     ...filters,
@@ -67,22 +72,35 @@ export function AuditPage() {
     queryKey: ['audit', salon.id, filters],
     queryFn: () => loadAuditLog(salon.id, bounds, null),
   });
-  const members = boardColumns(board.data?.stylists ?? []);
+  const members = team.data ?? [];
 
   function change(next: Partial<typeof filters>) {
+    generation.current += 1;
     setMore([]);
     setCursor(null);
+    setMoreError(false);
     setFilters({ ...filters, ...next });
   }
 
   async function loadMore() {
-    const page = await loadAuditLog(
-      salon.id,
-      bounds,
-      cursor ?? log.data?.next_cursor ?? null,
-    );
-    setMore([...more, ...page.events]);
-    setCursor(page.next_cursor);
+    if (loadingMore) return;
+    const asked = generation.current;
+    setLoadingMore(true);
+    setMoreError(false);
+    try {
+      const page = await loadAuditLog(
+        salon.id,
+        bounds,
+        cursor ?? log.data?.next_cursor ?? null,
+      );
+      if (asked !== generation.current) return;
+      setMore((previous) => [...previous, ...page.events]);
+      setCursor(page.next_cursor);
+    } catch {
+      if (asked === generation.current) setMoreError(true);
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
   const events = [...(log.data?.events ?? []), ...more];
@@ -119,7 +137,7 @@ export function AuditPage() {
           >
             <option value="">{t('audit.filters.all_stylists')}</option>
             {members.map((m) => (
-              <option key={m.member_id} value={m.member_id}>
+              <option key={m.id} value={m.id}>
                 {m.first_name}
               </option>
             ))}
@@ -196,9 +214,18 @@ export function AuditPage() {
           </table>
         </div>
       )}
+      {moreError ? (
+        <Banner role="alert" tone="danger">
+          {tErrors('generic.unexpected')}
+        </Banner>
+      ) : null}
       {hasMore ? (
         <div>
-          <Button onClick={() => void loadMore()} variant="secondary">
+          <Button
+            loading={loadingMore}
+            onClick={() => void loadMore()}
+            variant="secondary"
+          >
             {t('audit.load_more')}
           </Button>
         </div>

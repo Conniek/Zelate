@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Un client se signale : le gérant est prévenu
+
 - **Étant donné** Nadia, gérante, sur `/dashboard`
 - **Quand** Léa se signale par le QR de l'affiche pour un rendez-vous à 14h30 avec Inès (`check_in_appointment`)
 - **Alors** le bandeau « Rendez-vous à confirmer » apparaît sur le dashboard en moins de 2 s
@@ -18,6 +19,7 @@
 - **Et** Nadia et Inès reçoivent chacune une notification push `appointment_checked_in` « Rendez-vous à confirmer », même app fermée (K21, PRD §5.4)
 
 ### 1 bis. Rappel après 10 min sans confirmation
+
 - **Étant donné** le rendez-vous signalé par Léa à 14h20, toujours « À confirmer »
 - **Quand** il est 14h30 (tolérance des tests ±60 s, K7)
 - **Alors** Nadia et Inès reçoivent un rappel push (`appointment_checked_in`, variante `reminder`) (PRD §5.1, E19)
@@ -27,6 +29,7 @@
 - **Et** ces push au personnel ne sont soumis ni au consentement ni au plafond de SMS (BACKEND_SCHEMA §4.16)
 
 ### 2. Tant qu'il n'est pas confirmé, le rendez-vous ne compte pas
+
 - **Étant donné** le rendez-vous signalé de Léa, au statut « À confirmer »
 - **Quand** le moteur recalcule la file
 - **Alors** les heures de passage des autres clients ne changent pas à cause de lui
@@ -34,6 +37,7 @@
 - **Et** il reste visible du gérant et d'Inès
 
 ### 3. Confirmer un rendez-vous qui n'avait pas été saisi
+
 - **Étant donné** le rendez-vous signalé de Léa, sans rendez-vous saisi correspondant
 - **Quand** Nadia touche « Confirmer »
 - **Alors** la commande `confirm_appointment` part avec `decision` = `confirm`
@@ -47,6 +51,7 @@
 - **Et** à l'appel, Léa donnera le code de son ticket comme les autres clients (PRD §5.1, E21)
 
 ### 4. Confirmer en rapprochant d'un rendez-vous déjà saisi
+
 - **Étant donné** un rendez-vous saisi par le salon pour « Léa » à 14h30 chez Inès (S-18)
 - **Et** Léa qui se signale pour 14h30 avec Inès
 - **Quand** Nadia ouvre la section « À confirmer »
@@ -60,18 +65,21 @@
 - **Et** aucun SMS d'inscription n'est envoyé de nouveau
 
 ### 4 bis. Rapprochement impossible
+
 - **Étant donné** un rendez-vous saisi pour Léa qui a déjà été appelé, annulé, ou qui est chez un autre coiffeur que celui du signalement
 - **Quand** une commande `confirm_appointment` arrive avec ce `merge_into_ticket_id`
 - **Alors** elle est refusée avec `queue.invalid_merge_target` (TRD §6.2)
 - **Et** le signalement reste « À confirmer »
 
 ### 4 ter. Confirmation qui chevauche un rendez-vous saisi
+
 - **Étant donné** un rendez-vous saisi pour Karim à 14h30 chez Inès, et Léa qui se signale pour 14h30 avec Inès
 - **Quand** Nadia confirme le signalement de Léa sans rapprochement
 - **Alors** la commande est refusée avec `queue.appointment_overlap` (TRD v0.5 §6.2)
 - **Et** le signalement reste « À confirmer »
 
 ### 5. Refuser un rendez-vous introuvable
+
 - **Étant donné** Léa qui se signale pour 14h30 avec Inès, alors que le salon n'a aucun rendez-vous à ce nom
 - **Quand** Nadia touche « Refuser »
 - **Alors** un motif lui est demandé dans une liste (PRD §5.1, E29 ; APP_FLOW F-M13)
@@ -84,6 +92,7 @@
 - **Et** l'événement `appointment_rejected` est inscrit au journal, avec Nadia comme actrice
 
 ### 5 bis. Refuser sans motif
+
 - **Étant donné** la boîte de refus ouverte
 - **Quand** aucun motif n'est choisi
 - **Alors** le refus ne peut pas être confirmé
@@ -92,24 +101,28 @@
 - **Et** le rendez-vous reste « À confirmer »
 
 ### 6. Après un refus, le client peut rejoindre la file
+
 - **Étant donné** le rendez-vous de Léa refusé
 - **Quand** Léa touche « Rejoindre la file »
 - **Alors** elle arrive sur le parcours « Rejoindre la file » du salon (F-C3)
 - **Et** elle n'est pas bloquée par la règle d'un seul ticket actif
 
 ### 7. Client en avance (règle 8, R3)
+
 - **Étant donné** Léa qui se signale à 14h00 pour un rendez-vous à 14h30 avec Inès
 - **Quand** Nadia confirme
 - **Alors** Léa est prise avant 14h30 si Inès est libre et que cela ne retarde personne
 - **Et** sinon son heure de passage n'est pas avant 14h30
 
 ### 8. Client en retard de plus de 10 min (règle 7, R2)
+
 - **Étant donné** Léa qui se signale à 14h45 pour un rendez-vous à 14h30 avec Inès
 - **Quand** Nadia confirme
 - **Alors** Léa n'a plus la priorité de son rendez-vous (plus de 10 min après l'heure)
 - **Et** elle est prise dès que possible, sans retarder les rendez-vous suivants d'Inès
 
 ### 8 bis. Confirmation tardive du salon (E20)
+
 - **Étant donné** Léa qui se signale à 14h25 pour un rendez-vous à 14h30, et Nadia qui ne confirme qu'à 14h38
 - **Quand** le moteur place Léa après la confirmation
 - **Alors** Léa garde la priorité de son rendez-vous jusqu'à 14h40, 10 min après l'heure du rendez-vous (PRD §5.1, §5.2 règle 7, E20)
@@ -117,6 +130,7 @@
 - **Et** une fois appelée, la règle H4 s'applique (compteur de 10 min, E20)
 
 ### 9. Déjà traité par le coiffeur
+
 - **Étant donné** le rendez-vous signalé de Léa, qu'Inès vient de confirmer depuis son téléphone
 - **Quand** Nadia touche « Confirmer » ou « Refuser » sur une carte pas encore rafraîchie
 - **Alors** la commande est refusée avec `queue.already_resolved`
@@ -125,6 +139,7 @@
 - **Et** une seule notification part vers Léa
 
 ### 10. Le client a annulé entre-temps
+
 - **Étant donné** Léa qui a annulé son signalement avant la décision du salon (`cancel_ticket`, motif `client_cancelled`, PRD §5.1, E19)
 - **Quand** l'annulation est enregistrée
 - **Alors** la carte « À confirmer » disparaît chez Nadia et chez Inès en moins de 2 s
@@ -133,6 +148,7 @@
 - **Et** aucun rendez-vous n'entre dans la file
 
 ### 10 bis. Signalement jamais confirmé à la fermeture (E19)
+
 - **Étant donné** le signalement de Léa toujours « À confirmer » à 19:00, dernière fermeture de la journée
 - **Quand** l'heure de fermeture est atteinte
 - **Alors** `queue-tick` annule le ticket avec excuses, motif `end_of_day` (PRD §5.1, E19 ; TRD §6.1)
@@ -140,12 +156,14 @@
 - **Et** la carte disparaît chez Nadia et chez Inès
 
 ### 11. Ticket d'un autre salon
+
 - **Étant donné** Nadia, gérante du salon A
 - **Quand** une commande `confirm_appointment` est envoyée depuis son compte pour un ticket du salon B
 - **Alors** elle est refusée avec `queue.ticket_other_salon`
 - **Et** le ticket du salon B ne change pas
 
 ### 12. Double appui
+
 - **Étant donné** la carte « À confirmer » de Léa
 - **Quand** Nadia touche deux fois très vite « Confirmer »
 - **Alors** le bouton est désactivé pendant l'envoi
@@ -153,17 +171,20 @@
 - **Et** une seule notification `appointment_confirmed` est créée
 
 ### 13. Aucun numéro affiché (H6)
+
 - **Étant donné** Léa, cliente connectée par son numéro, qui se signale
 - **Quand** Nadia ou Inès consultent la carte « À confirmer », le rendez-vous confirmé ou son panneau
 - **Alors** le numéro de Léa n'est affiché nulle part
 
 ### 14. Coiffeur qui n'est pas concerné
+
 - **Étant donné** le rendez-vous signalé de Léa pour Inès
 - **Quand** une commande `confirm_appointment` est envoyée depuis le compte de Karim, autre coiffeur du salon
 - **Alors** elle est refusée avec `queue.forbidden`
 - **Et** le rendez-vous reste « À confirmer »
 
 ### 15. Client qui ne se souvient plus de son coiffeur
+
 - **Étant donné** Léa qui se signale pour 14h30 en choisissant « Je ne sais plus »
 - **Quand** Nadia ouvre la section « À confirmer »
 - **Alors** la carte affiche Léa et 14h30, avec « Coiffeur non précisé par le client »
@@ -176,40 +197,43 @@
 - **Et** le signalement reste « À confirmer »
 
 ### 16. Connexion perdue
+
 - **Étant donné** le dashboard qui affiche « Connexion perdue »
 - **Quand** Nadia regarde la section « À confirmer »
 - **Alors** « Confirmer » et « Refuser » sont désactivés
 - **Et** aucune commande n'est envoyée
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.board.pending_appointments.banner` | « {count, plural, one {# rendez-vous à confirmer} other {# rendez-vous à confirmer}} » | Pluriel ICU (APP_FLOW F-M6) |
-| `pro-manager.appointments.pending.reminder` | « Signalé il y a plus de 10 min : confirmez ou refusez. » | E19 |
-| `notifications.appointment_checked_in.push` | Voir `notifications.appointment_checked_in.push.*` dans le dictionnaire (2 textes) | Push au gérant et au coiffeur choisi (K21) |
-| `notifications.appointment_checked_in.reminder.push` | Voir `notifications.appointment_checked_in.reminder.push.*` dans le dictionnaire (2 textes) | Rappel après 10 min (E19) |
-| Motif du refus côté gérant (boîte « Refuser ») | _À rédiger_ (pas de clé de boîte de refus dans `pro-manager.appointments.pending.*`) ; liste : `pro-manager.remove.reason.*` (5 textes), en attendant une liste dédiée 🟡 | E29 |
-| `notifications.appointment_rejected.reason.<code>` | _À rédiger_ (clé prévue par TRD §9, absente du dictionnaire) | Motif lu par le client (E29) |
-| `pro-manager.appointments.pending.title` | « À confirmer » | Libellé indicatif (APP_FLOW F-M13) |
-| `pro-manager.appointments.pending.announced_time` | Rendez-vous annoncé à {time} | Heure annoncée par le client |
-| `pro-manager.appointments.pending.merge_suggestion` | Rapprocher du rendez-vous déjà saisi : {first_name}, {time}, avec {stylist_name} | Rapprochement avec un rendez-vous saisi (DESIGN_SYSTEM `PendingConfirmationCard`) |
-| `pro-manager.appointments.pending.unknown_stylist` | Coiffeur non précisé par le client | Client qui a choisi « Je ne sais plus » |
-| `common.actions.confirm` | « Confirmer » | APP_FLOW F-M13, F-S4 ; partagée avec C-11 |
-| `common.actions.reject` | « Refuser » | APP_FLOW F-M13, F-S4 ; partagée avec C-11 |
-| `common.ticket_status.pending_confirmation` | « À confirmer » | DESIGN_SYSTEM §2.4 |
-| `notifications.appointment_confirmed.push.title` / `.body` |Titre : Rendez-vous confirmé<br>Corps : {salon_name} confirme votre rendez-vous. Passage prévu vers {time}.| Push ; heure de passage (APP_FLOW §7) |
-| `notifications.appointment_rejected.push.title` / `.body` |Titre : Rendez-vous non confirmé<br>Corps : {salon_name} : {reason}. Vous pouvez rejoindre la file.| Push seulement, pas de SMS (PRD §5.4) ; avec l'action « Rejoindre la file » |
-| `client.ticket.appointment_rejected.join_queue` | « Rejoindre la file » | APP_FLOW F-C12, §7 |
-| `errors.queue.member_required` | « Choisissez le coiffeur de ce rendez-vous pour le confirmer. » | « Je ne sais plus » (scénario 15) |
-| `errors.queue.invalid_merge_target` | « Ce rendez-vous ne peut plus être regroupé. Confirmez le signalement seul ou choisissez un autre rendez-vous. » | Scénario 4 bis |
-| `errors.queue.appointment_overlap` | « Ce créneau chevauche un autre rendez-vous de ce coiffeur. Choisissez une autre heure ou un autre coiffeur. » | Scénario 4 ter |
-| `errors.queue.invalid_transition` | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. » | Signalement annulé par le client (K16) |
-| `errors.queue.invalid_payload` | « Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. » | Refus sans motif (E29) |
-| `errors.queue.already_resolved` | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran. | Partagée |
-| `errors.queue.ticket_other_salon` | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. | Partagée avec C-05, S-12 |
-| `errors.queue.forbidden` | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. | Partagée |
+
+| Clé (anglais)                                              | Texte (français)                                                                                                                                                          | Contrainte                                                                        |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `pro-manager.board.pending_appointments.banner`            | « {count, plural, one {# rendez-vous à confirmer} other {# rendez-vous à confirmer}} »                                                                                    | Pluriel ICU (APP_FLOW F-M6)                                                       |
+| `pro-manager.appointments.pending.reminder`                | « Signalé il y a plus de 10 min : confirmez ou refusez. »                                                                                                                 | E19                                                                               |
+| `notifications.appointment_checked_in.push`                | Voir `notifications.appointment_checked_in.push.*` dans le dictionnaire (2 textes)                                                                                        | Push au gérant et au coiffeur choisi (K21)                                        |
+| `notifications.appointment_checked_in.reminder.push`       | Voir `notifications.appointment_checked_in.reminder.push.*` dans le dictionnaire (2 textes)                                                                               | Rappel après 10 min (E19)                                                         |
+| Motif du refus côté gérant (boîte « Refuser »)             | _À rédiger_ (pas de clé de boîte de refus dans `pro-manager.appointments.pending.*`) ; liste : `pro-manager.remove.reason.*` (5 textes), en attendant une liste dédiée 🟡 | E29                                                                               |
+| `notifications.appointment_rejected.reason.<code>`         | _À rédiger_ (clé prévue par TRD §9, absente du dictionnaire)                                                                                                              | Motif lu par le client (E29)                                                      |
+| `pro-manager.appointments.pending.title`                   | « À confirmer »                                                                                                                                                           | Libellé indicatif (APP_FLOW F-M13)                                                |
+| `pro-manager.appointments.pending.announced_time`          | Rendez-vous annoncé à {time}                                                                                                                                              | Heure annoncée par le client                                                      |
+| `pro-manager.appointments.pending.merge_suggestion`        | Rapprocher du rendez-vous déjà saisi : {first_name}, {time}, avec {stylist_name}                                                                                          | Rapprochement avec un rendez-vous saisi (DESIGN_SYSTEM `PendingConfirmationCard`) |
+| `pro-manager.appointments.pending.unknown_stylist`         | Coiffeur non précisé par le client                                                                                                                                        | Client qui a choisi « Je ne sais plus »                                           |
+| `common.actions.confirm`                                   | « Confirmer »                                                                                                                                                             | APP_FLOW F-M13, F-S4 ; partagée avec C-11                                         |
+| `common.actions.reject`                                    | « Refuser »                                                                                                                                                               | APP_FLOW F-M13, F-S4 ; partagée avec C-11                                         |
+| `common.ticket_status.pending_confirmation`                | « À confirmer »                                                                                                                                                           | DESIGN_SYSTEM §2.4                                                                |
+| `notifications.appointment_confirmed.push.title` / `.body` | Titre : Rendez-vous confirmé<br>Corps : {salon_name} confirme votre rendez-vous. Passage prévu vers {time}.                                                               | Push ; heure de passage (APP_FLOW §7)                                             |
+| `notifications.appointment_rejected.push.title` / `.body`  | Titre : Rendez-vous non confirmé<br>Corps : {salon_name} : {reason}. Vous pouvez rejoindre la file.                                                                       | Push seulement, pas de SMS (PRD §5.4) ; avec l'action « Rejoindre la file »       |
+| `client.ticket.appointment_rejected.join_queue`            | « Rejoindre la file »                                                                                                                                                     | APP_FLOW F-C12, §7                                                                |
+| `errors.queue.member_required`                             | « Choisissez le coiffeur de ce rendez-vous pour le confirmer. »                                                                                                           | « Je ne sais plus » (scénario 15)                                                 |
+| `errors.queue.invalid_merge_target`                        | « Ce rendez-vous ne peut plus être regroupé. Confirmez le signalement seul ou choisissez un autre rendez-vous. »                                                          | Scénario 4 bis                                                                    |
+| `errors.queue.appointment_overlap`                         | « Ce créneau chevauche un autre rendez-vous de ce coiffeur. Choisissez une autre heure ou un autre coiffeur. »                                                            | Scénario 4 ter                                                                    |
+| `errors.queue.invalid_transition`                          | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. »                                                                                        | Signalement annulé par le client (K16)                                            |
+| `errors.queue.invalid_payload`                             | « Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. »                                                                                 | Refus sans motif (E29)                                                            |
+| `errors.queue.already_resolved`                            | Une décision a déjà été enregistrée à ce sujet. Vérifiez l'état affiché à l'écran.                                                                                        | Partagée                                                                          |
+| `errors.queue.ticket_other_salon`                          | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné.                                                                                        | Partagée avec C-05, S-12                                                          |
+| `errors.queue.forbidden`                                   | Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez.                                                             | Partagée                                                                          |
 
 ## Questions ouvertes
+
 - **Résolu le 19/10** (TRD v0.5 §6.2, K21) : `confirm_appointment` a `member_id?`, obligatoire quand le client a choisi « Je ne sais plus » (sinon `member_required`) ; le push de signalement ne vise alors que le gérant, aucun coiffeur n'est « concerné » avant la confirmation.
 - **Résolu le 19/10** (K14, K28 ; TRD §6.2, BACKEND_SCHEMA §3, §5) : le rendez-vous saisi par le salon survit et reprend le client, le consentement et le numéro du ticket signalé ; celui-ci est annulé (`merged`, événement `appointment_merged`) et son contact privé est clos. **Reste ouvert (TRD)** : quel lien de suivi le client garde-t-il ensuite (celui du ticket saisi, qu'il n'a jamais reçu s'il n'y avait pas de téléphone, ou sa session sur `/ticket`) ?
 - **APP_FLOW F-M13 / DESIGN_SYSTEM** : sur quels critères le rapprochement est-il proposé (même coiffeur, même heure, prénom proche) ? Que faire si plusieurs rendez-vous saisis correspondent ?

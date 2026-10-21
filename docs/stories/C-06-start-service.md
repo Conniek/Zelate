@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Commencer avec la prestation et la durée prévues
+
 - **Étant donné** Inès qui a appelé Léa, arrivée validée par son code, pour la prestation « Coupe homme » de durée prédéfinie 30 min
 - **Quand** Inès touche « Commencer »
 - **Alors** la feuille « Commencer la prestation » s'ouvre avec « Coupe homme » et 30 min pré-remplis
@@ -24,6 +25,7 @@
 - **Et** le dashboard affiche Léa comme cliente en cours d'Inès, avec sa fin estimée, en moins de 2 s
 
 ### 2. Modifier la durée avant de commencer
+
 - **Étant donné** la feuille « Commencer la prestation » ouverte avec 30 min
 - **Quand** Inès augmente la durée par pas de 5 min jusqu'à 45 min et touche « Commencer »
 - **Alors** la durée prévue enregistrée est de 45 min
@@ -32,18 +34,21 @@
 - **Et** un client suivant qui n'a pas coché « Me prévenir » ne reçoit rien (ligne `skipped`, `no_consent`, E17) mais voit la nouvelle heure sur son ticket
 
 ### 3. Modifier la prestation
+
 - **Étant donné** la feuille ouverte avec « Coupe homme »
 - **Quand** Inès choisit une autre prestation du salon
 - **Alors** la durée proposée devient la durée prédéfinie de cette prestation
 - **Et** à la confirmation, le ticket enregistre la prestation choisie (`service_id`)
 
 ### 4. Client qui ne savait pas encore
+
 - **Étant donné** Léa inscrite avec « Je ne sais pas encore » (`service_id` vide, durée de calcul 30 min)
 - **Quand** Inès ouvre la feuille « Commencer la prestation »
 - **Alors** aucune prestation n'est pré-remplie
 - **Et** Inès doit choisir une prestation avant de commencer (`service_id` obligatoire dans `start_service`)
 
 ### 5. Arrivée non validée
+
 - **Étant donné** Léa appelée, dont l'arrivée n'a pas été validée par son code
 - **Quand** Inès regarde la carte « Appel en cours »
 - **Alors** le bouton « Commencer » est inactif
@@ -51,46 +56,52 @@
 - **Et** le ticket reste « Appelé »
 
 ### 6. Ticket d'un autre coiffeur
+
 - **Étant donné** Léa appelée par Karim
 - **Quand** une commande `start_service` est envoyée avec le compte d'Inès pour le ticket de Léa
 - **Alors** la commande est refusée avec `queue.not_assigned_to_you`
 - **Et** le ticket reste « Appelé » chez Karim
 
 ### 7. Bornes de la durée
+
 - **Étant donné** la feuille « Commencer la prestation » ouverte
 - **Quand** Inès modifie la durée
 - **Alors** la durée enregistrée reste comprise entre 5 et 240 min (contrainte `tickets.planned_duration_minutes`, à confirmer, voir questions)
 
 ### 8. Double appui
+
 - **Étant donné** la feuille « Commencer la prestation » ouverte
 - **Quand** Inès touche deux fois « Commencer » très vite
 - **Alors** le bouton est désactivé pendant l'envoi
 - **Et** la prestation ne commence qu'une fois (un seul événement `service_started`)
 
 ### 9. Connexion perdue
+
 - **Étant donné** Inès dont l'écran affiche « Connexion perdue »
 - **Quand** elle veut commencer la prestation
 - **Alors** « Commencer » est désactivé
 - **Et** aucune prestation n'est enregistrée comme commencée
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-stylist.start.open` | Commencer | Bouton de la carte « Appel en cours », actif quand le client est arrivé |
-| `pro-stylist.start.sheet_title` | Commencer la prestation | APP_FLOW F-S6 |
-| `pro-stylist.start.service_label` | Prestation | Champ prestation |
-| `pro-stylist.start.duration_label` | Durée | Durée modifiable par pas de 5 min |
-| `pro-stylist.start.duration_decrease` | Retirer 5 min | Bouton du pas de 5 min ; nom accessible |
-| `pro-stylist.start.duration_increase` | Ajouter 5 min | Idem |
-| `pro-stylist.start.confirm` | Commencer | Bouton de la feuille |
-| `common.presence_status.in_service` | En prestation | Voir C-02 |
-| `common.ticket_status.in_service` | En prestation | PRD §5.2 |
-| `common.change_reason.service_longer` | Une prestation dure plus longtemps que prévu. | Raison `{reason}` du changement d'heure (K26) |
-| `errors.queue.not_assigned_to_you` | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket. | Code propre de `start_service` (TRD §6.2) |
-| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Voir C-04 |
-| `notifications.estimate_changed.push.title` / `.body` |Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason}| Voir C-02 ; push seulement ; message d'anticipation, seulement avec « Me prévenir » (E17) |
+
+| Clé (anglais)                                         | Texte (français)                                                                                       | Contrainte                                                                                |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `pro-stylist.start.open`                              | Commencer                                                                                              | Bouton de la carte « Appel en cours », actif quand le client est arrivé                   |
+| `pro-stylist.start.sheet_title`                       | Commencer la prestation                                                                                | APP_FLOW F-S6                                                                             |
+| `pro-stylist.start.service_label`                     | Prestation                                                                                             | Champ prestation                                                                          |
+| `pro-stylist.start.duration_label`                    | Durée                                                                                                  | Durée modifiable par pas de 5 min                                                         |
+| `pro-stylist.start.duration_decrease`                 | Retirer 5 min                                                                                          | Bouton du pas de 5 min ; nom accessible                                                   |
+| `pro-stylist.start.duration_increase`                 | Ajouter 5 min                                                                                          | Idem                                                                                      |
+| `pro-stylist.start.confirm`                           | Commencer                                                                                              | Bouton de la feuille                                                                      |
+| `common.presence_status.in_service`                   | En prestation                                                                                          | Voir C-02                                                                                 |
+| `common.ticket_status.in_service`                     | En prestation                                                                                          | PRD §5.2                                                                                  |
+| `common.change_reason.service_longer`                 | Une prestation dure plus longtemps que prévu.                                                          | Raison `{reason}` du changement d'heure (K26)                                             |
+| `errors.queue.not_assigned_to_you`                    | Ce client est pris en charge par un autre coiffeur. Seul ce coiffeur peut agir sur son ticket.         | Code propre de `start_service` (TRD §6.2)                                                 |
+| `errors.queue.invalid_transition`                     | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran.                         | Voir C-04                                                                                 |
+| `notifications.estimate_changed.push.title` / `.body` | Titre : Votre heure de passage change<br>Corps : Passage prévu vers {time} chez {salon_name}. {reason} | Voir C-02 ; push seulement ; message d'anticipation, seulement avec « Me prévenir » (E17) |
 
 ## Questions ouvertes
+
 - [PRD / BACKEND_SCHEMA / TRD] Bornes de la durée à la feuille « Commencer » : `tickets.planned_duration_minutes` va de 5 à 240 min, `services.duration_minutes` de 15 à 180 min ; TRD §6.2 ne donne `duration_limit_reached` (au-delà de 240 min) qu'à `adjust_duration`. Le PRD ne dit rien. Lesquelles s'appliquent à la saisie du coiffeur, et quel code pour une durée hors bornes à `start_service` (`invalid_payload` ?) ?
 - [PRD] Le coiffeur peut-il choisir une prestation dont il ne maîtrise pas la spécialité requise ?
 - [APP_FLOW] Quand le coiffeur change de prestation, la durée est-elle remplacée par la durée prédéfinie de la nouvelle prestation, même s'il l'avait déjà modifiée ?

@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Lancer un test
+
 - **Étant donné** un gérant dont le salon n'est pas publié
 - **Quand** il clique sur « Lancer un test »
 - **Alors** la commande `create_test_ticket` est envoyée
@@ -18,6 +19,7 @@
 - **Alors** le ticket est créé alors que la file du salon non publié est fermée : `create_test_ticket` ignore l'état de la file (TRD §6.2, K24)
 
 ### 2. Dérouler le test jusqu'au bout
+
 - **Étant donné** un ticket de test en attente
 - **Quand** le gérant ou un coiffeur l'appelle, saisit son code de 5 caractères, commence puis termine la prestation
 - **Alors** le ticket de test passe au statut `completed`
@@ -25,18 +27,21 @@
 - **Alors** la case « Test réussi » se coche toute seule dans la liste de contrôle
 
 ### 3. Le ticket de test est tenu à l'écart
+
 - **Étant donné** un ticket de test, en cours ou terminé
 - **Quand** les indicateurs du salon sont calculés
 - **Alors** le ticket de test n'est pas compté
 - **Alors** il ne bloque pas la règle « un seul ticket actif par client »
 
 ### 4. Publication impossible tant qu'une condition manque
+
 - **Étant donné** un salon auquel il manque au moins un de ces points : dossier validé par la plateforme, test réussi, horaires renseignés, 1 coiffeur actif, 1 prestation
 - **Quand** le gérant regarde le bouton « Publier mon salon »
 - **Alors** le bouton est inactif
 - **Alors** la liste de contrôle montre ce qui manque
 
 ### 4 bis. Publication demandée alors qu'une condition manque
+
 - **Étant donné** un salon validé, avec des horaires, 1 coiffeur actif et 1 prestation active, mais sans test réussi
 - **Quand** une commande `publish_salon` est envoyée
 - **Alors** elle est refusée avec l'erreur `queue.salon_not_ready`, avec la liste des conditions manquantes dans `details.missing` (ici `setup_test`) (TRD §6.2, K35)
@@ -44,6 +49,7 @@
 - **Alors** le salon reste au statut `approved`
 
 ### 5. Dossier en attente de validation
+
 - **Étant donné** un salon au statut `pending_review`, avec le test réussi et la configuration complète
 - **Quand** le gérant regarde le bouton « Publier mon salon »
 - **Alors** le bouton est inactif
@@ -52,6 +58,7 @@
 - **Alors** elle est refusée avec `queue.salon_not_ready`, `details.missing` contenant `verification`
 
 ### 6. Publier le salon
+
 - **Étant donné** un salon validé par la plateforme, avec le test réussi, des horaires, au moins 1 coiffeur actif et au moins 1 prestation active
 - **Quand** le gérant clique sur « Publier mon salon »
 - **Alors** la commande `publish_salon` est envoyée (TRD §6.2, K35)
@@ -62,30 +69,35 @@
 - **Alors** le gérant arrive sur `/dashboard`
 
 ### 7. Test demandé après la publication
+
 - **Étant donné** un salon publié
 - **Quand** une commande `create_test_ticket` est envoyée pour ce salon
 - **Alors** la commande est refusée avec l'erreur `queue.salon_already_published` (TRD §6.2)
 - **Alors** aucun ticket n'est créé
 
 ### 7 ter. Publier un salon déjà publié
+
 - **Étant donné** un salon publié
 - **Quand** une commande `publish_salon` est envoyée
 - **Alors** elle est refusée avec l'erreur `queue.salon_already_published` (TRD §6.2, K35)
 - **Alors** `published_at` ne change pas et aucun nouvel événement `published` n'est inscrit
 
 ### 7 quater. Seul le gérant publie
+
 - **Étant donné** un coiffeur connecté d'un salon prêt à publier
 - **Quand** une commande `publish_salon` est envoyée depuis son compte
 - **Alors** elle est refusée avec l'erreur `queue.forbidden` (TRD §6.2, codes communs)
 - **Alors** le salon n'est pas publié
 
 ### 7 bis. Seul le gérant lance un test
+
 - **Étant donné** un coiffeur connecté d'un salon non publié
 - **Quand** une commande `create_test_ticket` est envoyée depuis son compte
 - **Alors** la commande est refusée avec l'erreur `queue.forbidden` (TRD §6.2, codes communs)
 - **Alors** aucun ticket n'est créé
 
 ### 8. Double clic sur « Publier mon salon » ou « Lancer un test »
+
 - **Étant donné** un salon prêt à publier
 - **Quand** le gérant clique deux fois rapidement sur « Lancer un test »
 - **Alors** un seul ticket de test est créé
@@ -93,20 +105,22 @@
 - **Alors** un seul événement `published` est inscrit au journal (même `command_id`, ADR-004)
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.setup.test.start` | « Lancer un test » | Libellé indicatif (APP_FLOW F-M3) |
-| `pro-manager.setup.test.passed` | « Test réussi » | Libellé indicatif (APP_FLOW F-M3) |
-| `pro-manager.setup.test.ticket_name` | « Test » | Prénom du client fictif (APP_FLOW F-M3) |
-| `pro-manager.setup.publish` | « Publier mon salon » | Libellé indicatif (APP_FLOW F-M3) |
-| `pro-manager.setup.checklist.<item>` | Voir `pro-manager.setup.checklist.*` dans le dictionnaire (8 textes) | Un libellé par condition : dossier validé, test réussi, horaires, 1 coiffeur actif, 1 prestation |
-| `errors.queue.salon_already_published` | « Votre salon est déjà publié : les tickets de test ne sont plus possibles. » | Refus de `create_test_ticket` sur un salon publié (TRD §6.2) ; aussi renvoyé par `publish_salon` (K35), alors que le texte ne parle que des tickets de test (voir questions ouvertes) |
-| `errors.queue.salon_not_ready` | « Votre salon n'est pas encore prêt à être publié : {missing}. » | Refus de `publish_salon` (K35) ; `{missing}` = liste des conditions de `details.missing` |
-| `errors.queue.salon_not_ready_condition.<code>` | Voir `errors.queue.salon_not_ready_condition.*` dans le dictionnaire (5 textes) | Un texte par condition : `verification`, `setup_test`, `opening_hours`, `active_stylist`, `active_service` |
-| `pro-manager.setup.checklist.pending_review_hint` | « Votre dossier est en cours de validation : vous pourrez publier dès qu'il sera validé. » | Scénario 5 |
-| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
+
+| Clé (anglais)                                     | Texte (français)                                                                                                  | Contrainte                                                                                                                                                                            |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pro-manager.setup.test.start`                    | « Lancer un test »                                                                                                | Libellé indicatif (APP_FLOW F-M3)                                                                                                                                                     |
+| `pro-manager.setup.test.passed`                   | « Test réussi »                                                                                                   | Libellé indicatif (APP_FLOW F-M3)                                                                                                                                                     |
+| `pro-manager.setup.test.ticket_name`              | « Test »                                                                                                          | Prénom du client fictif (APP_FLOW F-M3)                                                                                                                                               |
+| `pro-manager.setup.publish`                       | « Publier mon salon »                                                                                             | Libellé indicatif (APP_FLOW F-M3)                                                                                                                                                     |
+| `pro-manager.setup.checklist.<item>`              | Voir `pro-manager.setup.checklist.*` dans le dictionnaire (8 textes)                                              | Un libellé par condition : dossier validé, test réussi, horaires, 1 coiffeur actif, 1 prestation                                                                                      |
+| `errors.queue.salon_already_published`            | « Votre salon est déjà publié : les tickets de test ne sont plus possibles. »                                     | Refus de `create_test_ticket` sur un salon publié (TRD §6.2) ; aussi renvoyé par `publish_salon` (K35), alors que le texte ne parle que des tickets de test (voir questions ouvertes) |
+| `errors.queue.salon_not_ready`                    | « Votre salon n'est pas encore prêt à être publié : {missing}. »                                                  | Refus de `publish_salon` (K35) ; `{missing}` = liste des conditions de `details.missing`                                                                                              |
+| `errors.queue.salon_not_ready_condition.<code>`   | Voir `errors.queue.salon_not_ready_condition.*` dans le dictionnaire (5 textes)                                   | Un texte par condition : `verification`, `setup_test`, `opening_hours`, `active_stylist`, `active_service`                                                                            |
+| `pro-manager.setup.checklist.pending_review_hint` | « Votre dossier est en cours de validation : vous pourrez publier dès qu'il sera validé. »                        | Scénario 5                                                                                                                                                                            |
+| `errors.queue.forbidden`                          | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2)                                                                                                                                                                |
 
 ## Questions ouvertes
+
 - **APP_FLOW** : d'après F-M3, le ticket de test « apparaît sur le dashboard ». Mais les gardes de §2.3 renvoient un salon validé et non publié vers `/dashboard/setup`, et `/dashboard` demande un salon validé. Où le gérant voit-il et traite-t-il le ticket de test ? Peut-il tester avant que la plateforme ait validé le dossier ?
 - **Résolu le 19/10** (K24, TRD §6.2) : `create_test_ticket` ignore l'état de la file ; le ticket de test est créé file fermée. **Reste ouvert (PRD / TRD)** : le coiffeur doit-il être « disponible » pour appeler le ticket de test (condition de la transition 2) ?
 - **Résolu le 19/10** (K35, TRD §6.2) : la publication passe par la commande `publish_salon` (gérant), qui vérifie dossier validé, `setup_test_passed_at`, horaires, 1 coiffeur actif et 1 prestation active, et renvoie `salon_not_ready` (avec `details.missing`) ou `salon_already_published` ; `setup_test_passed_at` est écrit par `complete_service` sur un ticket `is_test`.

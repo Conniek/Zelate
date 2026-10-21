@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Heure reculée de 10 min ou plus
+
 - **Étant donné** que j'ai coché « Me prévenir » et que la dernière heure de passage qui m'a été annoncée est 15h00 (`last_notified_start_at`)
 - **Quand** le coiffeur pressenti ajoute +15 min à sa prestation en cours et que mon heure passe à 15h15
 - **Alors** ma page de suivi affiche un bandeau avec la nouvelle heure et la raison du changement : `service_longer`, « Une prestation dure plus longtemps que prévu. »
@@ -19,12 +20,14 @@
 - **Et** 15h15 devient la dernière heure annoncée (`last_notified_start_at`)
 
 ### 2. Heure avancée de 10 min ou plus
+
 - **Étant donné** que j'ai coché « Me prévenir » et que la dernière heure annoncée est 15h00
 - **Quand** un client placé avant moi annule et que mon heure passe à 14h45
 - **Alors** ma page de suivi affiche un bandeau avec la nouvelle heure et la raison `client_ahead_left`, « Un client avant vous a quitté la file. »
 - **Et** je reçois une notification push « Changement d'heure »
 
 ### 3. Variation de moins de 10 min
+
 - **Étant donné** que la dernière heure annoncée est 15h00
 - **Quand** elle passe à 15h05 après un ajustement de +5 min
 - **Alors** la nouvelle heure s'affiche avec l'heure de dernière mise à jour
@@ -33,6 +36,7 @@
 - **Et** la dernière heure annoncée reste 15h00
 
 ### 3 bis. Petits écarts cumulés (E11)
+
 - **Étant donné** que la dernière heure annoncée est 15h00 et que mon heure est déjà passée à 15h05 sans notification
 - **Quand** un nouvel ajustement de +5 min la fait passer à 15h10
 - **Alors** l'écart avec la dernière heure annoncée atteint 10 min
@@ -41,6 +45,7 @@
 - **Alors** ni bandeau ni notification ne sont déclenchés
 
 ### 4. Limite exacte de 10 min
+
 - **Étant donné** que la dernière heure annoncée est 15h00
 - **Quand** elle passe à 15h10
 - **Alors** le bandeau et la notification « Changement d'heure » sont déclenchés
@@ -48,11 +53,13 @@
 - **Alors** ni bandeau ni notification ne sont déclenchés
 
 ### 4 bis. Va-et-vient sans écart net
+
 - **Étant donné** que la dernière heure annoncée est 15h00
 - **Quand** mon heure passe à 15h08, puis revient à 15h02
 - **Alors** aucun bandeau ni aucune notification ne sont déclenchés, l'écart avec 15h00 restant sous 10 min
 
 ### 5. Pause du coiffeur
+
 - **Étant donné** que le coiffeur pressenti pour mon ticket se met en pause pour 30 min
 - **Quand** mon heure de passage recule de 10 min ou plus à cause de cette pause
 - **Alors** je reçois la notification « Changement d'heure » avec la raison `stylist_break`, « Le coiffeur prévu fait une pause. »
@@ -60,6 +67,7 @@
 - **Et** aucun choix « attendre / premier disponible » ne m'est demandé (E25)
 
 ### 6. Recul de position
+
 - **Étant donné** que j'ai déclaré un retard et que le coiffeur m'a appelé
 - **Quand** le coiffeur choisit « Prendre le suivant » (`take_next`, seule cause de recul, E2) et que mon ticket recule
 - **Alors** ma page de suivi affiche un bandeau avec ma nouvelle position et la raison `client_late`, « Vous étiez en retard : le suivant est passé. »
@@ -68,22 +76,26 @@
 - **Et** un événement `postponed` est ajouté au journal avec le motif
 
 ### 7. Heure de nouveau sûre en fin de journée
+
 - **Étant donné** que j'ai reçu l'alerte de risque de fin de journée (U-11)
 - **Quand** mon heure de passage redevient sûre et avance de 10 min ou plus
 - **Alors** je reçois seulement la notification « Changement d'heure »
 - **Et** je ne reçois aucune nouvelle alerte de fin de journée
 
 ### 8. Une seule notification par changement
+
 - **Étant donné** qu'un changement d'estimation de 10 min ou plus m'a été notifié
 - **Quand** ma page de suivi est relue plusieurs fois sans nouveau changement
 - **Alors** je ne reçois pas de seconde notification pour ce même changement
 
 ### 9. Lien SMS
+
 - **Étant donné** que je suis mon ticket par `/t/:shortCode`
 - **Quand** mon heure de passage change de 10 min ou plus
 - **Alors** le bandeau avec la raison s'affiche à la relecture suivante de la page (au plus tard 30 s)
 
 ### 9 bis. Sans la case « Me prévenir » (E17, K19)
+
 - **Étant donné** que je n'ai pas coché « Me prévenir » et que la dernière heure annoncée est 15h00
 - **Quand** mon heure passe à 15h15
 - **Alors** ma page de suivi affiche le bandeau avec la nouvelle heure et la raison
@@ -93,20 +105,23 @@
 - **Alors** l'écart avec 15h00 est de moins de 10 min et le bandeau de changement n'est plus affiché
 
 ### 10. Heure de dernière mise à jour toujours visible
+
 - **Étant donné** que ma page de suivi est affichée
 - **Quand** l'heure de passage change, quelle que soit la variation
 - **Alors** l'heure de la dernière mise à jour est affichée et actualisée
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `client.ticket.change_banner.estimate` | Nouvelle heure de passage : vers {time}. {reason} | Variables `time`, `reason` |
-| `client.ticket.change_banner.postponed` | Votre place a reculé : {position, plural, one {# client} other {# clients}} avant vous. {reason} | Variables `position`, `reason` |
-| `common.change_reason.<code>` | Voir `common.change_reason.*` dans le dictionnaire (17 textes) | Une clé par raison |
-| `notifications.estimate_changed.push` | Voir `notifications.estimate_changed.push.*` dans le dictionnaire (2 textes) | Push seulement ; nouvelle heure et raison ; message d'anticipation (consentement, E17) |
-| `notifications.postponed.push` | Voir `notifications.postponed.push.*` dans le dictionnaire (2 textes) | Partagé avec U-07 ; push seulement ; nouvelle position et raison ; message indispensable (E17) |
+
+| Clé (anglais)                           | Texte (français)                                                                                 | Contrainte                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `client.ticket.change_banner.estimate`  | Nouvelle heure de passage : vers {time}. {reason}                                                | Variables `time`, `reason`                                                                     |
+| `client.ticket.change_banner.postponed` | Votre place a reculé : {position, plural, one {# client} other {# clients}} avant vous. {reason} | Variables `position`, `reason`                                                                 |
+| `common.change_reason.<code>`           | Voir `common.change_reason.*` dans le dictionnaire (17 textes)                                   | Une clé par raison                                                                             |
+| `notifications.estimate_changed.push`   | Voir `notifications.estimate_changed.push.*` dans le dictionnaire (2 textes)                     | Push seulement ; nouvelle heure et raison ; message d'anticipation (consentement, E17)         |
+| `notifications.postponed.push`          | Voir `notifications.postponed.push.*` dans le dictionnaire (2 textes)                            | Partagé avec U-07 ; push seulement ; nouvelle position et raison ; message indispensable (E17) |
 
 ## Questions ouvertes
+
 - **Résolu le 18/10** (E11) — Référence du seuil de 10 min : la dernière heure annoncée au client (`tickets.last_notified_start_at`), écarts cumulés ; voir scénarios 1 à 4 bis.
 - **Résolu le 19/10** (K19) — Sans consentement, `last_notified_start_at` n'est mis à jour que quand une notification part réellement ; la référence reste la dernière heure vraiment annoncée ; voir scénario 9 bis.
 - **Résolu le 19/10** (K26) — Liste des raisons : enum `estimate_change_reason` (17 codes, y compris pour une heure qui avance), textes uniques `common.change_reason.<code>` ; voir scénarios 1, 2, 5 et 6.

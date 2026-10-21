@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Inviter un coiffeur
+
 - **Étant donné** le gérant à l'étape « Équipe » du wizard, avec moins de 20 coiffeurs
 - **Quand** il clique sur « Ajouter un coiffeur », saisit prénom, nom, e-mail, coche au moins une spécialité et valide
 - **Alors** la fonction `invite-member` est appelée
@@ -19,6 +20,7 @@
 - **Alors** l'événement `member_invited` est inscrit au journal du salon
 
 ### 2. Le coiffeur active son compte
+
 - **Étant donné** un coiffeur au statut « invité »
 - **Quand** il active son compte depuis le lien de l'invitation (C-01)
 - **Alors** son statut devient « actif » dans la liste de l'équipe du gérant
@@ -26,75 +28,86 @@
 - **Alors** l'événement `member_activated` est inscrit au journal du salon
 
 ### 3. Rappel sur les téléphones de l'équipe
+
 - **Étant donné** le gérant à l'étape « Équipe » du wizard
 - **Quand** il a invité au moins un coiffeur
 - **Alors** un rappel lui explique que chaque coiffeur active son compte depuis son invitation et installe Zelaté Pro sur son téléphone
 
 ### 4. Aucune spécialité cochée
+
 - **Étant donné** le formulaire « Ajouter un coiffeur » rempli sans spécialité
 - **Quand** le gérant valide
 - **Alors** l'invitation est refusée avec le message de l'erreur `team.specialty_required` (TRD §6.2, hors `queue-command`)
 - **Alors** aucun e-mail n'est envoyé
 
 ### 5. Champ obligatoire manquant
+
 - **Étant donné** le formulaire sans prénom, sans nom ou sans e-mail
 - **Quand** le gérant valide
 - **Alors** l'invitation est refusée et le champ manquant est signalé
 - **Alors** un appel à `invite-member` envoyé quand même est refusé avec l'erreur `queue.invalid_payload` (code commun hors `queue-command`, TRD §6.2)
 
 ### 6. E-mail déjà présent dans l'équipe du salon
+
 - **Étant donné** un membre du salon déjà enregistré avec l'e-mail « lea@exemple.fr »
 - **Quand** le gérant invite un coiffeur avec ce même e-mail
 - **Alors** l'invitation est refusée avec le message de l'erreur `team.email_already_used`
 - **Alors** aucun e-mail n'est envoyé
 
 ### 7. E-mail d'un coiffeur rattaché à un autre salon
+
 - **Étant donné** un coiffeur invité ou actif dans le salon B avec l'e-mail « sam@exemple.fr »
 - **Quand** le gérant du salon A invite un coiffeur avec cet e-mail
 - **Alors** l'invitation est refusée avec le message de l'erreur `team.email_already_used`
 - **Alors** le message ne nomme pas le salon B (isolation par salon, PRD §5.1)
 
 ### 8. Limite de 20 coiffeurs
+
 - **Étant donné** un salon qui a déjà 20 coiffeurs
 - **Quand** le gérant essaie d'en ajouter un 21e
 - **Alors** l'invitation est refusée avec le message de l'erreur `team.limit_reached`, qui rappelle la limite de 20
 - **Alors** aucun e-mail n'est envoyé
 
 ### 9. Double clic sur la validation
+
 - **Étant donné** le formulaire rempli
 - **Quand** le gérant clique deux fois rapidement sur la validation
 - **Alors** un seul membre est créé et un seul e-mail est envoyé
 
 ### 10. Isolation par salon
+
 - **Étant donné** le gérant du salon A
 - **Quand** il essaie de lire la liste de l'équipe du salon B (par l'API)
 - **Alors** la lecture est refusée
 
 ### 11. Seul le gérant invite
+
 - **Étant donné** un coiffeur connecté du salon
 - **Quand** `invite-member` est appelée depuis son compte
 - **Alors** l'appel est refusé avec l'erreur `queue.forbidden` (code commun hors `queue-command`, TRD §6.2)
 - **Alors** aucun membre n'est créé et aucun e-mail n'est envoyé
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.team.add` | « Ajouter un coiffeur » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.team.status.invited` | « Invité » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.team.status.active` | « Actif » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.team.form.specialties_hint` | « Au moins une : le coiffeur reçoit les prestations qu'il maîtrise. » | — |
-| `pro-manager.team.form.submit` | « Envoyer l'invitation » | — |
-| `pro-manager.setup.team_phones.reminder` | « Chaque coiffeur active son compte depuis son invitation et installe Zelaté Pro sur son téléphone. » | Reprend le contenu de APP_FLOW F-M2, formulation à valider |
-| `common.specialties.<code>` | Voir `common.specialties.*` dans le dictionnaire (10 textes) | Codes `women_cut`, `men_cut`, `kids_cut`, `beard`, `color`, `highlights`, `braids`, `curly_hair`, `styling`, `treatment` (BACKEND_SCHEMA §4.5) |
-| `notifications.member_invitation.email.subject` | « Votre invitation sur Zelaté Pro » | E-mail |
-| `notifications.member_invitation.email.body` | « Bonjour {first_name}, ↵  ↵ {salon_name} vous invite à rejoindre son équipe sur Zelaté Pro. Depuis votre téléphone, vous verrez votre file, appellerez vos clients et suivrez vos prestations. ↵  ↵ Activez votre compte avec ce lien : ↵ {link} ↵  ↵ Ce lien ne sert qu'une fois et reste valable 72 h. S'il a expiré, demandez une nouvelle invitation à votre salon. ↵  ↵ Vous ne connaissez pas ce salon ? Ignorez simplement ce message. ↵  ↵ L'équipe Zelaté » | Lien à usage unique, valable 72 h ; nom du salon et prénom du coiffeur |
-| `errors.team.specialty_required` | « Choisissez au moins une spécialité. » | Au moins une spécialité |
-| `errors.team.email_already_used` | « Cette adresse e-mail est déjà utilisée. Vérifiez-la ou utilisez-en une autre. » | Ne nomme pas un autre salon |
-| `errors.team.limit_reached` | « Votre salon compte déjà 20 coiffeurs, le maximum. Désactivez un compte pour en inviter un nouveau. » | Rappelle la limite de 20 |
-| `errors.queue.invalid_payload` | « Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. » | Code commun hors `queue-command` (TRD §6.2) |
-| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun hors `queue-command` (TRD §6.2) |
+
+| Clé (anglais)                                   | Texte (français)                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Contrainte                                                                                                                                     |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pro-manager.team.add`                          | « Ajouter un coiffeur »                                                                                                                                                                                                                                                                                                                                                                                                                                          | Libellé indicatif (APP_FLOW F-M2)                                                                                                              |
+| `pro-manager.team.status.invited`               | « Invité »                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Libellé indicatif (APP_FLOW F-M2)                                                                                                              |
+| `pro-manager.team.status.active`                | « Actif »                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Libellé indicatif (APP_FLOW F-M2)                                                                                                              |
+| `pro-manager.team.form.specialties_hint`        | « Au moins une : le coiffeur reçoit les prestations qu'il maîtrise. »                                                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                              |
+| `pro-manager.team.form.submit`                  | « Envoyer l'invitation »                                                                                                                                                                                                                                                                                                                                                                                                                                         | —                                                                                                                                              |
+| `pro-manager.setup.team_phones.reminder`        | « Chaque coiffeur active son compte depuis son invitation et installe Zelaté Pro sur son téléphone. »                                                                                                                                                                                                                                                                                                                                                            | Reprend le contenu de APP_FLOW F-M2, formulation à valider                                                                                     |
+| `common.specialties.<code>`                     | Voir `common.specialties.*` dans le dictionnaire (10 textes)                                                                                                                                                                                                                                                                                                                                                                                                     | Codes `women_cut`, `men_cut`, `kids_cut`, `beard`, `color`, `highlights`, `braids`, `curly_hair`, `styling`, `treatment` (BACKEND_SCHEMA §4.5) |
+| `notifications.member_invitation.email.subject` | « Votre invitation sur Zelaté Pro »                                                                                                                                                                                                                                                                                                                                                                                                                              | E-mail                                                                                                                                         |
+| `notifications.member_invitation.email.body`    | « Bonjour {first_name}, ↵ ↵ {salon_name} vous invite à rejoindre son équipe sur Zelaté Pro. Depuis votre téléphone, vous verrez votre file, appellerez vos clients et suivrez vos prestations. ↵ ↵ Activez votre compte avec ce lien : ↵ {link} ↵ ↵ Ce lien ne sert qu'une fois et reste valable 72 h. S'il a expiré, demandez une nouvelle invitation à votre salon. ↵ ↵ Vous ne connaissez pas ce salon ? Ignorez simplement ce message. ↵ ↵ L'équipe Zelaté » | Lien à usage unique, valable 72 h ; nom du salon et prénom du coiffeur                                                                         |
+| `errors.team.specialty_required`                | « Choisissez au moins une spécialité. »                                                                                                                                                                                                                                                                                                                                                                                                                          | Au moins une spécialité                                                                                                                        |
+| `errors.team.email_already_used`                | « Cette adresse e-mail est déjà utilisée. Vérifiez-la ou utilisez-en une autre. »                                                                                                                                                                                                                                                                                                                                                                                | Ne nomme pas un autre salon                                                                                                                    |
+| `errors.team.limit_reached`                     | « Votre salon compte déjà 20 coiffeurs, le maximum. Désactivez un compte pour en inviter un nouveau. »                                                                                                                                                                                                                                                                                                                                                           | Rappelle la limite de 20                                                                                                                       |
+| `errors.queue.invalid_payload`                  | « Certaines informations sont incomplètes ou incorrectes. Vérifiez-les, puis réessayez. »                                                                                                                                                                                                                                                                                                                                                                        | Code commun hors `queue-command` (TRD §6.2)                                                                                                    |
+| `errors.queue.forbidden`                        | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. »                                                                                                                                                                                                                                                                                                                                                | Code commun hors `queue-command` (TRD §6.2)                                                                                                    |
 
 ## Questions ouvertes
+
 - **PRD / BACKEND_SCHEMA** : le PRD dit « 20 coiffeurs maximum », alors que BACKEND_SCHEMA §4.4 dit « 20 membres actifs maximum par salon ». Le gérant fait-il partie des 20 ? Les coiffeurs « invités » et « désactivés » comptent-ils ?
 - **APP_FLOW** : quand une invitation a expiré, le coiffeur lit « Demandez une nouvelle invitation à votre gérant » (F-S1). Pourtant, `/dashboard/team` (F-M2, F-M4) n'a aucune action « Renvoyer l'invitation ». Faut-il en ajouter une ? L'ancien lien est-il alors annulé ? Le gérant voit-il qu'une invitation a expiré ?
 - **Résolu le 19/10** (constat 22, TRD v0.5 §6.2 « Hors `queue-command` ») : `invite-member` renvoie `team.specialty_required`, `team.email_already_used`, `team.limit_reached`, plus les codes communs (`queue.forbidden`, `queue.invalid_payload`, `queue.rate_limited`, `generic.unexpected`).
