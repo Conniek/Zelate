@@ -273,7 +273,9 @@ test('test ticket called, served and published from a phone (DEV-6, S-07)', asyn
   // S-07: test passed, the manager publishes.
   await managerPage.reload();
   await expect(
-    managerPage.getByText(fr('pro-manager', 'setup.test.passed')),
+    managerPage
+      .getByRole('status')
+      .filter({ hasText: fr('pro-manager', 'setup.test.passed') }),
   ).toBeVisible();
   await managerPage
     .getByRole('button', { name: fr('pro-manager', 'setup.publish') })
