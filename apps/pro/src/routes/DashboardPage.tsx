@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useOutletContext } from 'react-router';
 import { Banner, ConnectionBanner, Skeleton } from '@zelate/ui';
 import { BoardControls } from './BoardControls';
+import { WalkInDialog } from './WalkInDialog';
 import { boardColumns, loadBoard, ticketStylistId } from '../lib/board-api';
 import type { BoardStylist, BoardTicket } from '../lib/board-api';
 import { AccessLost, loadServiceOptions } from '../lib/queue-api';
@@ -119,6 +120,7 @@ export function DashboardPage() {
   const { t: tCommon } = useTranslation('common');
   useBoardTitle();
   const [live, setLive] = useState(false);
+  const [message, setMessage] = useState('');
   const realtime = useSalonRealtime(salon.id);
   useEffect(() => setLive(realtime), [realtime]);
   const online = useOnline();
@@ -189,6 +191,18 @@ export function DashboardPage() {
           manager={stylists.find((s) => s.role === 'manager')}
           salonId={salon.id}
         />
+        <div>
+          <WalkInDialog
+            announce={setMessage}
+            disabled={lost}
+            salonId={salon.id}
+            services={services.data ?? []}
+            stylists={columns}
+          />
+        </div>
+        <p aria-live="polite" className="sr-only" role="status">
+          {message}
+        </p>
         <nav aria-label={t('board.menu_label')}>
           <Link
             className="inline-flex min-h-11 items-center text-body-sm font-semibold text-link"
