@@ -1409,6 +1409,10 @@ export async function revokeMemberSessions(
     // Only someone who still works here (an old membership gives no power).
     if (target.status !== 'active') return teamError('team.member_not_found');
     const revoked = await sessionsToRevoke(tx, target);
+    // Staff screens re-read at once: the revoked phone learns it now (ADR-019),
+    // not at its next poll. The message carries only the current version.
+    const date = parisDate(deps.clock());
+    const day = await tx.loadDay(target.salon_id, date, isoWeekday(date));
     await tx.apply({
       salon_id: target.salon_id,
       service_date: parisDate(deps.clock()),
@@ -1425,8 +1429,8 @@ export async function revokeMemberSessions(
       notifications: [],
       revoke_sessions_of: revoked,
       delete_push_of_members: [target.member_id],
-      broadcasts: [],
-      version: 0,
+      broadcasts: [{ kind: 'salon', event: 'queue_updated' }],
+      version: day?.salon.queue_version ?? 0,
     });
     // The person also works in another salon: told to the manager, who can
     // still deactivate the membership of his own salon.

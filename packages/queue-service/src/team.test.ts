@@ -48,6 +48,10 @@ describe('revoke-member-sessions (S-16 scenario 1)', () => {
     ).toEqual({ sessions_kept: false });
     expect(h.db.revokedSessions).toEqual([ANNA_PROFILE]);
     expect(h.db.deletedPush).toEqual([ANNA]);
+    // The revoked phone is told to read again (it then finds no access).
+    expect(h.db.broadcasts).toEqual([
+      { kind: 'salon', event: 'queue_updated', version: 0 },
+    ]);
     expect(h.db.members.find((m) => m.id === ANNA)?.status).toBe('active');
     expect(h.db.events.at(-1)).toMatchObject({
       scope: 'salon',

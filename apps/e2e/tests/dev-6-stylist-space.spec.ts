@@ -321,7 +321,8 @@ test('a manager cuts the sessions, then deactivates the stylist (S-16)', async (
   await expect(
     page.getByText(fr('pro-stylist', 'signin.sessions_revoked')),
   ).toBeVisible({
-    timeout: 30_000,
+    // Realtime message, or the next poll (60 s while realtime is up, ADR-019).
+    timeout: 75_000,
   });
 
   // Scenario 3 then 4: back in, then deactivated.
@@ -339,6 +340,7 @@ test('a manager cuts the sessions, then deactivates the stylist (S-16)', async (
   await expect(
     page.getByText(fr('pro-stylist', 'signin.access_revoked')),
   ).toBeVisible({
-    timeout: 30_000,
+    // Realtime message, or the next poll (60 s while realtime is up, ADR-019).
+    timeout: 75_000,
   });
 });
