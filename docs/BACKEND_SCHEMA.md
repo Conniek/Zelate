@@ -1,7 +1,7 @@
 # BACKEND SCHEMA — Zelaté
 
 > version 0.9 · 21/10/2026 · statut : à figer au lot DES-4, avant la première migration
-> v0.9 · 21/10/2026 : `get_salon_board` lit la réponse du client à une réaffectation dans `ticket_events.reason_code` (elle lisait `after`, jamais rempli) (S-13, E27).
+> v0.9 · 21/10/2026 : `get_salon_board` lit la réponse du client à une réaffectation dans `ticket_events.reason_code` (elle lisait `after`, jamais rempli) ; le coiffeur d'une réaffectation est écrit dans `after` et non plus dans `reason_code`, que la contrainte refusait (S-13).
 > v0.8 · 21/10/2026 : revue du lot DEV-7 — `get_salon_board` donne la dernière fermeture du jour, les réglages de fin de journée et, pour chaque ticket, l'alerte, la réponse du client et la décision du gérant (F-M12, S-15).
 > v0.7 · 21/10/2026 : lot DEV-6 — contrôle de session dans les fonctions d'aide du personnel (ADR-019), RPC `stylist_context()`, colonnes d'appel dans `get_stylist_queue()`, révocation et désactivation (S-16).
 > v0.6 · 21/10/2026 : lot DEV-5 — écriture de l'outbox (une ligne push et une ligne SMS par message client, noms ajoutés à l'envoi), messages temps réel envoyés par `realtime.send` dans la transaction, `preview_presence_change` devenue l'Edge Function `preview-presence-change`.
@@ -371,7 +371,7 @@ Le **statut d'approche** affiché dans l'espace coiffeur (« arrivé », « en r
 | `actor_profile_id` | uuid                | sans clé étrangère (K29)            | Profil qui a agi ; reste en place après la suppression du compte, sans rien qui le relie à une personne                                                                  |
 | `reason_code`      | text                | `check (reason_code ~ '^[a-z_]+$')` | Motif structuré (valeur d'un enum de motif, par exemple `removal_reason`, `reassignment_choice` pour `reassignment_resolved`) ; pas de texte libre dans le journal (K10) |
 | `before`           | jsonb               |                                     | Champs modifiés, avant                                                                                                                                                   |
-| `after`            | jsonb               |                                     | Champs modifiés, après                                                                                                                                                   |
+| `after`            | jsonb               |                                     | Champs modifiés, après ; pour `reassigned` et `reassignment_requested` : `{ "member_id": … }`, le coiffeur choisi (jamais dans `reason_code`)                            |
 | `command_id`       | uuid                |                                     | Commande d'origine                                                                                                                                                       |
 | `created_at`       | timestamptz         | NN, défaut `now()`                  |                                                                                                                                                                          |
 

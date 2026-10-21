@@ -357,3 +357,20 @@ export function diffStates(
     changed,
   };
 }
+
+const REASON_CODE = /^[a-z_]+$/;
+
+/**
+ * `ticket_events.reason_code` and `salon_events.reason_code` hold codes only
+ * (`check (reason_code ~ '^[a-z_]+$')`, K10). The engine names the stylist of
+ * a reassignment in that field: it is written to `after` instead (S-13).
+ */
+export function eventReason(reason: string | null): {
+  reason_code: string | null;
+  after: { member_id: string } | null;
+} {
+  if (reason === null || REASON_CODE.test(reason)) {
+    return { reason_code: reason, after: null };
+  }
+  return { reason_code: null, after: { member_id: reason } };
+}

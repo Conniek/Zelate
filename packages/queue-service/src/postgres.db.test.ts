@@ -460,6 +460,28 @@ describe.skipIf(!sql || lateParisEvening())('queue-command on Postgres', () => {
     expect(presence!.status).toBe('available');
   });
 
+  it('reassign_ticket logs the new stylist in after, never in reason_code (S-13)', async () => {
+    const ticket_id = ok(
+      await send(manager.user, 'register_walk_in', {
+        first_name: 'Rita',
+        phone: `0${phone().slice(3)}`,
+        service_id: service,
+        requested_member_id: anna.member,
+      }),
+    ).ticket_id as string;
+    const moved = await send(manager.user, 'reassign_ticket', {
+      ticket_id,
+      member_id: ben.member,
+    });
+    expect(moved.status).toBe(200);
+    const [event] =
+      await sql!`select type, reason_code, after from public.ticket_events
+      where ticket_id = ${ticket_id}
+        and type in ('reassigned', 'reassignment_requested')`;
+    expect(event!.reason_code).toBeNull();
+    expect((event!.after as { member_id: string }).member_id).toBe(ben.member);
+  });
+
   it('deactivate-member deletes the Auth sessions and logs the departure (S-16)', async () => {
     const session = id();
     await sql!`insert into auth.sessions (id, user_id) values (${session}, ${ben.user})`;
