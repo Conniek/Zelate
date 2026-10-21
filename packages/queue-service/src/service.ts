@@ -30,6 +30,7 @@ import type {
   DbValue,
   EventRow,
   FreeSlotRow,
+  MemberRecord,
   MemberRef,
   NewContact,
   NotificationRow,
@@ -41,6 +42,7 @@ import type {
 } from './ports.ts';
 import type { PhoneHasher, Random } from './random.ts';
 import {
+  isUuid,
   parseRequest,
   type CommandName,
   type ParsedRequest,
@@ -1301,5 +1303,208 @@ export async function previewPresenceChange(
       });
     }
     return okResponse({ tickets });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// S-16: revoke-member-sessions and deactivate-member (TRD §6.1, K3, K38)
+// ---------------------------------------------------------------------------
+
+type TeamErrorCode =
+  'team.member_not_found' | 'team.already_deactivated' | 'team.last_manager';
+
+function teamError(code: TeamErrorCode): CommandResponse {
+  return {
+    status: code === 'team.member_not_found' ? 404 : 409,
+    body: { ok: false, error: { code, messageKey: `errors.${code}` } },
+  };
+}
+
+interface MemberAction {
+  readonly manager: MemberRef;
+  readonly target: MemberRecord;
+}
+
+/** A manager acting on a member of his own salon; anything else looks like « not found ». */
+async function resolveMemberAction(
+  tx: QueueTx,
+  caller: Caller,
+  body: unknown,
+): Promise<MemberAction | CommandResponse> {
+  if (!caller.profileId) return UNAUTHENTICATED;
+  const memberId =
+    typeof body === 'object' && body !== null
+      ? (body as Record<string, unknown>).member_id
+      : undefined;
+  if (!isUuid(memberId)) return errorResponse('invalid_payload');
+  const managed = (await tx.memberships(caller.profileId)).filter(
+    (m) => m.role === 'manager',
+  );
+  if (managed.length === 0) return errorResponse('forbidden');
+  const target = await tx.memberById(memberId.toLowerCase());
+  const manager = target && managed.find((m) => m.salon_id === target.salon_id);
+  if (!target || !manager) return teamError('team.member_not_found');
+  return { manager, target };
+}
+
+function memberEvent(
+  action: MemberAction,
+  type: 'member_sessions_revoked' | 'member_deactivated',
+): EventRow {
+  return {
+    scope: 'salon',
+    type,
+    subject_member_id: action.target.member_id,
+    actor_type: 'manager',
+    actor_member_id: action.manager.member_id,
+    actor_profile_id: null,
+    reason_code: null,
+    command_id: null,
+  };
+}
+
+/** Phone lost or changed: every session and push subscription goes; the member stays active. */
+export async function revokeMemberSessions(
+  deps: QueueServiceDeps,
+  caller: Caller,
+  body: unknown,
+): Promise<CommandResponse> {
+  return deps.db.transaction(async (tx) => {
+    const action = await resolveMemberAction(tx, caller, body);
+    if ('status' in action) return action;
+    const { target } = action;
+    await tx.apply({
+      salon_id: target.salon_id,
+      service_date: parisDate(deps.clock()),
+      salon: {},
+      members: [],
+      presences: [],
+      new_tickets: [],
+      ticket_updates: [],
+      new_contacts: [],
+      contact_updates: [],
+      contact_moves: [],
+      contact_replaces: [],
+      events: [memberEvent(action, 'member_sessions_revoked')],
+      notifications: [],
+      revoke_sessions_of: target.profile_id ? [target.profile_id] : [],
+      delete_push_of_members: [target.member_id],
+      broadcasts: [],
+      version: 0,
+    });
+    return okResponse({});
+  });
+}
+
+/**
+ * Departure from the salon: the member becomes `deactivated` and loses every
+ * session; his clients are handled like for a stylist absent all day (E6, E7):
+ * a called client goes back to the head, those who asked for him choose
+ * « premier disponible » or cancel; a client in service is completed by the
+ * manager (E15).
+ */
+export async function deactivateMember(
+  deps: QueueServiceDeps,
+  caller: Caller,
+  body: unknown,
+): Promise<CommandResponse> {
+  return deps.db.transaction(async (tx) => {
+    const action = await resolveMemberAction(tx, caller, body);
+    if ('status' in action) return action;
+    const salonId = action.target.salon_id;
+    await tx.lockSalon(salonId);
+    const target = await tx.memberById(action.target.member_id);
+    if (!target) return teamError('team.member_not_found');
+    if (target.status === 'deactivated') {
+      return teamError('team.already_deactivated');
+    }
+    if (
+      target.role === 'manager' &&
+      target.status === 'active' &&
+      (await tx.activeManagerCount(salonId)) <= 1
+    ) {
+      return teamError('team.last_manager');
+    }
+
+    const now = deps.clock();
+    const serviceDate = parisDate(now);
+    const day = await tx.loadDay(salonId, serviceDate, isoWeekday(serviceDate));
+    if (!day) return teamError('team.member_not_found');
+    const actor: Actor = {
+      type: 'member',
+      member_id: action.manager.member_id,
+    };
+    const run: Run = {
+      tx,
+      deps,
+      ctx: {
+        salonId,
+        actor,
+        member: action.manager,
+        profileId: caller.profileId,
+      },
+      day,
+      now,
+      serviceDate,
+      state: toState(
+        day,
+        serviceDayOf(serviceDate, day.opening_hours, day.closed),
+        now,
+      ),
+      extras: emptyExtras(),
+    };
+
+    let output: EngineOutput = unchanged(run.state);
+    if (target.status === 'active') {
+      const result = applyCommand(
+        run.state,
+        {
+          command: 'set_presence',
+          actor,
+          payload: {
+            member_id: target.member_id,
+            status: 'absent',
+            break_type: null,
+            until: null,
+            shift_end_at: null,
+          },
+        },
+        now,
+      );
+      if (result.ok) output = result;
+    }
+    // From now on the engine sees him deactivated (no free slot with him).
+    const after =
+      output.state.salon.queue_version === run.state.salon.queue_version
+        ? bumpVersion(output.state)
+        : output.state;
+    const state: QueueState = {
+      ...after,
+      members: after.members.map((m) =>
+        m.id === target.member_id ? { ...m, status: 'deactivated' } : m,
+      ),
+    };
+    const writes = buildWrites(
+      run,
+      {
+        output: { ...output, state },
+        extraEvents: [memberEvent(action, 'member_deactivated')],
+      },
+      null,
+    );
+    const previous = writes.members.find((m) => m.id === target.member_id);
+    await tx.apply({
+      ...writes,
+      members: [
+        ...writes.members.filter((m) => m.id !== target.member_id),
+        {
+          id: target.member_id,
+          columns: { ...previous?.columns, status: 'deactivated' },
+        },
+      ],
+      revoke_sessions_of: target.profile_id ? [target.profile_id] : [],
+      delete_push_of_members: [target.member_id],
+    });
+    return okResponse({ queue_version: writes.version });
   });
 }

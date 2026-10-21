@@ -190,6 +190,32 @@ function sqlTx(q: SqlRunner): QueueTx {
       return row?.salon_id ?? null;
     },
 
+    async memberById(memberId) {
+      const row = await one<Row>(
+        `select id, salon_id, profile_id, role, status from public.salon_members
+         where id = $1`,
+        [memberId],
+      );
+      return row
+        ? {
+            member_id: row.id as string,
+            salon_id: row.salon_id as string,
+            profile_id: (row.profile_id as string | null) ?? null,
+            role: row.role as MemberRole,
+            status: row.status as 'invited' | 'active' | 'deactivated',
+          }
+        : null;
+    },
+
+    async activeManagerCount(salonId) {
+      const row = await one<{ n: unknown }>(
+        `select count(*) as n from public.salon_members
+         where salon_id = $1 and role = 'manager' and status = 'active'`,
+        [salonId],
+      );
+      return num(row?.n ?? 0);
+    },
+
     async ticketByToken(token) {
       return ref(
         await one(
@@ -586,6 +612,17 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
         n.dedupe_key,
         n.requires_consent,
       ],
+    );
+  }
+
+  // S-16: every device of the member loses its session and its push.
+  for (const profileId of w.revoke_sessions_of ?? []) {
+    await q.query('delete from auth.sessions where user_id = $1', [profileId]);
+  }
+  for (const memberId of w.delete_push_of_members ?? []) {
+    await q.query(
+      'delete from public.push_subscriptions where member_id = $1',
+      [memberId],
     );
   }
 

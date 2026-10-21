@@ -27,6 +27,14 @@ export interface MemberRef {
   readonly role: MemberRole;
 }
 
+export interface MemberRecord {
+  readonly member_id: string;
+  readonly salon_id: string;
+  readonly profile_id: string | null;
+  readonly role: MemberRole;
+  readonly status: 'invited' | 'active' | 'deactivated';
+}
+
 export interface TicketRef {
   readonly ticket_id: string;
   readonly salon_id: string;
@@ -142,9 +150,9 @@ export interface NotificationRow {
   readonly requires_consent: boolean;
 }
 
-/** `published` is written by `publish_salon`, outside the engine (K35). */
+/** Salon events written by the service itself: K35 and S-16. */
 export type PublishedEvent = Omit<SalonEvent, 'type'> & {
-  readonly type: 'published';
+  readonly type: 'published' | 'member_sessions_revoked' | 'member_deactivated';
 };
 
 export type EventRow = (QueueEvent | PublishedEvent) & {
@@ -191,6 +199,9 @@ export interface WriteSet {
   readonly contact_replaces: readonly ContactReplace[];
   readonly events: readonly EventRow[];
   readonly notifications: readonly NotificationRow[];
+  /** S-16: Auth sessions to delete (profile ids) and members whose push subscriptions go. */
+  readonly revoke_sessions_of?: readonly string[];
+  readonly delete_push_of_members?: readonly string[];
   /** Payload `{ version }` (and `status` for a ticket); sent inside the transaction. */
   readonly broadcasts: readonly Broadcast[];
   readonly version: number;
@@ -215,6 +226,10 @@ export interface QueueTx {
   ticketRef(ticketId: string): Promise<TicketRef | null>;
   /** Salon of a member (any status), for `set_presence` on someone else. */
   memberSalon(memberId: string): Promise<string | null>;
+  /** A member of any status (S-16). */
+  memberById(memberId: string): Promise<MemberRecord | null>;
+  /** Active managers of a salon (at least one must stay, S-16 scenario 8). */
+  activeManagerCount(salonId: string): Promise<number>;
   ticketByToken(token: string): Promise<TicketRef | null>;
   /** Active, non-test ticket of a client in any salon. */
   activeTicketOfClient(profileId: string): Promise<TicketRef | null>;

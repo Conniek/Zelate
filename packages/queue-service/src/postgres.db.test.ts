@@ -10,6 +10,7 @@ import { readTicketLink } from './link.ts';
 import { sqlQueueDb, sqlTicketLinkReader } from './postgres.ts';
 import { cryptoRandom, hmacPhoneHasher } from './random.ts';
 import {
+  deactivateMember,
   handleQueueCommand,
   previewPresenceChange,
   runQueueTick,
@@ -421,5 +422,27 @@ describe.skipIf(!sql)('queue-command on Postgres', () => {
     const [presence] = await sql!`select status from public.stylist_presence
       where member_id = ${ben.member}`;
     expect(presence!.status).toBe('available');
+  });
+
+  it('deactivate-member deletes the Auth sessions and logs the departure (S-16)', async () => {
+    const session = id();
+    await sql!`insert into auth.sessions (id, user_id) values (${session}, ${ben.user})`;
+    const response = await deactivateMember(
+      deps(),
+      { profileId: manager.user },
+      {
+        member_id: ben.member,
+      },
+    );
+    expect(response.status).toBe(200);
+    const [member] =
+      await sql!`select status from public.salon_members where id = ${ben.member}`;
+    expect(member!.status).toBe('deactivated');
+    const [sessions] =
+      await sql!`select count(*) as n from auth.sessions where user_id = ${ben.user}`;
+    expect(Number(sessions!.n)).toBe(0);
+    const [event] = await sql!`select actor_member_id from public.salon_events
+      where salon_id = ${salon} and type = 'member_deactivated' and subject_member_id = ${ben.member}`;
+    expect(event!.actor_member_id).toBe(manager.member);
   });
 });
