@@ -24,11 +24,13 @@ export function preflight(request: Request): Response | null {
     : null;
 }
 
+// The address set by the platform's edge comes first: the first entry of
+// x-forwarded-for can be chosen by the caller, which would defeat per-IP caps.
 export function clientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   return (
-    forwarded?.split(',')[0]?.trim() ||
     request.headers.get('cf-connecting-ip') ||
+    forwarded?.split(',').at(-1)?.trim() ||
     'unknown'
   );
 }

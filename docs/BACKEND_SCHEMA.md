@@ -1,6 +1,7 @@
 # BACKEND SCHEMA — Zelaté
 
-> version 0.5 · 19/10/2026 · statut : à figer au lot DES-4, avant la première migration
+> version 0.6 · 21/10/2026 · statut : à figer au lot DES-4, avant la première migration
+> v0.6 · 21/10/2026 : lot DEV-5 — écriture de l'outbox (une ligne push et une ligne SMS par message client, noms ajoutés à l'envoi), messages temps réel envoyés par `realtime.send` dans la transaction, `preview_presence_change` devenue l'Edge Function `preview-presence-change`.
 > v0.5 · 19/10/2026 : décisions de Koni K28 à K41, impact technique des réponses d'Ely E17 à E31 (PRD v1.2), alignements de la revue d'architecture du 19/10 (constats 6, 7, 13, 14, 19, 23, 24, 27, 28, 31, 33, 34, 37). Contacts privés pour tout ticket dont le numéro est connu (K28) ; règles de suppression vers `profiles` (K29) ; profil créé par l'action qui demande le prénom (K30) ; `call_count`, `priority_since` (K31) ; droits par colonne et vues publiques en droits du propriétaire (K32) ; `push_subscriptions` écrites par le serveur seulement (K33) ; `salons.is_full` (K36) ; outbox réservée par `skip locked` et e-mails sans ticket dédupliqués (K37) ; sens de `assigned_member_id` (K39) ; purges (K40) ; contraintes `check` complétées ; `salon_events.ticket_id` ; nouvelles colonnes `confirmation_reminder_sent_at`, `reassignment_proposed_start_at` et table `private.no_show_warnings` (E19, E27, E28).
 > v0.4 : réponses K13 à K27 — consentement par ticket, fusion des rendez-vous (`merged`, `appointment_merged`), heure annoncée, push aux membres, raisons d'un changement d'heure (`estimate_change_reason`), clés de déduplication.
 > v0.3 : PRD v1.1 et TRD v0.3 — rendez-vous (`ticket_kind`, `scheduled_at`, statut `pending_confirmation`), demande de réaffectation, libération à l'heure annoncée, dernière heure notifiée, prochain créneau libre, compteur d'absences par numéro, lien court, journal sans texte libre.
@@ -407,6 +408,8 @@ Mêmes colonnes que `ticket_events`, avec `type salon_event_type`, `subject_memb
 
 **Réservation** (K37) : `send-notifications` peut tourner plusieurs fois en même temps (cron et appel après chaque commande). Il réserve ses lignes `pending` dont `scheduled_at` est passé avec `select … for update skip locked`, et vérifie le plafond SMS sous un verrou transactionnel par ticket (`pg_advisory_xact_lock` sur l'identifiant du ticket).
 
+**Écriture par le moteur et `queue-command`** (DEV-5) : chaque message à un client donne **une ligne `push` et une ligne `sms`** avec la même clé ; `send-notifications` passe la ligne SMS en `skipped` (`push_active`) quand un abonnement push est actif, sauf pour `your_turn` (E1). `params` ne contient ni prénom ni téléphone : l'envoi les ajoute depuis le ticket et `ticket_contacts`. `params.variant` porte la variante du dictionnaire (`reminder`, `no_wait`…) et `params.on_sent_last_notified_start_at` la valeur à écrire dans `tickets.last_notified_start_at` une fois le message parti (K19). L'avertissement `no_show_warning` est écrit par `queue-tick` à la 5e absence (K8, E10, E28).
+
 **Consentement et plafond : notifications des clients seulement** (`recipient_member_id` vide, constat 7).
 
 - **Plafond SMS** : avant envoi, `send-notifications` compte les SMS `sent` du ticket hors `your_turn`, `cancelled_by_salon` et `no_show_warning` ; à 3, la ligne passe en `skipped` (`sms_cap_reached`) ; ces trois modèles partent toujours (E1, E17, E28).
@@ -533,13 +536,15 @@ Règles transverses :
 | `get_audit_log`     | `salon_id?`, `from` (défaut : il y a 7 jours), `to`, `type?`, `member_id?` (acteur ou membre concerné), `cursor?` | Événements paginés, avec le prénom du membre qui a agi et le code du ticket, jamais le prénom du client (K25)                                                                                                                                                                                           | Gérant (son salon) ou admin                                              |
 | `get_day_summary`   | `salon_id`, `service_date`, `member_id?`                                                                          | Clients servis, attente annoncée et réelle, absences, annulations                                                                                                                                                                                                                                       | Gérant ; coiffeur connecté pour lui-même                                 |
 
-`preview_presence_change` n'est pas une fonction SQL : elle a besoin du moteur de file TypeScript (`packages/queue-engine`) et sera une Edge Function (DEV-2 partie 2 ou DEV-3). Les RPC ci-dessus sont déjà dans les migrations de DEV-1.
+`preview_presence_change` n'est pas une fonction SQL : elle a besoin du moteur de file TypeScript (`packages/queue-engine`) ; c'est l'Edge Function `preview-presence-change` (DEV-5). Les RPC ci-dessus sont déjà dans les migrations de DEV-1.
 
 ### 8.2 Écritures
 
 Toutes les écritures de file passent par le module commun `supabase/functions/_shared/queue-transaction` (TRD ADR-003, K38), utilisé par `queue-command` (TRD §6.2), `queue-tick`, `deactivate-member` et `account-delete`. Il exécute dans **une transaction** : `select pg_advisory_xact_lock(hashtextextended(salon_id::text, 0))` → contrôle d'idempotence (`private.processed_commands`, pour les commandes portant un `command_id`) → lecture de l'état de la file du jour → application du moteur → écritures `tickets`, `private.ticket_contacts` (K28), `profiles` au premier passage (K30), `stylist_presence`, `salons` (compteurs, `is_full`, `next_free_slots`, `queue_version`), `ticket_events` / `salon_events`, `notifications` → enregistrement de la réponse → validation, puis diffusion temps réel.
 
 `publish_salon` et `set_notifications_consent` passent aussi par `queue-command` (TRD §6.2, K34, K35).
+
+Mise en œuvre (DEV-5) : `packages/queue-service` fait tout sauf le SQL ; `postgres.ts` écrit, dans cet ordre, les tickets qui se ferment, puis ceux qui libèrent un coiffeur, puis les autres (index uniques partiels), puis les contacts (fermetures d'abord, fusion K14, nouveaux numéros), le journal, l'outbox (`on conflict do nothing`) et les messages temps réel. Ceux-ci partent par `realtime.send` **dans la transaction** : ils ne sont publiés que si elle est validée ; le sujet `ticket-token:` est calculé en SQL à partir du jeton, qui ne remonte jamais à la fonction. Une commande refusée par le moteur est aussi enregistrée dans `processed_commands` (le rejeu renvoie le même refus) ; une erreur de base annule tout, réponse comprise. `queue-tick` traite chaque salon (et chaque journée passée qui a encore un ticket actif) dans sa propre transaction : un salon en erreur n'arrête pas les autres.
 
 ### 8.3 Storage
 
