@@ -312,13 +312,13 @@ describe('confirm_arrival errors', () => {
     );
   });
 
-  it('a waiting client may also be marked arrived (H8, E34 default)', () => {
-    const out = ok(
-      makeState({ tickets: [makeTicket('a', { short_code: 'AF2K9' })] }),
-      confirmArrival('ines', 'AF2K9'),
-      at('10:00'),
+  it('E34 — arrival is only recorded at the call: a waiting ticket is refused', () => {
+    const state = makeState({
+      tickets: [makeTicket('a', { short_code: 'AF2K9' })],
+    });
+    expect(fails(state, confirmArrival('ines', 'AF2K9'), at('10:00'))).toBe(
+      'invalid_transition',
     );
-    expect(ticketOf(out.state, 'a').arrived_at).toBe(at('10:00'));
   });
 
   it('forbidden for a client', () => {

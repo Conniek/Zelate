@@ -1,6 +1,7 @@
 /** Edge cases of DEV-2: break, overrun, absence, manager « Je coiffe », end of day, DST. */
 import { describe, expect, it } from 'vitest';
 import {
+  applyCommand,
   computeSchedule,
   detectTimeTriggers,
   pickNextTicket,
@@ -68,7 +69,7 @@ describe('Stylist break (E25)', () => {
     );
   });
 
-  it('an overdue break counts from now (no automatic status change, E32 open)', () => {
+  it('E32 — an overdue break counts from now in the estimate until the next tick ends it', () => {
     const state = makeState({
       members: [
         makeMember('ines', {
@@ -114,6 +115,93 @@ describe('Stylist break (E25)', () => {
         params: expect.objectContaining({ reason: 'stylist_break_ended' }),
       }),
     );
+  });
+});
+
+describe('E32 — opening by the manager only, automatic end of break, late stylist back by himself', () => {
+  const onBreak = () =>
+    makeState({
+      members: [
+        makeMember('ines', {
+          presence: presence('on_break', {
+            break_type: 'meal',
+            expected_back_at: at('10:45'),
+          }),
+        }),
+      ],
+      tickets: [
+        makeTicket('a', {
+          estimated_start_at: at('10:45'),
+          last_notified_start_at: at('10:45'),
+          estimate_version: 1,
+        }),
+      ],
+    });
+
+  it('E32 — the stylist stays on break before the announced end', () => {
+    const out = detectTimeTriggers(onBreak(), at('10:44'));
+    expect(memberOf(out.state, 'ines').presence.status).toBe('on_break');
+    expect(out.events).toEqual([]);
+  });
+
+  it('E32 — at the announced end of break the stylist is available again, logged and recomputed', () => {
+    const out = detectTimeTriggers(onBreak(), at('10:45'));
+    expect(memberOf(out.state, 'ines').presence).toEqual({
+      status: 'available',
+      status_since: at('10:45'),
+      break_type: null,
+      expected_back_at: null,
+      shift_end_at: null,
+    });
+    expect(out.events).toContainEqual(
+      expect.objectContaining({
+        scope: 'salon',
+        type: 'presence_changed',
+        subject_member_id: 'ines',
+        actor_type: 'system',
+        reason_code: 'available',
+      }),
+    );
+    expect(ticketOf(out.state, 'a').estimated_start_at).toBe(at('10:45'));
+    expect(out.state.salon.queue_version).toBe(1);
+    const called = ok(out.state, callTicket('ines'), at('10:46'));
+    expect(ticketOf(called.state, 'a').status).toBe('called');
+  });
+
+  it('E32 — a late stylist stays late after his expected time until he sets himself available', () => {
+    const state = makeState({
+      members: [
+        makeMember('ines', {
+          presence: presence('late', { expected_back_at: at('10:30') }),
+        }),
+      ],
+      tickets: [makeTicket('a')],
+    });
+    const out = detectTimeTriggers(state, at('10:40'));
+    expect(memberOf(out.state, 'ines').presence.status).toBe('late');
+    expect(ticketOf(out.state, 'a').estimated_start_at).toBe(at('10:40'));
+    const back = ok(
+      out.state,
+      setPresence('ines', 'ines', 'available'),
+      at('10:41'),
+    );
+    expect(memberOf(back.state, 'ines').presence.status).toBe('available');
+  });
+
+  it('E32 — the queue is never opened automatically at the opening time', () => {
+    const state = makeState({ salon: { queue_status: 'closed' } });
+    const out = detectTimeTriggers(state, at('09:00'));
+    expect(out.state.salon.queue_status).toBe('closed');
+  });
+
+  it('E32 — no new sign-up after the last closing time', () => {
+    const state = makeState({ members: [makeMember('ines'), makeManager()] });
+    const out = applyCommand(
+      state,
+      joinQueue('late-client', { service_id: 'blowdry' }),
+      at('19:00'),
+    );
+    expect(out).toEqual({ ok: false, error: { code: 'queue_full' } });
   });
 });
 

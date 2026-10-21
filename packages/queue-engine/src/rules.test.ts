@@ -576,7 +576,7 @@ describe('H8 — declared arrival time', () => {
     expect(pickNextTicket(state, 'ines', at('10:20'))?.id).toBe('a');
   });
 
-  it('a physically arrived client takes the head back before his declared time (E34 default)', () => {
+  it('E34 — he takes the head back at his declared time, not at a physical arrival', () => {
     const state = makeState({
       tickets: [
         makeTicket('a', {
@@ -587,7 +587,24 @@ describe('H8 — declared arrival time', () => {
         makeTicket('b', { queue_rank: 2 }),
       ],
     });
-    expect(pickNextTicket(state, 'ines', at('10:06'))?.id).toBe('a');
+    expect(pickNextTicket(state, 'ines', at('10:06'))?.id).toBe('b');
+    expect(pickNextTicket(state, 'ines', at('10:20'))?.id).toBe('a');
+  });
+
+  it('E34 — after his declared time he is eligible again even without a recorded arrival', () => {
+    const state = makeState({
+      tickets: [
+        makeTicket('a', { queue_rank: 1, declared_arrival_at: at('10:20') }),
+        makeTicket('b', { queue_rank: 2 }),
+      ],
+    });
+    expect(pickNextTicket(state, 'ines', at('10:25'))?.id).toBe('a');
+    const called = ok(state, callTicket('ines'), at('10:25'));
+    expect(ticketOf(called.state, 'a')).toMatchObject({
+      status: 'called',
+      arrived_at: null,
+      release_due_at: at('10:35'),
+    });
   });
 
   it('the stylist with no other client waits for the declared time in the estimate', () => {

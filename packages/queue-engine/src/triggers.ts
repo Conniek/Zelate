@@ -1,6 +1,7 @@
 /**
  * Time triggers of `queue-tick` (TRD §6.1, BACKEND_SCHEMA §10), step 1:
- * end of the service day, release at `release_due_at`, reminder, stylist
+ * end of the service day, end of announced breaks (E32), release at
+ * `release_due_at`, reminder, stylist
  * choice timeout, automatic cancellation after the closing, recalculation
  * with the end-of-day warnings, then T-30 and T-10. Each trigger is guarded
  * by a column so a second tick at the same instant changes nothing.
@@ -14,10 +15,11 @@ import {
 import { finalize, withVersion } from './output.ts';
 import { refresh } from './refresh.ts';
 import { isActiveStatus, lastClosingAt, waitOffered } from './rules.ts';
-import { CLEARED_CALL, SYSTEM, ticketEvent } from './state.ts';
+import { CLEARED_CALL, SYSTEM, salonEvent, ticketEvent } from './state.ts';
 import type {
   EngineOutput,
   Instant,
+  MemberState,
   QueueEvent,
   QueueState,
   TicketState,
@@ -168,6 +170,44 @@ function anticipation(now: Instant): TicketRule {
   };
 }
 
+/**
+ * E32: at the end of an announced break the stylist is available again,
+ * without action from him. A late stylist only becomes available when he
+ * says so, and the queue only opens by the manager's hand.
+ */
+function endBreaks(
+  state: QueueState,
+  now: Instant,
+  events: QueueEvent[],
+): QueueState {
+  return {
+    ...state,
+    members: state.members.map((member): MemberState => {
+      const { status, expected_back_at } = member.presence;
+      if (
+        status !== 'on_break' ||
+        expected_back_at === null ||
+        now < expected_back_at
+      ) {
+        return member;
+      }
+      events.push(
+        salonEvent(SYSTEM, 'presence_changed', member.id, 'available'),
+      );
+      return {
+        ...member,
+        presence: {
+          status: 'available',
+          status_since: now,
+          break_type: null,
+          expected_back_at: null,
+          shift_end_at: null,
+        },
+      };
+    }),
+  };
+}
+
 function queueSnapshot(state: QueueState): string {
   const salon = { ...state.salon, estimate_updated_at: null, queue_version: 0 };
   return JSON.stringify([salon, state.members, state.tickets]);
@@ -183,6 +223,7 @@ export function detectTimeTriggers(
   if (now >= state.salon.service_day.ends_at) {
     next = eachTicket(next, endOfServiceDay(now), events);
   } else {
+    next = endBreaks(next, now, events);
     next = eachTicket(next, release(now), events);
     next = eachTicket(next, reminder(now), events);
     next = eachTicket(next, choiceTimeout(now), events);
