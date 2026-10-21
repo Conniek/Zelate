@@ -143,6 +143,18 @@ async function signIn(page: Page, who: Account, next: string) {
     .click();
 }
 
+/** Waits for a text; on failure, says where the page is and what it shows. */
+async function waitForText(page: Page, text: string, timeout: number) {
+  try {
+    await expect(page.getByText(text)).toBeVisible({ timeout });
+  } catch {
+    const body = (await page.locator('body').innerText()).slice(0, 600);
+    throw new Error(
+      `« ${text} » not shown at ${page.url()}; page shows: ${body}`,
+    );
+  }
+}
+
 /** The stylist uses his own phone (ADR-007). */
 async function phone(browser: Browser): Promise<Page> {
   const context = await browser.newContext({ ...devices['iPhone 13'] });
@@ -318,12 +330,8 @@ test('a manager cuts the sessions, then deactivates the stylist (S-16)', async (
       name: fr('pro-manager', 'team.revoke_sessions.submit'),
     })
     .click();
-  await expect(
-    page.getByText(fr('pro-stylist', 'signin.sessions_revoked')),
-  ).toBeVisible({
-    // Realtime message, or the next poll (60 s while realtime is up, ADR-019).
-    timeout: 75_000,
-  });
+  // Realtime message, or the next poll (60 s while realtime is up, ADR-019).
+  await waitForText(page, fr('pro-stylist', 'signin.sessions_revoked'), 75_000);
 
   // Scenario 3 then 4: back in, then deactivated.
   await signIn(page, stylist, '/stylist/queue');
@@ -337,10 +345,6 @@ test('a manager cuts the sessions, then deactivates the stylist (S-16)', async (
     .getByRole('dialog')
     .getByRole('button', { name: fr('pro-manager', 'team.deactivate.submit') })
     .click();
-  await expect(
-    page.getByText(fr('pro-stylist', 'signin.access_revoked')),
-  ).toBeVisible({
-    // Realtime message, or the next poll (60 s while realtime is up, ADR-019).
-    timeout: 75_000,
-  });
+  // Realtime message, or the next poll (60 s while realtime is up, ADR-019).
+  await waitForText(page, fr('pro-stylist', 'signin.access_revoked'), 75_000);
 });
