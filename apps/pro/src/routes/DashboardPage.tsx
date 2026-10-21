@@ -148,6 +148,14 @@ function TicketLine({
                 ? time(ticket.estimated_start_at)
                 : null,
             approach,
+            // S-13 (E27): a request waiting for the client, or how it ended.
+            ticket.reassignment_member_id !== null
+              ? t('board.ticket.reassignment_waiting')
+              : ticket.reassignment_resolved === 'refused'
+                ? t('board.ticket.reassignment_refused')
+                : ticket.reassignment_resolved === 'expired'
+                  ? t('board.ticket.reassignment_expired')
+                  : null,
           ]
             .filter((part): part is string => Boolean(part))
             .join(' · ')}

@@ -21,7 +21,11 @@ import type {
   TicketState,
   TicketStatus,
 } from '../../queue-engine/src/index.ts';
-import { TICKET_FIELDS, TICKET_INSTANT_FIELDS } from './mapping.ts';
+import {
+  TICKET_FIELDS,
+  TICKET_INSTANT_FIELDS,
+  eventReason,
+} from './mapping.ts';
 import type { LinkView, TicketLinkReader } from './link.ts';
 import type {
   Broadcast,
@@ -561,10 +565,11 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
 
   for (const e of w.events) {
     if (e.scope === 'ticket') {
+      const { reason_code, after } = eventReason(e.reason_code);
       await q.query(
         `insert into public.ticket_events (ticket_id, salon_id, type, actor_type,
-           actor_member_id, actor_profile_id, reason_code, command_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+           actor_member_id, actor_profile_id, reason_code, command_id, after)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9::text::jsonb)`,
         [
           e.ticket_id,
           w.salon_id,
@@ -572,8 +577,9 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
           e.actor_type,
           e.actor_member_id,
           e.actor_profile_id,
-          e.reason_code,
+          reason_code,
           e.command_id,
+          after === null ? null : JSON.stringify(after),
         ],
       );
     } else {
@@ -588,7 +594,7 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
           e.actor_member_id,
           e.actor_profile_id,
           e.subject_member_id,
-          e.reason_code,
+          eventReason(e.reason_code).reason_code,
           e.command_id,
         ],
       );

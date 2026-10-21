@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { parisInstant } from '@zelate/queue-service/time';
 import { Banner, Button, Dialog, TextField } from '@zelate/ui';
-import { previewPresence } from '../lib/board-api';
+import { previewPresence, ticketStylistId } from '../lib/board-api';
 import type {
   BoardStylist,
   BoardTicket,
@@ -112,6 +112,57 @@ export function PresenceDialog({
   const impact = preview.data ?? [];
   const toConfirm = impact.filter((item) => item.choice_required).length;
   const needsTime = action === 'late' || action === 'leaving_early';
+  const me = stylist.member_id;
+
+  // F-M8 lines the engine's answer alone does not spell out (S-11).
+  const reassigned = impact.filter(
+    (item) =>
+      item.kind === 'queue' &&
+      item.member_before === me &&
+      item.member_after !== null &&
+      item.member_after !== me &&
+      !item.choice_required,
+  ).length;
+  const calledBack = impact.find(
+    (item) =>
+      item.status_before === 'called' && item.status_after === 'waiting',
+  );
+  const inService =
+    action === 'absent'
+      ? tickets.find(
+          (x) => x.status === 'in_service' && x.assigned_member_id === me,
+        )
+      : undefined;
+  const movedByEngine = new Set(
+    impact.filter((i) => i.member_after !== me).map((i) => i.ticket_id),
+  );
+  // Appointments are not given to another stylist by the engine: the manager does it.
+  const appointmentsToReassign = change
+    ? tickets.filter((x) => {
+        if (
+          x.kind !== 'appointment' ||
+          x.status !== 'waiting' ||
+          ticketStylistId(x) !== me ||
+          !x.scheduled_at ||
+          movedByEngine.has(x.id)
+        ) {
+          return false;
+        }
+        const at = Date.parse(x.scheduled_at);
+        if (change.status === 'absent') return true;
+        if (change.status === 'off_duty') {
+          return (
+            change.shift_end_at !== null &&
+            at >= Date.parse(change.shift_end_at)
+          );
+        }
+        return change.until !== null && at < Date.parse(change.until);
+      }).length
+    : 0;
+  const nothing =
+    impact.length === 0 &&
+    inService === undefined &&
+    appointmentsToReassign === 0;
 
   async function confirm() {
     if (!change) {
@@ -213,7 +264,9 @@ export function PresenceDialog({
           {/* Only the result is read out, once it is known. */}
           <p aria-live="polite" className="sr-only">
             {change !== null && preview.isSuccess
-              ? t('presence.impact.summary', { count: impact.length })
+              ? t('presence.impact.summary', {
+                  count: nothing ? 0 : Math.max(impact.length, 1),
+                })
               : ''}
           </p>
           {change === null ? null : preview.isPending ? (
@@ -222,10 +275,38 @@ export function PresenceDialog({
             <Banner role="alert" tone="danger">
               {tErrors('generic.unexpected')}
             </Banner>
-          ) : impact.length === 0 ? (
+          ) : nothing ? (
             <p className="text-body-sm">{t('presence.impact.none')}</p>
           ) : (
             <>
+              {calledBack ? (
+                <p className="text-body-sm">
+                  {t('presence.impact.called_back_to_top', {
+                    first_name:
+                      names.get(calledBack.ticket_id)?.display_name ??
+                      calledBack.short_code,
+                  })}
+                </p>
+              ) : null}
+              {inService ? (
+                <p className="text-body-sm">
+                  {t('presence.impact.service_to_complete', {
+                    first_name: inService.display_name,
+                  })}
+                </p>
+              ) : null}
+              {reassigned > 0 ? (
+                <p className="text-body-sm">
+                  {t('presence.impact.reassigned', { count: reassigned })}
+                </p>
+              ) : null}
+              {appointmentsToReassign > 0 ? (
+                <p className="text-body-sm">
+                  {t('presence.impact.appointments_to_reassign', {
+                    count: appointmentsToReassign,
+                  })}
+                </p>
+              ) : null}
               <ul className="grid gap-1 text-body-sm">
                 {impact.map((item) => {
                   const ticket = names.get(item.ticket_id);

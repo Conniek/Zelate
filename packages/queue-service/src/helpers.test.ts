@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { eventReason } from './mapping.ts';
 import { cryptoRandom, hmacPhoneHasher } from './random.ts';
 import { COMMAND_NAMES, parseRequest } from './request.ts';
 import {
@@ -330,5 +331,19 @@ describe('request validation (TRD §6.2)', () => {
         ),
       )?.tracking_token,
     ).toBe('a'.repeat(43));
+  });
+});
+
+describe('eventReason (K10)', () => {
+  it('keeps a reason code and moves a stylist id to after', () => {
+    expect(eventReason('refused')).toEqual({
+      reason_code: 'refused',
+      after: null,
+    });
+    expect(eventReason(null)).toEqual({ reason_code: null, after: null });
+    expect(eventReason('20000000-0000-4000-8000-000000000002')).toEqual({
+      reason_code: null,
+      after: { member_id: '20000000-0000-4000-8000-000000000002' },
+    });
   });
 });

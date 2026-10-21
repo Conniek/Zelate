@@ -1248,29 +1248,89 @@ export async function runQueueTick(
 }
 
 // ---------------------------------------------------------------------------
-// preview_presence_change (TRD §6.3, K2): the engine runs, nothing is written
+// Previews (TRD §6.3, K2): the engine runs a manager's command, nothing is
+// written. `set_presence` (F-M8, S-11) and `reassign_ticket` (F-M10, S-13).
 // ---------------------------------------------------------------------------
 
 export interface PresencePreviewTicket {
   readonly ticket_id: string;
   readonly short_code: string;
+  readonly kind: 'queue' | 'appointment';
+  readonly status_before: string;
+  readonly status_after: string;
+  /** Who serves, or is expected to serve, the client: assigned, else estimated. */
+  readonly member_before: string | null;
+  readonly member_after: string | null;
   readonly estimated_start_at_before: string | null;
   readonly estimated_start_at_after: string | null;
   /** The client will be asked to wait or take the first available (E7). */
   readonly choice_required: boolean;
 }
 
-export async function previewPresenceChange(
+/** S-13: what the reassignment does for the ticket itself. */
+export interface ReassignmentPreview {
+  readonly ticket_id: string;
+  readonly estimated_start_at_before: string | null;
+  readonly estimated_start_at_after: string | null;
+  /** Later than now: the client is asked first (E9), nothing moves before. */
+  readonly needs_client_answer: boolean;
+}
+
+type PreviewedCommand = 'set_presence' | 'reassign_ticket';
+
+const servingMember = (t: TicketState): string | null =>
+  t.assigned_member_id ?? t.estimated_member_id;
+
+const isoOrNull = (instant: Instant | null): string | null =>
+  instant === null ? null : iso(instant);
+
+/** Every active ticket whose time, stylist or status the command would change. */
+function previewImpact(
+  before: QueueState,
+  after: QueueState,
+): PresencePreviewTicket[] {
+  const old = new Map(before.tickets.map((t) => [t.id, t]));
+  const tickets: PresencePreviewTicket[] = [];
+  for (const next of after.tickets) {
+    const prev = old.get(next.id);
+    if (!prev || !isActiveStatus(prev.status)) continue;
+    const choice =
+      prev.stylist_change_pending_since === null &&
+      next.stylist_change_pending_since !== null;
+    const changed =
+      choice ||
+      prev.estimated_start_at !== next.estimated_start_at ||
+      servingMember(prev) !== servingMember(next) ||
+      prev.status !== next.status;
+    if (!changed) continue;
+    tickets.push({
+      ticket_id: next.id,
+      short_code: next.short_code,
+      kind: next.kind,
+      status_before: prev.status,
+      status_after: next.status,
+      member_before: servingMember(prev),
+      member_after: servingMember(next),
+      estimated_start_at_before: isoOrNull(prev.estimated_start_at),
+      estimated_start_at_after: isoOrNull(next.estimated_start_at),
+      choice_required: choice,
+    });
+  }
+  return tickets;
+}
+
+async function previewCommand(
   deps: QueueServiceDeps,
   caller: Caller,
+  command: PreviewedCommand,
   payload: unknown,
 ): Promise<CommandResponse> {
   const req = parseRequest({
-    command: 'set_presence',
+    command,
     command_id: deps.random.uuid(),
     payload,
   });
-  if (!req || req.command !== 'set_presence') {
+  if (!req || req.command !== command) {
     return errorResponse('invalid_payload');
   }
   return deps.db.transaction(async (tx) => {
@@ -1292,35 +1352,50 @@ export async function previewPresenceChange(
     );
     const result = applyCommand(
       state,
-      { command: 'set_presence', actor: ctx.actor, payload: req.payload },
+      { command, actor: ctx.actor, payload: req.payload } as Command,
       now,
     );
     if (!result.ok) return errorResponse(result.error.code);
-    const before = new Map(state.tickets.map((t) => [t.id, t]));
-    const tickets: PresencePreviewTicket[] = [];
-    for (const after of result.state.tickets) {
-      const old = before.get(after.id);
-      if (!old || !isActiveStatus(after.status)) continue;
-      const choice =
-        old.stylist_change_pending_since === null &&
-        after.stylist_change_pending_since !== null;
-      if (old.estimated_start_at === after.estimated_start_at && !choice) {
-        continue;
-      }
-      tickets.push({
-        ticket_id: after.id,
-        short_code: after.short_code,
-        estimated_start_at_before:
-          old.estimated_start_at === null ? null : iso(old.estimated_start_at),
-        estimated_start_at_after:
-          after.estimated_start_at === null
-            ? null
-            : iso(after.estimated_start_at),
-        choice_required: choice,
-      });
-    }
-    return okResponse({ tickets });
+    const tickets = previewImpact(state, result.state);
+    if (req.command !== 'reassign_ticket') return okResponse({ tickets });
+
+    const id = req.payload.ticket_id;
+    const prev = state.tickets.find((t) => t.id === id);
+    const next = result.state.tickets.find((t) => t.id === id);
+    const asked =
+      next !== undefined &&
+      next.reassignment_requested_at !== null &&
+      prev?.reassignment_requested_at !== next.reassignment_requested_at;
+    const reassignment: ReassignmentPreview = {
+      ticket_id: id,
+      estimated_start_at_before: isoOrNull(prev?.estimated_start_at ?? null),
+      estimated_start_at_after: isoOrNull(
+        asked
+          ? (next?.reassignment_proposed_start_at ?? null)
+          : (next?.estimated_start_at ?? null),
+      ),
+      needs_client_answer: asked,
+    };
+    return okResponse({ tickets, reassignment });
   });
+}
+
+/** F-M8 (S-11): who moves if a stylist changes status. */
+export function previewPresenceChange(
+  deps: QueueServiceDeps,
+  caller: Caller,
+  payload: unknown,
+): Promise<CommandResponse> {
+  return previewCommand(deps, caller, 'set_presence', payload);
+}
+
+/** F-M10 (S-13): the new time of a reassigned client, and whether he is asked first. */
+export function previewReassignment(
+  deps: QueueServiceDeps,
+  caller: Caller,
+  payload: unknown,
+): Promise<CommandResponse> {
+  return previewCommand(deps, caller, 'reassign_ticket', payload);
 }
 
 // ---------------------------------------------------------------------------
