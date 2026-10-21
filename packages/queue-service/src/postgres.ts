@@ -96,7 +96,9 @@ function assignments(
   const keys = Object.keys(columns);
   return {
     sql: keys
-      .map((k, i) => `${k} = $${i + offset}${jsonb.has(k) ? '::jsonb' : ''}`)
+      .map(
+        (k, i) => `${k} = $${i + offset}${jsonb.has(k) ? '::text::jsonb' : ''}`,
+      )
       .join(', '),
     params: keys.map((k) => columns[k]!),
   };
@@ -152,7 +154,7 @@ function sqlTx(q: SqlRunner): QueueTx {
     async saveProcessed(commandId, command, salonId, response) {
       await q.query(
         `insert into private.processed_commands (command_id, command, salon_id, response)
-         values ($1, $2, $3, $4::jsonb)`,
+         values ($1, $2, $3, $4::text::jsonb)`,
         [commandId, command, salonId, JSON.stringify(response)],
       );
     },
@@ -514,7 +516,7 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
     await q.query(
       `insert into public.notifications (ticket_id, salon_id, recipient_profile_id,
          recipient_member_id, channel, template, params, dedupe_key, requires_consent)
-       values ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
+       values ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8, $9)
        on conflict do nothing`,
       [
         n.ticket_id,
@@ -538,15 +540,15 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
     const name = topic(b, w.salon_id);
     if (name !== null) {
       const event = b.kind === 'salon' ? b.event : 'salon_updated';
-      await q.query('select realtime.send($1::jsonb, $2, $3, true)', [
+      await q.query('select realtime.send($1::text::jsonb, $2, $3, true)', [
         JSON.stringify({ version: w.version }),
         event,
         name,
       ]);
     } else if (b.kind === 'ticket') {
       await q.query(
-        `select realtime.send($1::jsonb, 'ticket_updated', 'ticket:' || id::text, true),
-                realtime.send($2::jsonb, 'ticket_updated', 'ticket-token:' ||
+        `select realtime.send($1::text::jsonb, 'ticket_updated', 'ticket:' || id::text, true),
+                realtime.send($2::text::jsonb, 'ticket_updated', 'ticket-token:' ||
                   substr(encode(extensions.digest(tracking_token, 'sha256'), 'hex'), 1, 32), true)
          from public.tickets where id = $3`,
         [

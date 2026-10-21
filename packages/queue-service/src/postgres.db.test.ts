@@ -148,6 +148,18 @@ describe.skipIf(!sql)('queue-command on Postgres', () => {
       from public.notifications where ticket_id = ${ticket_id as string} order by channel`;
     expect(outbox.map((n) => n.channel)).toEqual(['push', 'sms']);
 
+    const [types] = await db`select
+        (select bool_and(jsonb_typeof(params) = 'object') from public.notifications
+          where ticket_id = ${ticket_id as string}) as params_are_objects,
+        (select jsonb_typeof(next_free_slots) from public.salons where id = ${salon}) as slots_type,
+        (select bool_and(jsonb_typeof(response) = 'object') from private.processed_commands
+          where salon_id = ${salon}) as responses_are_objects`;
+    expect(types).toEqual({
+      params_are_objects: true,
+      slots_type: 'array',
+      responses_are_objects: true,
+    });
+
     const events = await db`select type, command_id from public.ticket_events
       where ticket_id = ${ticket_id as string}`;
     expect(events[0]).toMatchObject({ type: 'created' });
