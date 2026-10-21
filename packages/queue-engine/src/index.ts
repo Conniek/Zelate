@@ -9,6 +9,7 @@ export {
 export { applyCommand } from './commands.ts';
 export { detectTimeTriggers } from './triggers.ts';
 export { diffNotifications } from './notifications.ts';
+export { newTicket, type NewTicketFields } from './state.ts';
 export {
   isActiveStatus,
   lastClosingAt,
