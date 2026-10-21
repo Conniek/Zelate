@@ -142,6 +142,9 @@ importers:
       '@zelate/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@zelate/queue-service':
+        specifier: workspace:*
+        version: link:../../packages/queue-service
       '@zelate/salon-setup':
         specifier: workspace:*
         version: link:../../packages/salon-setup
@@ -4545,14 +4548,6 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.7(vite@6.4.4(@types/node@24.19.2)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))':
-    dependencies:
-      '@vitest/spy': 3.2.7
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 6.4.4(@types/node@24.19.2)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1)
-
   '@vitest/mocker@3.2.7(vite@6.4.4(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))':
     dependencies:
       '@vitest/spy': 3.2.7
@@ -6476,7 +6471,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.7
-      '@vitest/mocker': 3.2.7(vite@6.4.4(@types/node@24.19.2)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))
+      '@vitest/mocker': 3.2.7(vite@6.4.4(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))
       '@vitest/pretty-format': 3.2.7
       '@vitest/runner': 3.2.7
       '@vitest/snapshot': 3.2.7

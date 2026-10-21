@@ -34,7 +34,11 @@
     "end_of_day_later": "Plus tard",
     "end_of_day_confirm": "{count, plural, =0 {Aucun client n'attend chez vous.} one {{first_names} passera chez un collègue ou choisira de vous attendre.} other {{first_names} passeront chez vos collègues ou choisiront de vous attendre.}}",
     "end_of_day_appointments": "{count, plural, one {Rendez-vous restant : {first_names}. Le client choisira un autre coiffeur ; le gérant peut le réaffecter.} other {Rendez-vous restants : {first_names}. Les clients choisiront un autre coiffeur ; le gérant peut les réaffecter.}}",
-    "end_of_day_submit": "Terminer ma journée"
+    "end_of_day_submit": "Terminer ma journée",
+    "current": "Statut : {status}",
+    "break_until": "Retour vers {time}",
+    "end_of_day_until": "Fin de journée à {time}",
+    "title": "Mon statut"
   },
   "connection": {
     "lost": "Connexion perdue. Reconnexion en cours…",
@@ -54,21 +58,29 @@
     "up_next": "Ensuite",
     "empty": "Aucun client pour l'instant. Les prochains s'afficheront ici.",
     "my_appointments": "Mes rendez-vous",
-    "call": "Appeler"
+    "call": "Appeler",
+    "call_hint": "Disponible pour appeler votre prochain client.",
+    "appointment_badge": "RDV {time}",
+    "call_unavailable": "Déclarez-vous disponible pour appeler un client.",
+    "call_no_client": "Aucun client à appeler pour l'instant."
   },
   "call": {
     "title": "Appel en cours",
     "countdown": "{minutes, plural, =0 {Place libérée dans moins d'1 min} other {Place libérée dans # min}}",
     "reminder_sent": "Rappel envoyé",
     "declared_delay": "Retard annoncé : {minutes} min",
-    "released_banner": "Place de {first_name} libérée faute d'arrivée. Appelez le suivant."
+    "released_banner": "Place de {first_name} libérée faute d'arrivée. Appelez le suivant.",
+    "release_in": "Place libérée dans",
+    "minutes_left": "{minutes, plural, one {Plus que # minute} other {Plus que # minutes}}",
+    "test_client": "Client test"
   },
   "arrival": {
     "enter_code": "Saisir le code",
     "code_hint": "Demandez son code au client",
     "code_pad_label": "Code du ticket, 5 caractères",
     "submit": "Valider",
-    "arrived": "Arrivé"
+    "arrived": "Arrivé",
+    "char_label": "Caractère {index} sur {count}"
   },
   "take_next": {
     "button": "Prendre le suivant",
@@ -81,7 +93,10 @@
     "duration_label": "Durée",
     "duration_decrease": "Retirer 5 min",
     "duration_increase": "Ajouter 5 min",
-    "confirm": "Commencer"
+    "confirm": "Commencer",
+    "no_service": "Prestation non précisée",
+    "decrease_short": "−5",
+    "increase_short": "+5"
   },
   "service": {
     "in_progress": "En cours",
@@ -94,7 +109,8 @@
     "adjust_label": "Ajouter {minutes} min à la prestation",
     "complete": "Terminer",
     "complete_hint": "Maintenez pour terminer",
-    "complete_confirm": "Terminer la prestation de {first_name} ?"
+    "complete_confirm": "Terminer la prestation de {first_name} ?",
+    "adjust_group": "Ajouter du temps à la prestation"
   },
   "appointments": {
     "title": "Mes rendez-vous",
@@ -123,7 +139,11 @@
     "cancel_keep": "Garder",
     "merge_suggestion": "Vous aviez déjà saisi {first_name} à {time}. En confirmant, les deux rendez-vous n'en feront qu'un.",
     "merge_confirm": "Regrouper et confirmer",
-    "warning_stylist_absent": "Vous êtes déclaré absent aujourd'hui. Le rendez-vous est enregistré."
+    "warning_stylist_absent": "Vous êtes déclaré absent aujourd'hui. Le rendez-vous est enregistré.",
+    "reason_label": "Motif, envoyé au client",
+    "reject_title": "Refuser le rendez-vous de {first_name} ?",
+    "pending": "À confirmer",
+    "time_required": "Indiquez une heure."
   },
   "summary": {
     "title": "Mon bilan du jour",
@@ -131,6 +151,15 @@
     "avg_duration_by_service": "Durée moyenne par prestation",
     "planned_vs_actual": "Écart prévu / réel",
     "empty": "Aucun client servi aujourd'hui. Votre bilan se remplira à la première prestation terminée.",
-    "back_to_queue": "Retour à ma file"
-  }
+    "back_to_queue": "Retour à ma file",
+    "wait_values": "Attente annoncée {announced} min · réelle {actual} min",
+    "no_show": "{count, plural, =0 {Aucune absence} one {# absence} other {# absences}}"
+  },
+  "menu": {
+    "label": "Menu",
+    "queue": "Ma file",
+    "appointments": "Mes rendez-vous",
+    "summary": "Mon bilan"
+  },
+  "page_title": "{page} – {app}"
 }

@@ -873,6 +873,8 @@ describe('setup test and publication (K24, K35)', () => {
       status: 'waiting',
     });
     expect(h.db.contacts.has(id)).toBe(false);
+    // Shown in a stylist's queue at once (ADR-015).
+    expect(h.db.ticket(id).estimated_member_id).not.toBeNull();
     // A second tap returns the running test.
     expect(
       data(

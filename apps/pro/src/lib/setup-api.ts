@@ -5,6 +5,7 @@ export interface SetupSalon {
   id: string;
   name: string;
   status: string;
+  setup_test_passed_at: string | null;
 }
 
 export interface ServiceRow {
@@ -28,7 +29,7 @@ export interface ClosureRow {
 export async function loadOwnSalon(): Promise<SetupSalon | null> {
   const { data, error } = await supabase
     .from('salons')
-    .select('id, name, status')
+    .select('id, name, status, setup_test_passed_at')
     .limit(1)
     .maybeSingle();
   if (error) throw error;
@@ -156,4 +157,18 @@ export async function updateService(
     })
     .eq('id', id);
   return !error;
+}
+
+/** « Au moins 1 coiffeur actif » (K35): a stylist, or the manager who cuts hair. */
+export async function countActiveHairdressers(
+  salonId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('salon_members')
+    .select('id', { count: 'exact', head: true })
+    .eq('salon_id', salonId)
+    .eq('status', 'active')
+    .eq('is_hairdressing', true);
+  if (error) throw error;
+  return count ?? 0;
 }

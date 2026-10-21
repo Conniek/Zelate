@@ -1403,6 +1403,7 @@ export type Database = {
       get_stylist_queue: { Args: never; Returns: Json };
       my_active_ticket: { Args: never; Returns: Json };
       resolve_qr_token: { Args: { qr_token: string }; Returns: string };
+      stylist_context: { Args: never; Returns: Json };
       save_signup_draft: {
         Args: { p_data: Json; p_step: number };
         Returns: undefined;

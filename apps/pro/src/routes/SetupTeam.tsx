@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TeamMemberActions } from './TeamMemberActions';
 import { Banner, Button, TextField } from '@zelate/ui';
 import { inviteMember, loadTeam } from '../lib/team-api';
 import { loadSpecialties } from '../lib/setup-api';
@@ -88,6 +89,13 @@ export function SetupTeam({ salonId }: { salonId: string }) {
             <span className="text-body-sm text-text-muted">
               {t(`team.status.${member.status}`)}
             </span>
+            {member.status === 'active' ? (
+              <TeamMemberActions
+                memberId={member.id}
+                name={member.first_name}
+                salonId={salonId}
+              />
+            ) : null}
           </li>
         ))}
       </ul>

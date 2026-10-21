@@ -131,6 +131,10 @@ type Fields = Record<string, unknown>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function isUuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID.test(value);
+}
+
 function present(p: Fields, key: string): boolean {
   return p[key] !== undefined && p[key] !== null;
 }

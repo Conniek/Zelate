@@ -31,6 +31,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 export function Button({
   children,
   className,
+  onClick,
   fullWidth = false,
   loading = false,
   size = 'md',
@@ -50,12 +51,26 @@ export function Button({
     .filter(Boolean)
     .join(' ');
 
+  // While loading, or `aria-disabled`, the button keeps its focus (a native
+  // `disabled` would drop it, DEV-6 accessibility review) and ignores clicks.
+  const inert =
+    loading ||
+    props['aria-disabled'] === true ||
+    props['aria-disabled'] === 'true';
+
   return (
     <button
       {...props}
       aria-busy={loading || undefined}
-      className={classes}
-      disabled={props.disabled || loading}
+      aria-disabled={inert || undefined}
+      className={`${classes}${inert ? ' cursor-not-allowed opacity-50' : ''}`}
+      onClick={(event) => {
+        if (inert) {
+          event.preventDefault();
+          return;
+        }
+        onClick?.(event);
+      }}
       type={type}
     >
       {loading ? (

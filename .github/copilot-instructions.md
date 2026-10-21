@@ -7,7 +7,7 @@ These rules mirror `CLAUDE.md`. If the two files disagree, `CLAUDE.md` wins and 
 ## Current state
 
 - **Phase 2 is closed (19/10/2026).** All business and technical questions are decided: E1-E39 (Ely) and K1-K45 (Koni). For E32-E39 and K42-K45 the written proposals are the default decisions (`docs/stories/README.md`); Ely may still revise one, nothing waits for her.
-- **DEV-0 to DEV-4 are merged; DEV-5 (queue commands: `queue-command`, `queue-tick`, `ticket-public`, `preview-presence-change`) is on `feat/dev-5-queue-commands`, see `docs/reviews/2026-10-21-dev-5.md`.** Next: DEV-6 (stylist space). Queue writes only go through `packages/queue-service` and the Edge Functions that call it (ADR-003).
+- **DEV-0 to DEV-5 are merged; DEV-6 (stylist space `/stylist/*`, S-07 test and publication, S-16 revoke and deactivate) is on `feat/dev-6-stylist-space`, see `docs/reviews/2026-10-21-dev-6.md`.** Next: DEV-7 (manager dashboard). Queue writes only go through `packages/queue-service` and the Edge Functions that call it (ADR-003).
 - Supabase local is running and its API, Studio and Mailpit endpoints respond. Some ports bind to `0.0.0.0`; Studio, pgMeta and analytics have no authentication. Keep the stack on a trusted local network only; never use its shared default keys in production or share `supabase status` output.
 
 ## Read before working

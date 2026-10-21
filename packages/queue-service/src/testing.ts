@@ -116,6 +116,9 @@ export class FakeDb implements QueueDb {
   notifications: NotificationRow[] = [];
   broadcasts: (Broadcast & { version: number })[] = [];
   noShowRecords: { hash: string; ticket_id: string; at: Instant }[] = [];
+  /** Profiles whose Auth sessions were deleted, members whose push went (S-16). */
+  revokedSessions: string[] = [];
+  deletedPush: string[] = [];
   noShowWarnings = new Map<string, Instant>();
   /** Throw inside `apply`, to test that nothing is written. */
   failNextApply = false;
@@ -177,6 +180,25 @@ export class FakeDb implements QueueDb {
             role: m.role,
           })),
       ticketRef: async (id) => this.ref(id),
+      memberById: async (id) => {
+        const m = this.members.find((x) => x.id === id);
+        return m
+          ? {
+              member_id: m.id,
+              salon_id: m.salon_id,
+              profile_id: m.profile_id,
+              role: m.role,
+              status: m.status,
+            }
+          : null;
+      },
+      activeManagerCount: async (salonId) =>
+        this.members.filter(
+          (m) =>
+            m.salon_id === salonId &&
+            m.role === 'manager' &&
+            m.status === 'active',
+        ).length,
       memberSalon: async (id) =>
         this.members.find((m) => m.id === id)?.salon_id ?? null,
       ticketByToken: async (token) => {
@@ -447,6 +469,8 @@ export class FakeDb implements QueueDb {
     }
     this.checkPhoneIndex();
     this.events.push(...w.events);
+    this.revokedSessions.push(...(w.revoke_sessions_of ?? []));
+    this.deletedPush.push(...(w.delete_push_of_members ?? []));
     for (const n of w.notifications) {
       const duplicate = this.notifications.some(
         (x) =>

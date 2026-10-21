@@ -1,9 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router';
-import { loadHours, loadServices } from '../lib/setup-api';
+import {
+  countActiveHairdressers,
+  loadHours,
+  loadServices,
+} from '../lib/setup-api';
 import type { SetupSalon } from '../lib/setup-api';
 import { SetupClosures } from './SetupClosures';
+import { SetupPublish } from './SetupPublish';
 import { SetupQr } from './SetupQr';
 import { SetupHours } from './SetupHours';
 import { SetupServices } from './SetupServices';
@@ -30,7 +35,12 @@ export function SetupPage() {
     queryKey: ['services', salon.id],
     queryFn: () => loadServices(salon.id),
   });
+  const { data: hairdressers = 0 } = useQuery({
+    queryKey: ['hairdressers', salon.id],
+    queryFn: () => countActiveHairdressers(salon.id),
+  });
   const approved = salon.status !== 'pending_review';
+  const testPassed = salon.setup_test_passed_at !== null;
   const hasHours = Object.values(hours ?? {}).some((r) => r.length > 0);
   const hasService = services?.some((s) => s.is_active) ?? false;
 
@@ -47,7 +57,12 @@ export function SetupPage() {
             label={t('setup.checklist.application_approved')}
           />
           <Item done={hasHours} label={t('setup.checklist.opening_hours')} />
+          <Item
+            done={hairdressers > 0}
+            label={t('setup.checklist.active_stylist')}
+          />
           <Item done={hasService} label={t('setup.checklist.active_service')} />
+          <Item done={testPassed} label={t('setup.checklist.test_passed')} />
         </ul>
         {!approved && (
           <p className="text-body-sm text-text-muted">
@@ -60,6 +75,12 @@ export function SetupPage() {
       <SetupServices salonId={salon.id} />
       <SetupTeam salonId={salon.id} />
       <SetupQr salonId={salon.id} />
+      <SetupPublish
+        ready={
+          approved && hasHours && hasService && hairdressers > 0 && testPassed
+        }
+        salon={salon}
+      />
     </main>
   );
 }

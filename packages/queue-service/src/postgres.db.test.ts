@@ -10,6 +10,7 @@ import { readTicketLink } from './link.ts';
 import { sqlQueueDb, sqlTicketLinkReader } from './postgres.ts';
 import { cryptoRandom, hmacPhoneHasher } from './random.ts';
 import {
+  deactivateMember,
   handleQueueCommand,
   previewPresenceChange,
   runQueueTick,
@@ -78,6 +79,26 @@ function ok(response: CommandResponse): Record<string, unknown> {
   if (!body.ok)
     throw new Error(`expected ok, got ${JSON.stringify(body.error)}`);
   return body.data!;
+}
+
+/**
+ * An appointment time later today, in Paris: 20 min from now, rounded to 5 min.
+ * Null in the last minutes before midnight, when no slot is left today.
+ */
+function laterToday(): { iso: string; hhmm: string } | null {
+  const at = Math.ceil((Date.now() + 20 * 60_000) / 300_000) * 300_000;
+  const day = (ms: number) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(
+      new Date(ms),
+    );
+  if (day(at + 60 * 60_000) !== day(Date.now())) return null;
+  const hhmm = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Paris',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(at));
+  return { iso: new Date(at).toISOString(), hhmm };
 }
 
 function codeOf(response: CommandResponse): string {
@@ -273,6 +294,9 @@ describe.skipIf(!sql)('queue-command on Postgres', () => {
   });
 
   it('merges a QR check-in into the appointment the salon entered (K14)', async () => {
+    const slot = laterToday();
+    // Too close to midnight for an appointment today: nothing to test.
+    if (!slot) return;
     const [qr] =
       await sql!`select qr_token from public.salons where id = ${salon}`;
     const [auth] =
@@ -280,17 +304,12 @@ describe.skipIf(!sql)('queue-command on Postgres', () => {
     const entered = ok(
       await send(manager.user, 'create_appointment', {
         first_name: 'Inès',
-        scheduled_at: new Date(Date.now() + 3 * 3600_000).toISOString(),
+        scheduled_at: slot.iso,
         member_id: ben.member,
         phone: `+${auth!.phone as string}`,
       }),
     );
-    const scheduled = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Europe/Paris',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).format(new Date(Date.now() + 3 * 3600_000));
+    const scheduled = slot.hhmm;
     const signalled = ok(
       await send(client2, 'check_in_appointment', {
         salon_id: salon,
@@ -421,5 +440,27 @@ describe.skipIf(!sql)('queue-command on Postgres', () => {
     const [presence] = await sql!`select status from public.stylist_presence
       where member_id = ${ben.member}`;
     expect(presence!.status).toBe('available');
+  });
+
+  it('deactivate-member deletes the Auth sessions and logs the departure (S-16)', async () => {
+    const session = id();
+    await sql!`insert into auth.sessions (id, user_id) values (${session}, ${ben.user})`;
+    const response = await deactivateMember(
+      deps(),
+      { profileId: manager.user },
+      {
+        member_id: ben.member,
+      },
+    );
+    expect(response.status).toBe(200);
+    const [member] =
+      await sql!`select status from public.salon_members where id = ${ben.member}`;
+    expect(member!.status).toBe('deactivated');
+    const [sessions] =
+      await sql!`select count(*) as n from auth.sessions where user_id = ${ben.user}`;
+    expect(Number(sessions!.n)).toBe(0);
+    const [event] = await sql!`select actor_member_id from public.salon_events
+      where salon_id = ${salon} and type = 'member_deactivated' and subject_member_id = ${ben.member}`;
+    expect(event!.actor_member_id).toBe(manager.member);
   });
 });

@@ -15,11 +15,28 @@ describe('Button', () => {
     );
 
     const button = screen.getByRole('button', { name: 'Save' });
-    expect(button).toBeDisabled();
+    // Still focusable, so the keyboard focus is not lost mid-action.
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
     expect(button).toHaveAttribute('aria-busy', 'true');
 
     await user.click(button);
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('aria-disabled keeps the focus and ignores clicks', async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    render(
+      <Button aria-disabled onClick={onClick}>
+        Call
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Call' });
+    await user.click(button);
+    expect(onClick).not.toHaveBeenCalled();
+    button.focus();
+    expect(button).toHaveFocus();
   });
 
   it('supports full-width and destructive variants', () => {
