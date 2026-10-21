@@ -298,7 +298,9 @@ test('absence preview is shown before it is confirmed (DEV-7, S-11)', async ({
     .click();
   const dialog = managerPage.getByRole('dialog');
   await expect(
-    dialog.getByText(fr('pro-manager', 'presence.impact.none')),
+    dialog.getByText(fr('pro-manager', 'presence.impact.none'), {
+      exact: true,
+    }),
   ).toBeVisible();
   // Nothing is written before « Confirmer ».
   const { data: before } = await db
@@ -387,9 +389,8 @@ test('at closing, the manager decides for each client still waiting (DEV-7, S-15
 
   const page = await browser.newPage();
   await signIn(page, manager, '/dashboard');
-  const box = page.getByRole('region', {
-    name: fr('pro-manager', 'end_of_day.closing.title', { count: 1 }),
-  });
+  // The helper does not expand ICU plurals: the one-client form, as rendered.
+  const box = page.getByRole('region', { name: '1 client attend encore' });
   await expect(box).toBeVisible();
   await expect(box.getByText('Inès')).toBeVisible();
   await box
