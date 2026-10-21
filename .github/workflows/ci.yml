@@ -92,4 +92,10 @@ jobs:
       - name: Run queue-command integration tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-        run: pnpm --filter @zelate/queue-service test:db
+        run: |
+          set -o pipefail
+          pnpm --filter @zelate/queue-service test:db 2>&1 | tee /tmp/db-test.log || {
+            # TEMP: show the end of the output as an annotation.
+            echo "::error title=db-test::$(tail -c 20000 /tmp/db-test.log | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          }
