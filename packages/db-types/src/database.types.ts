@@ -59,6 +59,7 @@ export type Database = {
           provider_message_id: string | null;
           recipient_member_id: string | null;
           recipient_profile_id: string | null;
+          requires_consent: boolean;
           salon_id: string;
           scheduled_at: string;
           sent_at: string | null;
@@ -79,6 +80,7 @@ export type Database = {
           provider_message_id?: string | null;
           recipient_member_id?: string | null;
           recipient_profile_id?: string | null;
+          requires_consent?: boolean;
           salon_id: string;
           scheduled_at?: string;
           sent_at?: string | null;
@@ -99,6 +101,7 @@ export type Database = {
           provider_message_id?: string | null;
           recipient_member_id?: string | null;
           recipient_profile_id?: string | null;
+          requires_consent?: boolean;
           salon_id?: string;
           scheduled_at?: string;
           sent_at?: string | null;
