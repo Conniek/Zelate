@@ -218,5 +218,11 @@
         "body": "{first_name} attend votre confirmation depuis 10 min (rendez-vous à {time})."
       }
     }
+  },
+  "staff_sign_in": {
+    "email": {
+      "subject": "Votre lien de connexion Zelaté Pro",
+      "body": "Bonjour,\n\nOuvrez ce lien sur votre téléphone pour vous connecter à Zelaté Pro :\n{link}\n\nCe lien ne sert qu'une fois. Vous ne l'avez pas demandé ? Ignorez simplement ce message.\n\nL'équipe Zelaté"
+    }
   }
 }

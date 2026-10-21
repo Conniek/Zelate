@@ -22,12 +22,52 @@ const router = createBrowserRouter(
       path: '/signin',
     },
     {
+      lazy: async () => ({
+        Component: (await import('./routes/InvitePage')).InvitePage,
+      }),
+      path: '/invite/:token',
+    },
+    {
+      lazy: async () => ({
+        Component: (await import('./routes/SignupPage')).SignupPage,
+      }),
+      path: '/signup',
+    },
+    {
+      lazy: async () => ({
+        Component: (await import('./routes/SignupPendingPage'))
+          .SignupPendingPage,
+      }),
+      path: '/signup/pending',
+    },
+    {
       children: [
         {
           lazy: async () => ({
-            Component: (await import('./routes/AdminHomePage')).AdminHomePage,
+            Component: (await import('./routes/SetupPage')).SetupPage,
+          }),
+          path: 'setup',
+        },
+      ],
+      lazy: async () => ({
+        Component: (await import('./routes/DashboardGuard')).DashboardGuard,
+      }),
+      path: '/dashboard',
+    },
+    {
+      children: [
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/AdminSalonsPage'))
+              .AdminSalonsPage,
           }),
           path: 'salons',
+        },
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/AdminSalonPage')).AdminSalonPage,
+          }),
+          path: 'salons/:salonId',
         },
       ],
       lazy: async () => ({

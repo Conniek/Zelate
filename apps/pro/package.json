@@ -16,6 +16,8 @@
     "@zelate/auth-policy": "workspace:*",
     "@zelate/db-types": "workspace:*",
     "@zelate/i18n": "workspace:*",
+    "@zelate/salon-setup": "workspace:*",
+    "@zelate/salon-signup": "workspace:*",
     "@zelate/ui": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
