@@ -35,6 +35,38 @@ describe('queue-tick', () => {
     expect(h.db.salons.get(SALON)!.queue_version).toBe(version);
   });
 
+  it("a free stylist's slot follows the clock without a write every minute", async () => {
+    await h.tick();
+    const stored = h.db.salons.get(SALON)!.next_free_slots;
+    for (let i = 0; i < 5; i += 1) {
+      h.now += MINUTE;
+      expect((await h.tick()).changed).toBe(0);
+    }
+    expect(h.db.salons.get(SALON)!.next_free_slots).toEqual(stored);
+  });
+
+  it('a slot that moves is a new version for the public page', async () => {
+    await h.tick();
+    // Every stylist on a long break: the slot moves to their return.
+    for (const member of [
+      '20000000-0000-4000-8000-000000000001',
+      ANNA,
+      '20000000-0000-4000-8000-000000000003',
+    ]) {
+      const p = h.db.presences.get(`${member}:2026-10-19`)!;
+      Object.assign(p, {
+        status: 'on_break',
+        break_type: 'meal',
+        expected_back_at: h.now + 60 * MINUTE,
+      });
+    }
+    const version = h.db.salons.get(SALON)!.queue_version;
+    h.db.broadcasts = [];
+    await h.tick();
+    expect(h.db.salons.get(SALON)!.queue_version).toBeGreaterThan(version);
+    expect(h.db.broadcasts.some((b) => b.kind === 'salon_public')).toBe(true);
+  });
+
   it('reminds at 5 min and releases at 10 min (H4)', async () => {
     const { ticket_id } = data(await join());
     const id = ticket_id as string;

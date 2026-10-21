@@ -21,7 +21,7 @@ export interface Harness {
     profileId: string | null,
     command: string,
     payload?: unknown,
-    options?: { commandId?: string; token?: string },
+    options?: { commandId?: string; token?: string; salonId?: string },
   ): Promise<CommandResponse>;
   tick(): Promise<TickReport>;
 }
@@ -42,6 +42,7 @@ export function harness(): Harness {
           command_id: options.commandId ?? crypto.randomUUID(),
           payload,
           ...(options.token ? { tracking_token: options.token } : {}),
+          ...(options.salonId ? { salon_id: options.salonId } : {}),
         },
       ),
     tick: () =>

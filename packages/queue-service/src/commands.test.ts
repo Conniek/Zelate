@@ -454,6 +454,101 @@ describe('salon commands', () => {
   });
 });
 
+describe('review fixes (DEV-5)', () => {
+  /** Anna also works in the other salon, and that membership is older. */
+  function annaInTwoSalons() {
+    const anna = h.db.members.find((m) => m.id === ANNA)!;
+    h.db.members.unshift({
+      ...anna,
+      id: '20000000-0000-4000-8000-0000000000a2',
+      salon_id: OTHER_SALON,
+    });
+  }
+
+  it('a member of two salons must say where call_ticket applies', async () => {
+    annaInTwoSalons();
+    const { ticket_id } = data(await join());
+    expect(code(await h.send(ANNA_PROFILE, 'call_ticket'))).toBe(
+      'invalid_payload',
+    );
+    expect(h.db.ticket(ticket_id as string).status).toBe('waiting');
+    const called = data(
+      await h.send(ANNA_PROFILE, 'call_ticket', {}, { salonId: SALON }),
+    );
+    expect(called.ticket_id).toBe(ticket_id);
+    expect(
+      code(
+        await h.send(
+          ANNA_PROFILE,
+          'call_ticket',
+          {},
+          {
+            salonId: '10000000-0000-4000-8000-0000000000ff',
+          },
+        ),
+      ),
+    ).toBe('forbidden');
+  });
+
+  it('set_presence follows the salon of the member it changes', async () => {
+    annaInTwoSalons();
+    data(
+      await h.send(ANNA_PROFILE, 'set_presence', {
+        member_id: ANNA,
+        status: 'on_break',
+        break_type: 'short',
+        until: '2026-10-19T10:15:00+02:00',
+      }),
+    );
+    expect(h.db.presences.get(`${ANNA}:${DATE}`)?.status).toBe('on_break');
+    expect(
+      code(
+        await h.send(ANNA_PROFILE, 'set_presence', {
+          member_id: '20000000-0000-4000-8000-0000000000ff',
+          status: 'available',
+        }),
+      ),
+    ).toBe('forbidden');
+  });
+
+  it('a new consent is a new version, heard on the ticket channel only', async () => {
+    const { ticket_id } = data(await join());
+    const version = h.db.salons.get(SALON)!.queue_version;
+    h.db.broadcasts = [];
+    data(
+      await h.send(CLIENT, 'set_notifications_consent', {
+        ticket_id,
+        consent: true,
+      }),
+    );
+    expect(h.db.salons.get(SALON)!.queue_version).toBe(version + 1);
+    expect(h.db.broadcasts).toEqual([
+      { kind: 'ticket', ticket_id, status: 'waiting', version: version + 1 },
+    ]);
+  });
+
+  it('two salons racing for one number: one ticket, one business refusal', async () => {
+    h.db.members.find(
+      (m) => m.id === '20000000-0000-4000-8000-000000000009',
+    )!.role = 'manager';
+    const [a, b] = await Promise.all([
+      walkIn('0677889900'),
+      h.send(OTHER_PROFILE, 'register_walk_in', {
+        first_name: 'Sam',
+        phone: '0677889900',
+      }),
+    ]);
+    const outcomes = [a, b]
+      .map((r) => (r.status === 200 ? 'ok' : code(r)))
+      .sort();
+    expect(outcomes).toEqual(['already_has_active_ticket', 'ok']);
+    const active = [...h.db.contacts.values()].filter(
+      (c) => c.phone_e164 === '+33677889900' && c.is_active,
+    );
+    expect(active).toHaveLength(1);
+  });
+});
+
 describe('appointments (H10)', () => {
   const create = (extra: Record<string, unknown> = {}) =>
     h.send(MANAGER_PROFILE, 'create_appointment', {

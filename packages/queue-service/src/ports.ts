@@ -213,6 +213,8 @@ export interface QueueTx {
 
   memberships(profileId: string): Promise<MemberRef[]>;
   ticketRef(ticketId: string): Promise<TicketRef | null>;
+  /** Salon of a member (any status), for `set_presence` on someone else. */
+  memberSalon(memberId: string): Promise<string | null>;
   ticketByToken(token: string): Promise<TicketRef | null>;
   /** Active, non-test ticket of a client in any salon. */
   activeTicketOfClient(profileId: string): Promise<TicketRef | null>;

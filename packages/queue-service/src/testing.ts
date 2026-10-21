@@ -83,6 +83,14 @@ export function ticketFromColumns(
   return out as unknown as TicketState;
 }
 
+/** Like a Postgres unique violation (SQLSTATE 23505). */
+function uniqueViolation(constraint_name: string): Error {
+  return Object.assign(new Error(constraint_name), {
+    code: '23505',
+    constraint_name,
+  });
+}
+
 const hex = (bytes: Uint8Array) =>
   [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 
@@ -116,26 +124,26 @@ export class FakeDb implements QueueDb {
 
   async transaction<T>(fn: (tx: QueueTx) => Promise<T>): Promise<T> {
     const releases: (() => void)[] = [];
-    const snapshot = structuredClone({
+    try {
+      return await fn(this.tx(releases));
+    } finally {
+      for (const release of releases) release();
+    }
+  }
+
+  /** Writes are all-or-nothing, like the statements of one transaction. */
+  private snapshot() {
+    return structuredClone({
       salons: this.salons,
       tickets: this.tickets,
       contacts: this.contacts,
       profiles: this.profiles,
       members: this.members,
       presences: this.presences,
-      processed: this.processed,
       events: this.events,
       notifications: this.notifications,
       broadcasts: this.broadcasts,
     });
-    try {
-      return await fn(this.tx(releases));
-    } catch (error) {
-      Object.assign(this, snapshot);
-      throw error;
-    } finally {
-      for (const release of releases) release();
-    }
   }
 
   private tx(releases: (() => void)[]): QueueTx {
@@ -169,6 +177,8 @@ export class FakeDb implements QueueDb {
             role: m.role,
           })),
       ticketRef: async (id) => this.ref(id),
+      memberSalon: async (id) =>
+        this.members.find((m) => m.id === id)?.salon_id ?? null,
       ticketByToken: async (token) => {
         for (const [id, t] of this.tickets) {
           if (t.columns.tracking_token === token) return this.ref(id);
@@ -220,7 +230,15 @@ export class FakeDb implements QueueDb {
             t.columns.appointment_source === 'salon_entry' &&
             Date.parse(t.columns.created_at as string) >= since,
         ).length,
-      apply: async (writes) => this.apply(writes),
+      apply: async (writes) => {
+        const before = this.snapshot();
+        try {
+          this.apply(writes);
+        } catch (error) {
+          Object.assign(this, before);
+          throw error;
+        }
+      },
       dueSalonDays: async (today) => {
         const out = new Map<
           string,
@@ -453,7 +471,7 @@ export class FakeDb implements QueueDb {
       const status = c.status as TicketState['status'];
       if (c.client_id && !c.is_test && isActiveStatus(status)) {
         if (clients.has(c.client_id as string)) {
-          throw new Error('tickets_one_active_per_client');
+          throw uniqueViolation('tickets_one_active_per_client');
         }
         clients.add(c.client_id as string);
       }
@@ -462,7 +480,7 @@ export class FakeDb implements QueueDb {
         c.assigned_member_id
       ) {
         if (busy.has(c.assigned_member_id as string)) {
-          throw new Error('tickets_one_busy_per_stylist');
+          throw uniqueViolation('tickets_one_busy_per_stylist');
         }
         busy.add(c.assigned_member_id as string);
       }
@@ -474,7 +492,7 @@ export class FakeDb implements QueueDb {
     for (const c of this.contacts.values()) {
       if (!c.is_active || c.is_pending_confirmation) continue;
       if (seen.has(c.phone_hash))
-        throw new Error('ticket_contacts_one_active_per_phone');
+        throw uniqueViolation('ticket_contacts_one_active_per_phone');
       seen.add(c.phone_hash);
     }
   }

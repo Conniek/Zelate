@@ -182,6 +182,14 @@ function sqlTx(q: SqlRunner): QueueTx {
       );
     },
 
+    async memberSalon(memberId) {
+      const row = await one<{ salon_id: string }>(
+        'select salon_id from public.salon_members where id = $1',
+        [memberId],
+      );
+      return row?.salon_id ?? null;
+    },
+
     async ticketByToken(token) {
       return ref(
         await one(

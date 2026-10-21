@@ -185,17 +185,23 @@ async function resolveContext(
   const memberships = await tx.memberships(caller.profileId);
   if (memberships.length === 0) return errorResponse('forbidden');
   let member = memberships[0]!;
-  const salonId = payloadField(req, 'salon_id');
+  let salonId = payloadField(req, 'salon_id') ?? req.salon_id;
+  if (!salonId && req.command === 'set_presence') {
+    // The salon of the member whose status changes.
+    salonId = await tx.memberSalon(req.payload.member_id);
+    if (!salonId) return errorResponse('forbidden');
+  }
   if (salonId) {
     const match = memberships.find((m) => m.salon_id === salonId);
     if (!match) return errorResponse('forbidden');
     member = match;
   } else if (memberships.length > 1) {
-    // Several salons: follow the ticket when there is one. A ticket of a
-    // salon the caller does not belong to is never loaded: the engine
-    // answers `ticket_other_salon` from the caller's own salon.
+    // Several salons: follow the ticket. A ticket of a salon the caller does
+    // not belong to is never loaded (the engine answers from his own salon).
+    // Without ticket, the body must say which salon: never guess.
     const ticketId = payloadField(req, 'ticket_id');
-    const ref = ticketId ? await tx.ticketRef(ticketId) : null;
+    if (!ticketId) return errorResponse('invalid_payload');
+    const ref = await tx.ticketRef(ticketId);
     member = memberships.find((m) => m.salon_id === ref?.salon_id) ?? member;
   }
   return {
@@ -564,6 +570,8 @@ const PREPARE: { [K in CommandName]?: Prepare<K> } = {
 interface Outcome {
   readonly output: EngineOutput;
   readonly extraEvents: EventRow[];
+  /** Only the ticket channels hear about it (a change the salon cannot see). */
+  readonly ticketBroadcastsOnly?: boolean;
 }
 
 function unchanged(state: QueueState): EngineOutput {
@@ -599,15 +607,16 @@ function setNotificationsConsent(
   if (ticket.notifications_consent_at === consentAt) {
     return { output: unchanged(run.state), extraEvents: [] };
   }
-  const state: QueueState = {
+  const state: QueueState = bumpVersion({
     ...run.state,
     tickets: run.state.tickets.map((t) =>
       t.id === ticket.id ? { ...t, notifications_consent_at: consentAt } : t,
     ),
-  };
+  });
   return {
     output: { state, events: [], notifications: [] },
     extraEvents: [],
+    ticketBroadcastsOnly: true,
   };
 }
 
@@ -755,17 +764,30 @@ function clientNotifications(output: EngineOutput): NotificationRow[] {
   return rows;
 }
 
+const MINUTE = 60_000;
+
+/**
+ * Two slot lists are the same when every service starts at the same minute,
+ * or « now » in both (a slot at or before the next minute): a free stylist's
+ * slot follows the clock and must not be rewritten every minute. The
+ * interface shows a past or current `start_at` as « maintenant ».
+ */
 function sameSlots(
   stored: readonly FreeSlotRow[],
   computed: readonly FreeSlotRow[],
+  now: Instant,
 ): boolean {
+  const soon = now + MINUTE;
   return (
     stored.length === computed.length &&
-    stored.every(
-      (s, i) =>
+    stored.every((s, i) => {
+      const a = Date.parse(s.start_at);
+      const b = Date.parse(computed[i]!.start_at);
+      return (
         s.service_id === computed[i]!.service_id &&
-        Date.parse(s.start_at) === Date.parse(computed[i]!.start_at),
-    )
+        (a === b || (a <= soon && b <= soon))
+      );
+    })
   );
 }
 
@@ -829,13 +851,21 @@ function buildWrites(
 
   // ADR-017: next free slot per service, without the stylist. It moves with
   // time too, so it is compared with the stored one at every pass.
+  // Rounded up to the minute: no millisecond noise in the stored value.
   const slots: FreeSlotRow[] = findNextFreeSlots(output.state, run.now).map(
-    (s) => ({ service_id: s.service_id, start_at: iso(s.start_at) }),
+    (s) => ({
+      service_id: s.service_id,
+      start_at: iso(Math.ceil(s.start_at / MINUTE) * MINUTE),
+    }),
   );
-  if (!sameSlots(run.day.salon.next_free_slots, slots)) {
+  if (!sameSlots(run.day.salon.next_free_slots, slots, run.now)) {
     salon.next_free_slots = JSON.stringify(slots);
-    if (!diff.changed && !extraChanged)
+    if (!diff.changed && !extraChanged) {
+      // A new version, so that public pages read the new slot again.
+      version += 1;
+      salon.queue_version = version;
       broadcasts.push({ kind: 'salon_public' });
+    }
   }
 
   return {
@@ -869,7 +899,9 @@ function buildWrites(
       ...clientNotifications(output),
       ...extras.staffNotifications,
     ],
-    broadcasts,
+    broadcasts: outcome.ticketBroadcastsOnly
+      ? broadcasts.filter((b) => b.kind === 'ticket')
+      : broadcasts,
     version,
   };
 }
@@ -973,6 +1005,37 @@ export async function handleQueueCommand(
   const phone = await preparePhone(req, deps.phones);
   if (phone === 'invalid_phone') return errorResponse('invalid_phone');
 
+  try {
+    return await commandTransaction(deps, caller, req, phone);
+  } catch (error) {
+    // Two salons racing for the same client or number: the unique index
+    // decides, the transaction is rolled back, the answer stays a business one.
+    if (isActiveTicketConflict(error)) {
+      return errorResponse('already_has_active_ticket');
+    }
+    throw error;
+  }
+}
+
+const ACTIVE_TICKET_INDEXES = [
+  'tickets_one_active_per_client',
+  'ticket_contacts_one_active_per_phone',
+];
+
+function isActiveTicketConflict(error: unknown): boolean {
+  const e = error as { code?: string; constraint_name?: string } | null;
+  return (
+    e?.code === '23505' &&
+    ACTIVE_TICKET_INDEXES.includes(e.constraint_name ?? '')
+  );
+}
+
+function commandTransaction(
+  deps: QueueServiceDeps,
+  caller: Caller,
+  req: ParsedRequest,
+  phone: PreparedPhone | null,
+): Promise<CommandResponse> {
   return deps.db.transaction(async (tx) => {
     const ctx = await resolveContext(tx, req, caller);
     if ('status' in ctx) return ctx;
@@ -1120,7 +1183,17 @@ async function tickSalon(
   const output = detectTimeTriggers(run.state, now);
   confirmationReminders(run, output.state);
   await noShowWarnings(run, output.state);
-  const writes = buildWrites(run, { output, extraEvents: [] }, null);
+  let writes = buildWrites(run, { output, extraEvents: [] }, null);
+  if (serviceDate < parisDate(now)) {
+    // A past day only closes its tickets: today's pass owns the salon's
+    // counters and free slots; only the version moves, for the broadcasts.
+    const { queue_version } = writes.salon;
+    writes = {
+      ...writes,
+      salon: queue_version === undefined ? {} : { queue_version },
+      broadcasts: writes.broadcasts.filter((b) => b.kind !== 'salon_public'),
+    };
+  }
   const empty =
     Object.keys(writes.salon).length === 0 &&
     writes.ticket_updates.length === 0 &&

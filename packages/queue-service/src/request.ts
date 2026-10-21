@@ -2,7 +2,8 @@
  * Validation of a `queue-command` request body (TRD §6.2). Hand-written
  * checks, no dependency: the same file runs in Node (tests) and Deno.
  *
- * Common body: `{ command, command_id, payload, tracking_token? }`. Any
+ * Common body: `{ command, command_id, payload, tracking_token?, salon_id? }`
+ * (`salon_id`: the salon a member of several salons acts in). Any
  * malformed field gives `invalid_payload`; business checks stay in the engine.
  */
 import {
@@ -114,6 +115,8 @@ export type ParsedRequest = {
     readonly command: K;
     readonly command_id: string;
     readonly tracking_token: string | null;
+    /** Body-level salon of a member of several salons (DEV-5). */
+    readonly salon_id: string | null;
     readonly payload: Payloads[K];
   };
 }[CommandName];
@@ -366,7 +369,14 @@ function isFields(v: unknown): v is Fields {
 
 export function parseRequest(body: unknown): ParsedRequest | null {
   if (!isFields(body)) return null;
-  const { command, command_id, payload, tracking_token } = body;
+  const { command, command_id, payload, tracking_token, salon_id } = body;
+  if (
+    salon_id !== undefined &&
+    salon_id !== null &&
+    (typeof salon_id !== 'string' || !UUID.test(salon_id))
+  ) {
+    return null;
+  }
   if (typeof command !== 'string' || !(command in PARSERS)) return null;
   if (typeof command_id !== 'string' || !UUID.test(command_id)) return null;
   if (payload !== undefined && !isFields(payload)) return null;
@@ -384,6 +394,7 @@ export function parseRequest(body: unknown): ParsedRequest | null {
       command,
       command_id: command_id.toLowerCase(),
       tracking_token: (tracking_token as string | undefined) ?? null,
+      salon_id: typeof salon_id === 'string' ? salon_id.toLowerCase() : null,
       payload: parse(payload ?? {}),
     } as ParsedRequest;
   } catch (error) {
