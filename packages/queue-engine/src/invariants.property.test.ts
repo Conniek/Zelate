@@ -466,6 +466,17 @@ const runs: fc.Arbitrary<Run> = fc.record({
   }),
   steps: fc.array(stepArb, { minLength: 5, maxLength: 60, size: 'max' }),
 });
+/** Counterexample found by the per-stylist H5 property before the take_next fix. */
+const H5_REGRESSION: Run = {
+  start: 420,
+  prefill: [0, 1, 1, 0, 0],
+  steps: [
+    { kind: 'eta', ticket: 0, response: 'late', delay: 5 },
+    { kind: 'call', member: 2 },
+    { kind: 'take_next', ticket: 0, member: 1 },
+  ],
+};
+
 const PARAMS = { numRuns: Number(process.env.FC_RUNS ?? 150) };
 
 describe('Invariants (zelate-domain §7)', () => {
@@ -630,7 +641,12 @@ describe('Invariants (zelate-domain §7)', () => {
           }
         }
       }),
-      PARAMS,
+      {
+        numRuns: Math.max(PARAMS.numRuns, 600),
+        // Shrunk counterexample of the review (21/10): a manager's take_next made
+        // a client pass three tickets Inès could also serve.
+        examples: [[H5_REGRESSION]],
+      },
     );
   });
 
