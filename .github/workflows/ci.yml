@@ -53,6 +53,9 @@ jobs:
 
   database:
     name: Database migrations and pgTAP tests
+    env:
+      # Read by config.toml (auth hook) at every supabase command; never used in CI.
+      SEND_SMS_HOOK_SECRET: v1,whsec_Y2ktdGVzdC1vbmx5LXNlY3JldC1ub3QtZm9yLXVzZQ==
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -64,9 +67,6 @@ jobs:
           version: 2.117.0
 
       - name: Start local Supabase (database only)
-        env:
-          # Read by config.toml (auth hook); the value is never used in CI.
-          SEND_SMS_HOOK_SECRET: v1,whsec_Y2ktdGVzdC1vbmx5LXNlY3JldC1ub3QtZm9yLXVzZQ==
         run: supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor
 
       - name: Replay migrations and seed
