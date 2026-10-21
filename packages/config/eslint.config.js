@@ -44,4 +44,23 @@ export default tseslint.config(
       'i18next/no-literal-string': 'off',
     },
   },
+  {
+    // TRD §4: the queue engine imports nothing outside its own folder.
+    files: ['packages/queue-engine/src/**/*.ts'],
+    ignores: ['**/*.test.ts', 'packages/queue-engine/src/testing/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^(?!\\./)',
+              message:
+                'packages/queue-engine is pure TypeScript: relative imports only (TRD §4).',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
