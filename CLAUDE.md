@@ -51,6 +51,7 @@ More skills and agents arrive with their lots (see `docs/IMPLEMENTATION_PLAN.md`
 - `packages/ui`: shared accessible UI components, theme and self-hosted fonts.
 - `packages/i18n`: French dictionaries, typed namespaces and app-specific i18next setup.
 - `packages/config`: shared TypeScript and ESLint configuration.
+- `packages/queue-engine`: pure TypeScript queue engine (schedule, distribution, commands, time triggers, notifications); no runtime dependency, imported by the Edge Functions (DEV-2).
 - `supabase`: local project configuration, migrations, Edge Functions and database tests.
 - `docs`: product, technical, screen-flow and implementation sources of truth.
 
