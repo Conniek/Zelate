@@ -14,6 +14,12 @@ const router = createBrowserRouter([
     element: <HomePage />,
     path: '/',
   },
+  {
+    lazy: async () => ({
+      Component: (await import('./routes/SignInPage')).SignInPage,
+    }),
+    path: '/signin',
+  },
 ]);
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 

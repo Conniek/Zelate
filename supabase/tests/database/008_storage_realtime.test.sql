@@ -38,7 +38,7 @@ select is(private.topic_uuid('ticket:not-a-uuid', 'ticket'), null, 'a malformed 
 
 create function pg_temp.login(p_uid text) returns void language plpgsql as $$
 begin
-  perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated', 'aal', 'aal2')::text, true);
   execute 'set local role authenticated';
 end $$;
 

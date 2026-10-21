@@ -487,6 +487,25 @@
         "all_actors": "Tous les acteurs"
       },
       "empty": "Aucun événement pour ces filtres. Élargissez la période ou retirez un filtre."
+    },
+    "mfa": {
+      "enroll_title": "Activez la double authentification",
+      "enroll_body": "Scannez ce QR code avec une application d'authentification, puis saisissez le code à 6 chiffres.",
+      "secret_label": "Ou saisissez cette clé",
+      "verify_title": "Double authentification",
+      "verify_body": "Saisissez le code à 6 chiffres de votre application d'authentification.",
+      "code_label": "Code à 6 chiffres",
+      "submit": "Valider",
+      "forbidden": "Vous n'avez pas accès à cette page.",
+      "digit_aria": "Chiffre {index} sur 6"
     }
+  },
+  "signin": {
+    "title": "Connexion à Zelaté Pro",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "magic_link": "Recevoir un lien de connexion",
+    "link_sent": "Lien envoyé. Ouvrez-le sur cet appareil."
   }
 }

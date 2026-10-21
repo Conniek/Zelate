@@ -1355,6 +1355,23 @@ export type Database = {
       };
     };
     Functions: {
+      admin_access: {
+        Args: never;
+        Returns: string;
+      };
+      consume_rate_limit: {
+        Args: {
+          p_bucket: string;
+          p_key: string;
+          p_limit: number;
+          p_window_seconds: number;
+        };
+        Returns: boolean;
+      };
+      ensure_profile: {
+        Args: { p_first_name: string };
+        Returns: Database['public']['Tables']['profiles']['Row'];
+      };
       get_audit_log: {
         Args: {
           cursor?: Json;
@@ -1375,6 +1392,15 @@ export type Database = {
       get_stylist_queue: { Args: never; Returns: Json };
       my_active_ticket: { Args: never; Returns: Json };
       resolve_qr_token: { Args: { qr_token: string }; Returns: string };
+      is_rate_limited: {
+        Args: {
+          p_bucket: string;
+          p_key: string;
+          p_limit: number;
+          p_window_seconds: number;
+        };
+        Returns: boolean;
+      };
       search_salons: {
         Args: { lat: number; lng: number; query?: string; radius_m?: number };
         Returns: {

@@ -49,7 +49,9 @@
     "otp_rate_limited": "Trop de codes ont été demandés en peu de temps. Réessayez plus tard.",
     "invalid_code": "Ce code n'est pas le bon. Vérifiez le SMS, puis réessayez.",
     "code_expired": "Ce code a expiré. Demandez-en un nouveau.",
-    "too_many_attempts": "Trop d'essais. Patientez 5 min, puis demandez un nouveau code."
+    "too_many_attempts": "Trop d'essais. Patientez 5 min, puis demandez un nouveau code.",
+    "invalid_credentials": "E-mail ou mot de passe incorrect.",
+    "invalid_mfa_code": "Ce code n'est pas le bon. Réessayez avec le code affiché dans votre application."
   },
   "validation": {
     "siret_format": "Le SIRET compte 14 chiffres. Vérifiez votre saisie.",
