@@ -113,6 +113,8 @@ async function readySalon(name: string) {
           first_name: 'Sam',
           last_name: 'Durand',
           email: stylist.email,
+          // A bulk insert sends null for missing columns, not their default.
+          is_hairdressing: true,
         },
       ])
       .select('id, role'),
