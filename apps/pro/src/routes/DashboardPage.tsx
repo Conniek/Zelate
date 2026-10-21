@@ -27,14 +27,33 @@ function useBoardTitle(): void {
   }, [t, tCommon]);
 }
 
-/** One polite message, read again even when the same text comes back. */
+/**
+ * One polite message, read again even when the same text comes back. The
+ * outcome of the manager's own action wins: a board change seen within 2 s of
+ * it (usually that same action, re-read) is not announced over it.
+ */
 function useAnnouncer() {
   const [message, setMessage] = useState('');
-  const announce = useCallback((text: string) => {
+  const lastAction = useRef(0);
+  const say = useCallback((text: string) => {
     setMessage('');
     window.setTimeout(() => setMessage(text), 50);
   }, []);
-  return { message, announce };
+  const announce = useCallback(
+    (text: string) => {
+      lastAction.current = Date.now();
+      say(text);
+    },
+    [say],
+  );
+  const announceChange = useCallback(
+    (text: string) => {
+      if (Date.now() - lastAction.current < 2_000) return;
+      say(text);
+    },
+    [say],
+  );
+  return { message, announce, announceChange };
 }
 
 /**
@@ -226,7 +245,7 @@ export function DashboardPage() {
   const { t } = useTranslation('pro-manager');
   const { t: tCommon } = useTranslation('common');
   useBoardTitle();
-  const { message, announce } = useAnnouncer();
+  const { message, announce, announceChange } = useAnnouncer();
   const [presence, setPresence] = useState<{
     action: PresenceAction;
     memberId: string;
@@ -237,7 +256,7 @@ export function DashboardPage() {
     queryKey: ['service-options', salon.id],
     queryFn: () => loadServiceOptions(salon.id),
   });
-  useBoardEvents(board.data?.tickets, announce);
+  useBoardEvents(board.data?.tickets, announceChange);
 
   // The open ticket left the board (served, cancelled elsewhere): say why the panel closed.
   const openTicket =
