@@ -60,6 +60,7 @@ More skills and agents arrive with their lots (see `docs/IMPLEMENTATION_PLAN.md`
 - `corepack pnpm dev`: run both Vite applications (client on port 5173, Pro on 5174).
 - `corepack pnpm dev:client` / `corepack pnpm dev:pro`: run one application.
 - `corepack pnpm lint`, `corepack pnpm format:check`, `corepack pnpm typecheck`, `corepack pnpm test`, `corepack pnpm build`: quality checks.
+- `corepack pnpm test:e2e`: Playwright end-to-end tests (needs `supabase start` and `supabase functions serve`; see `docs/reviews/2026-10-21-dev-4.md`).
 - `PATH="$HOME/.docker/bin:$PATH" supabase start`: start local Supabase after Docker Desktop is running.
 - `PATH="$HOME/.docker/bin:$PATH" supabase test db`: run database tests after migrations exist.
 

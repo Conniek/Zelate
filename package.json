@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "prepare": "husky",
     "test": "corepack pnpm --recursive --if-present test",
+    "test:e2e": "corepack pnpm --filter @zelate/e2e test:e2e",
     "typecheck": "corepack pnpm --recursive --if-present typecheck"
   },
   "lint-staged": {
