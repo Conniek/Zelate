@@ -7,6 +7,7 @@
  */
 import {
   applyCommand,
+  computeSchedule,
   detectTimeTriggers,
   findNextFreeSlots,
   isActiveStatus,
@@ -659,9 +660,25 @@ function createTestTicket(run: Run): Outcome | CommandResponse {
     }),
     is_test: true,
   };
-  const state = bumpVersion({
+  // Estimated stylist and time at once, so that the test client shows in a
+  // stylist's queue straight away (ADR-015).
+  const added: QueueState = {
     ...run.state,
     tickets: [...run.state.tickets, ticket],
+  };
+  const estimate = computeSchedule(added, run.now).tickets[ticket_id];
+  const state = bumpVersion({
+    ...added,
+    tickets: added.tickets.map((t) =>
+      t.id === ticket_id && estimate
+        ? {
+            ...t,
+            estimated_start_at: estimate.estimated_start_at,
+            estimated_member_id: estimate.estimated_member_id,
+            last_notified_start_at: estimate.estimated_start_at,
+          }
+        : t,
+    ),
   });
   return {
     output: {

@@ -9,9 +9,12 @@ import { supabase } from '../lib/supabase';
 export function SignInPage() {
   const { t } = useTranslation('pro-manager');
   const { t: tErrors } = useTranslation('errors');
+  const { t: tStylist } = useTranslation('pro-stylist');
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = safeNext(params.get('next'));
+  // F-S2: why the stylist space sent the person back here.
+  const reason = params.get('reason');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,6 +65,16 @@ export function SignInPage() {
       {error ? (
         <Banner role="alert" tone="danger">
           {error}
+        </Banner>
+      ) : null}
+      {reason === 'sessions_revoked' ? (
+        <Banner role="alert" tone="warning">
+          {tStylist('signin.sessions_revoked')}
+        </Banner>
+      ) : null}
+      {reason === 'access_revoked' ? (
+        <Banner role="alert" tone="danger">
+          {tStylist('signin.access_revoked')}
         </Banner>
       ) : null}
       {linkSent ? <Banner>{t('signin.link_sent')}</Banner> : null}

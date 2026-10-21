@@ -1,26 +1,34 @@
-import { useTranslation } from 'react-i18next';
-import { Button } from '@zelate/ui';
+import { useQuery } from '@tanstack/react-query';
+import { Navigate } from 'react-router';
+import { Skeleton } from '@zelate/ui';
+import { loadStylistContext } from '../lib/queue-api';
+import { supabase } from '../lib/supabase';
+
+/** Where `/` leads: the dashboard for a manager, the queue for a stylist. */
+async function landing(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) return '/signin';
+  const ctx = await loadStylistContext().catch(() => null);
+  if (ctx?.access === 'active') {
+    return ctx.role === 'manager' ? '/dashboard/setup' : '/stylist/queue';
+  }
+  if (ctx?.access === 'deactivated') return '/signin?reason=access_revoked';
+  // Signed in without a salon: a manager finishing his sign-up.
+  return '/dashboard/setup';
+}
 
 export function HomePage() {
-  const { t } = useTranslation('pro-stylist');
-  const { t: tCommon } = useTranslation('common');
-
-  return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center gap-8 px-5 py-10">
-      <header className="grid gap-3">
-        <p className="font-display text-h1 font-bold">
-          {tCommon('brand.pro_name')}
-        </p>
-        <h1 className="text-body-lg font-semibold text-text">
-          {t('queue.title')}
-        </h1>
-      </header>
-      <section className="grid gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
-        <p className="text-body text-text-muted">{t('queue.empty')}</p>
-        <Button disabled fullWidth size="lg" variant="secondary">
-          {t('queue.call')}
-        </Button>
-      </section>
-    </main>
-  );
+  const { data } = useQuery({
+    queryKey: ['landing'],
+    queryFn: landing,
+    gcTime: 0,
+  });
+  if (!data) {
+    return (
+      <main className="mx-auto w-full max-w-xl px-5 py-10" aria-busy="true">
+        <Skeleton className="h-10 w-full" />
+      </main>
+    );
+  }
+  return <Navigate replace to={data} />;
 }

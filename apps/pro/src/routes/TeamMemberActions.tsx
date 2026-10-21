@@ -1,0 +1,132 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Banner, Button, Dialog } from '@zelate/ui';
+import { sendMemberAction } from '../lib/queue-api';
+import { supabase } from '../lib/supabase';
+import { useErrorText } from '../lib/use-command';
+
+/** How many waiting clients asked for this member (K2 preview, without writing). */
+async function clientsToChoose(memberId: string): Promise<number> {
+  const { data } = await supabase.functions.invoke('preview-presence-change', {
+    body: { member_id: memberId, status: 'absent' },
+  });
+  const tickets = (data?.data?.tickets ?? []) as { choice_required: boolean }[];
+  return tickets.filter((ticket) => ticket.choice_required).length;
+}
+
+/** S-16 · « Déconnecter ses appareils » and « Désactiver » (F-M4). */
+export function TeamMemberActions({
+  memberId,
+  name,
+  salonId,
+}: {
+  memberId: string;
+  name: string;
+  salonId: string;
+}) {
+  const { t } = useTranslation('pro-manager');
+  const { t: tCommon } = useTranslation('common');
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState<'revoke' | 'deactivate' | null>(null);
+  const [count, setCount] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+
+  async function confirm() {
+    if (!open) return;
+    setBusy(true);
+    setError(null);
+    const outcome = await sendMemberAction(
+      open === 'revoke' ? 'revoke-member-sessions' : 'deactivate-member',
+      memberId,
+    );
+    setBusy(false);
+    if (!outcome.ok) {
+      setError(errorText(outcome.messageKey));
+      return;
+    }
+    setDone(
+      open === 'revoke'
+        ? t('team.menu.revoke_sessions')
+        : t('team.status.deactivated'),
+    );
+    setOpen(null);
+    await queryClient.invalidateQueries({ queryKey: ['team', salonId] });
+  }
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-2"
+      aria-label={t('team.menu.label', { stylist_name: name })}
+      role="group"
+    >
+      <Button
+        onClick={() => {
+          setError(null);
+          setOpen('revoke');
+        }}
+        size="sm"
+        variant="ghost"
+      >
+        {t('team.menu.revoke_sessions')}
+      </Button>
+      <Button
+        onClick={() => {
+          setError(null);
+          setCount(0);
+          setOpen('deactivate');
+          void clientsToChoose(memberId).then(setCount);
+        }}
+        size="sm"
+        variant="ghost"
+      >
+        {t('team.menu.deactivate')}
+      </Button>
+      {done ? (
+        <span className="text-body-sm text-success-text" role="status">
+          {done}
+        </span>
+      ) : null}
+      <Dialog
+        closeLabel={tCommon('actions.close')}
+        description={
+          open === 'revoke'
+            ? t('team.revoke_sessions.confirm', { stylist_name: name })
+            : t('team.deactivate.confirm', { stylist_name: name, count })
+        }
+        onOpenChange={(value) => !value && setOpen(null)}
+        open={open !== null}
+        title={
+          open === 'revoke'
+            ? t('team.revoke_sessions.title')
+            : t('team.deactivate.title', { stylist_name: name })
+        }
+      >
+        <div className="grid gap-4">
+          {error ? (
+            <Banner role="alert" tone="danger">
+              {error}
+            </Banner>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              loading={busy}
+              onClick={() => void confirm()}
+              variant="danger"
+            >
+              {open === 'revoke'
+                ? t('team.revoke_sessions.submit')
+                : t('team.deactivate.submit')}
+            </Button>
+            <Button onClick={() => setOpen(null)} variant="ghost">
+              {t('team.cancel')}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    </div>
+  );
+}

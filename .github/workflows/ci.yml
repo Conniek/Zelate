@@ -99,3 +99,73 @@ jobs:
             echo "::error title=db-test::$(tail -c 20000 /tmp/db-test.log | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')"
             exit 1
           }
+
+  e2e:
+    name: End-to-end tests
+    env:
+      # Read by config.toml (auth hook) at every supabase command; never used in CI.
+      SEND_SMS_HOOK_SECRET: v1,whsec_Y2ktdGVzdC1vbmx5LXNlY3JldC1ub3QtZm9yLXVzZQ==
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write test-only function secrets
+        run: |
+          cat > supabase/functions/.env <<EOF
+          SEND_SMS_HOOK_SECRET=${SEND_SMS_HOOK_SECRET}
+          SMTP_HOST=inbucket
+          SMTP_PORT=1025
+          PRO_APP_URL=http://localhost:5174
+          CLIENT_APP_URL=http://localhost:5173
+          MAIL_FROM=no-reply@zelate.test
+          PHONE_HASH_SECRET=ci-only-phone-hash-secret-never-used-elsewhere
+          CRON_SECRET=ci-only-cron-secret-never-used-elsewhere
+          EOF
+
+      - name: Start local Supabase
+        run: supabase start -x studio,imgproxy,logflare,vector,supavisor
+
+      - name: Serve Edge Functions
+        run: |
+          nohup supabase functions serve --env-file supabase/functions/.env > /tmp/functions.log 2>&1 &
+          for i in $(seq 1 90); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS http://127.0.0.1:54321/functions/v1/queue-command || true)
+            if [ "$code" = "204" ] || [ "$code" = "200" ]; then exit 0; fi
+            sleep 2
+          done
+          tail -n 50 /tmp/functions.log
+          exit 1
+
+      - name: Install Chromium
+        run: pnpm --filter @zelate/e2e exec playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        run: |
+          set -o pipefail
+          pnpm test:e2e 2>&1 | tee /tmp/e2e.log || {
+            # The end of the output as an annotation, readable without the log files.
+            echo "::error title=e2e::$(tail -c 15000 /tmp/e2e.log | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')"
+            echo "::error title=functions::$(tail -c 4000 /tmp/functions.log | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          }

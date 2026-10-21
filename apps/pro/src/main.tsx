@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { i18next } from '@zelate/i18n';
 import { initializeProI18n } from '@zelate/i18n/pro';
 import { ToastProvider } from '@zelate/ui';
@@ -8,7 +8,11 @@ import '@zelate/ui/fonts.css';
 import '@zelate/ui/theme.css';
 import { HomePage } from './routes/HomePage';
 
-const queryClient = new QueryClient();
+// ADR-007: client data lives in memory only (no persister), and is dropped
+// when the tab closes or the user signs out.
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { gcTime: 5 * 60_000 } },
+});
 const router = createBrowserRouter(
   [
     {
@@ -53,6 +57,38 @@ const router = createBrowserRouter(
         Component: (await import('./routes/DashboardGuard')).DashboardGuard,
       }),
       path: '/dashboard',
+    },
+    {
+      children: [
+        { element: <Navigate replace to="/stylist/queue" />, index: true },
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/stylist/StylistQueuePage'))
+              .StylistQueuePage,
+          }),
+          path: 'queue',
+        },
+        {
+          lazy: async () => ({
+            Component: (
+              await import('./routes/stylist/StylistAppointmentsPage')
+            ).StylistAppointmentsPage,
+          }),
+          path: 'appointments',
+        },
+        {
+          lazy: async () => ({
+            Component: (await import('./routes/stylist/StylistSummaryPage'))
+              .StylistSummaryPage,
+          }),
+          path: 'summary',
+        },
+      ],
+      lazy: async () => ({
+        Component: (await import('./routes/stylist/StylistLayout'))
+          .StylistLayout,
+      }),
+      path: '/stylist',
     },
     {
       children: [
