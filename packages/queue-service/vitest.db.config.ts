@@ -8,5 +8,9 @@ export default defineConfig({
     include: ['src/**/*.db.test.ts'],
     testTimeout: 30000,
     fileParallelism: false,
+    // Failures as GitHub annotations: readable without downloading the logs.
+    reporters: process.env.GITHUB_ACTIONS
+      ? ['default', 'github-actions']
+      : ['default'],
   },
 });
