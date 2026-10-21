@@ -10,12 +10,14 @@
 ## Scénarios
 
 ### 1. Partir des suggestions pré-remplies
+
 - **Étant donné** le gérant à l'étape « Prestations » du wizard
 - **Quand** il coche des prestations suggérées, ajuste leur durée ou leur prix, puis enregistre
 - **Alors** chaque prestation cochée est enregistrée avec ses valeurs ajustées
 - **Alors** les prestations non cochées ne sont pas enregistrées
 
 ### 2. Ajouter une prestation
+
 - **Étant donné** le gérant à l'étape « Prestations »
 - **Quand** il clique sur « Ajouter », saisit « Coupe homme », 30 min, un prix et la spécialité requise, puis enregistre
 - **Alors** la prestation est enregistrée comme active
@@ -23,52 +25,62 @@
 - **Alors** la fiche salon affiche son nom, sa durée et son prix
 
 ### 3. Durées limites acceptées
+
 - **Étant donné** le formulaire d'une prestation
 - **Quand** le gérant saisit une durée de 15 min, puis une autre de 180 min
 - **Alors** chacune est enregistrée
 
 ### 4. Durée hors limites
+
 - **Étant donné** le formulaire d'une prestation
 - **Quand** le gérant saisit une durée de moins de 15 min ou de plus de 180 min
 - **Alors** l'enregistrement est refusé avec un message qui rappelle la plage de 15 à 180 min
 
 ### 5. Durée qui n'est pas un multiple de 5
+
 - **Étant donné** le formulaire d'une prestation
 - **Quand** le gérant saisit une durée de 17 min
 - **Alors** l'enregistrement est refusé avec un message d'erreur (BACKEND_SCHEMA §4.9 : multiple de 5)
 
 ### 6. Nom trop court ou trop long
+
 - **Étant donné** le formulaire d'une prestation
 - **Quand** le nom fait moins de 2 caractères ou plus de 60
 - **Alors** l'enregistrement est refusé avec un message d'erreur
 
 ### 7. Prix négatif
+
 - **Étant donné** le formulaire d'une prestation
 - **Quand** le gérant saisit un prix négatif
 - **Alors** l'enregistrement est refusé avec un message d'erreur
 
 ### 8. Prix à 0
+
 - **Étant donné** le formulaire d'une prestation
 - **Quand** le gérant saisit un prix de 0
 - **Alors** la prestation est enregistrée (`price_cents` ≥ 0)
 
 ### 9. La spécialité requise limite les coiffeurs éligibles
+
 - **Étant donné** une prestation « Tresses » qui demande la spécialité `braids`, et un seul coiffeur qui la maîtrise
 - **Quand** un client sans préférence prend cette prestation
 - **Alors** seul ce coiffeur peut être son coiffeur pressenti et l'appeler (H1, PRD §5.2 règle 4)
 
 ### 9 bis. Prestation sans spécialité requise
+
 - **Étant donné** le formulaire d'une prestation
 - **Quand** le gérant l'enregistre sans choisir de spécialité
 - **Alors** la prestation est enregistrée, avec `required_specialty_code` vide (PRD §5.1, E12)
 
 ### 9 ter. « Je ne sais pas encore » accepté par tous les coiffeurs
+
 - **Étant donné** un client qui choisit « Je ne sais pas encore » à l'étape 1 de « Rejoindre la file »
 - **Quand** l'heure de passage est calculée
 - **Alors** 30 min sont comptées pour ce ticket (PRD §5.2)
 - **Alors** tout coiffeur présent peut être son coiffeur pressenti et l'appeler (PRD §5.1, E12 ; APP_FLOW F-C3)
 
 ### 10. La durée prédéfinie sert au calcul et au démarrage
+
 - **Étant donné** une prestation de 45 min choisie par un client
 - **Quand** l'heure de passage des clients suivants est calculée
 - **Alors** 45 min sont comptées pour ce ticket (H2)
@@ -76,52 +88,59 @@
 - **Alors** la durée de 45 min est pré-remplie (F-S6)
 
 ### 11. Aucune prestation active
+
 - **Étant donné** un salon sans aucune prestation active
 - **Quand** le gérant enregistre l'étape « Prestations »
 - **Alors** un message indique qu'au moins une prestation active est nécessaire (APP_FLOW F-M2)
 - **Alors** le bouton « Publier mon salon » reste inactif (F-M3)
 
 ### 11 bis. Durée d'une prestation changée dans la journée
+
 - **Étant donné** une prestation de 30 min, et des tickets en attente qui l'ont choisie
 - **Quand** le gérant passe sa durée à 45 min
 - **Alors** les tickets déjà en file gardent leur prestation et leur durée de 30 min (PRD §5.1, E16)
 - **Alors** un client qui rejoint la file ensuite avec cette prestation compte 45 min
 
 ### 11 ter. Prestation désactivée dans la journée
+
 - **Étant donné** des tickets en attente avec la prestation « Couleur »
 - **Quand** le gérant désactive « Couleur »
 - **Alors** les tickets déjà en file gardent la prestation « Couleur » (PRD §5.1, E16)
 - **Alors** « Couleur » n'est plus proposée aux nouveaux clients
 
 ### 11 quater. Modification inscrite au journal, sans valeur
+
 - **Étant donné** le gérant qui renomme une prestation ou change sa durée
 - **Quand** l'enregistrement réussit
 - **Alors** l'événement `settings_updated` est inscrit au journal du salon, avec le gérant comme acteur (BACKEND_SCHEMA §4.15)
 - **Alors** l'événement ne porte que le nom de la table et des colonnes modifiées, sans l'ancien ni le nouveau nom (K10)
 
 ### 12. Isolation par salon
+
 - **Étant donné** le gérant du salon A
 - **Quand** il essaie de modifier une prestation du salon B (par l'API)
 - **Alors** l'écriture est refusée
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.services.title` | « Prestations » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.services.add` | « Ajouter » | Libellé indicatif (APP_FLOW F-M2) |
-| `pro-manager.services.suggestions.<id>` | Voir `pro-manager.services.suggestions.*` dans le dictionnaire (10 textes) | Nom de 2 à 60 caractères |
-| `pro-manager.services.suggestions_intro` | « Cochez les prestations que vous proposez, puis ajustez la durée et le prix. » | — |
-| `pro-manager.services.field.duration` | « Durée (min) » | Unité « min » ; 15 à 180 |
-| `pro-manager.services.field.duration_hint` | « De 15 à 180 min, par pas de 5 min » | — |
-| `pro-manager.services.field.specialty_none` | « Aucune » | Spécialité facultative (E12) |
-| `pro-manager.services.field.price` | « Prix (€) » | Format fr-FR en euros |
-| `pro-manager.services.field.specialty` | « Spécialité requise » | Liste `common.specialties.<code>` |
-| `errors.validation.service_duration` | « La durée doit être comprise entre 15 et 180 min, par pas de 5 min. » | Rappelle 15 à 180 min, multiple de 5 |
-| `errors.validation.service_name` | « Le nom de la prestation doit faire entre 2 et 60 caractères. » | 2 à 60 caractères |
-| `errors.validation.service_price` | « Le prix ne peut pas être négatif. » | Prix positif ou nul |
-| `errors.validation.at_least_one_active_service` | « Gardez au moins une prestation active. » | — |
+
+| Clé (anglais)                                   | Texte (français)                                                                | Contrainte                           |
+| ----------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------ |
+| `pro-manager.services.title`                    | « Prestations »                                                                 | Libellé indicatif (APP_FLOW F-M2)    |
+| `pro-manager.services.add`                      | « Ajouter »                                                                     | Libellé indicatif (APP_FLOW F-M2)    |
+| `pro-manager.services.suggestions.<id>`         | Voir `pro-manager.services.suggestions.*` dans le dictionnaire (10 textes)      | Nom de 2 à 60 caractères             |
+| `pro-manager.services.suggestions_intro`        | « Cochez les prestations que vous proposez, puis ajustez la durée et le prix. » | —                                    |
+| `pro-manager.services.field.duration`           | « Durée (min) »                                                                 | Unité « min » ; 15 à 180             |
+| `pro-manager.services.field.duration_hint`      | « De 15 à 180 min, par pas de 5 min »                                           | —                                    |
+| `pro-manager.services.field.specialty_none`     | « Aucune »                                                                      | Spécialité facultative (E12)         |
+| `pro-manager.services.field.price`              | « Prix (€) »                                                                    | Format fr-FR en euros                |
+| `pro-manager.services.field.specialty`          | « Spécialité requise »                                                          | Liste `common.specialties.<code>`    |
+| `errors.validation.service_duration`            | « La durée doit être comprise entre 15 et 180 min, par pas de 5 min. »          | Rappelle 15 à 180 min, multiple de 5 |
+| `errors.validation.service_name`                | « Le nom de la prestation doit faire entre 2 et 60 caractères. »                | 2 à 60 caractères                    |
+| `errors.validation.service_price`               | « Le prix ne peut pas être négatif. »                                           | Prix positif ou nul                  |
+| `errors.validation.at_least_one_active_service` | « Gardez au moins une prestation active. »                                      | —                                    |
 
 ## Questions ouvertes
+
 - **PRD / APP_FLOW** : la liste des suggestions pré-remplies (noms, durées, prix, spécialités) n'est écrite nulle part.
 - **Résolu le 18/10** (E12, PRD §5.1) : la spécialité d'une prestation est facultative ; « je ne sais pas encore » est accepté par tous les coiffeurs.
 - **Résolu le 18/10** (E16, PRD §5.1) : changer la durée d'une prestation ou la désactiver dans la journée ne modifie pas les tickets déjà en file.

@@ -10,12 +10,14 @@
 ## Scénarios
 
 ### 1. Voir les coiffeurs et la nouvelle heure
+
 - **Étant donné** un ticket en attente, et le gérant qui a ouvert son panneau détail
 - **Quand** il clique sur « Changer de coiffeur »
 - **Alors** la liste des coiffeurs s'affiche
 - **Alors** chaque coiffeur est accompagné de la nouvelle heure de passage estimée du client
 
 ### 2. Réaffecter sans recul, variation de 10 min ou plus
+
 - **Étant donné** la liste des coiffeurs affichée, avec Léa qui ferait passer le client 15 min plus tôt
 - **Quand** le gérant choisit Léa
 - **Alors** la commande `reassign_ticket` est envoyée
@@ -24,12 +26,14 @@
 - **Alors** l'événement `reassigned` est inscrit au journal du ticket, avec le coiffeur d'avant et le coiffeur d'après
 
 ### 3. Réaffecter sans recul, variation de moins de 10 min
+
 - **Étant donné** un coiffeur qui ferait passer le client moins de 10 min plus tôt que la dernière heure qui lui a été annoncée, écarts précédents compris (E11), ou à la même heure
 - **Quand** le gérant le choisit
 - **Alors** le ticket est rattaché à ce coiffeur
 - **Alors** aucune notification n'est envoyée au client
 
 ### 4. Choix qui ferait reculer l'heure du client : demande au client
+
 - **Étant donné** la liste des coiffeurs affichée, avec Sam qui ferait passer le client 20 min plus tard
 - **Quand** le gérant choisit Sam
 - **Alors** le message « L'heure du client reculerait de 20 min : il recevra une demande » s'affiche (F-M10)
@@ -43,6 +47,7 @@
 - **Alors** l'événement `reassignment_requested` est inscrit au journal du ticket
 
 ### 5. Le client accepte
+
 - **Étant donné** une demande de réaffectation vers Sam en cours
 - **Quand** le client clique sur « Accepter » (`respond_reassignment`, `accept`)
 - **Alors** le ticket est rattaché à Sam et les heures sont recalculées
@@ -50,6 +55,7 @@
 - **Alors** l'événement `reassignment_resolved` est inscrit au journal du ticket, avec le choix `accepted`
 
 ### 5 bis. Le client accepte, mais l'heure a encore reculé
+
 - **Étant donné** une demande vers Sam qui annonçait 15:20 (`reassignment_proposed_start_at`)
 - **Quand** le client accepte alors que la nouvelle heure chez Sam est devenue 15:30, soit 10 min de plus
 - **Alors** le ticket n'est pas réaffecté
@@ -58,6 +64,7 @@
 - **Alors** l'acceptation vaut et le ticket est rattaché à Sam
 
 ### 6. Le client refuse
+
 - **Étant donné** une demande de réaffectation vers Sam en cours
 - **Quand** le client clique sur « Refuser » (`respond_reassignment`, `refuse`)
 - **Alors** le ticket garde son coiffeur et son heure
@@ -66,6 +73,7 @@
 - **Alors** le gérant voit le résultat « refusé » sur ce ticket (E27, `get_salon_board`)
 
 ### 6 bis. Pas de réponse en 10 min
+
 - **Étant donné** une demande de réaffectation envoyée à 14:00
 - **Quand** il est 14:10 sans réponse du client (tolérance des tests ±60 s, TRD §10.1, K7)
 - **Alors** `queue-tick` efface la demande (`expired`)
@@ -75,6 +83,7 @@
 - **Alors** le gérant voit le résultat « sans réponse » sur ce ticket (E27)
 
 ### 6 ter. Client sans push ou sans consentement
+
 - **Étant donné** un client sans push actif, ou qui n'a pas coché « Me prévenir »
 - **Quand** le gérant demande une réaffectation qui recule son heure
 - **Alors** aucun SMS n'est envoyé (PRD §5.4 : push seulement)
@@ -82,64 +91,73 @@
 - **Alors** la demande reste visible sur la page de suivi du client pendant 10 min (F-C5)
 
 ### 6 sexies. Réaffecter un rendez-vous
+
 - **Étant donné** le rendez-vous de Léa à 15:00 chez Inès
 - **Quand** le gérant le réaffecte à Karim par « Changer de coiffeur »
 - **Alors** la même règle s'applique : réaffectation immédiate si l'heure de Léa ne recule pas, sinon demande à Léa (PRD §5.1, E27)
 - **Alors** une fois la réaffectation faite, `assigned_member_id` passe à Karim (K39)
 
 ### 6 quater. Seconde demande pendant qu'une demande attend
+
 - **Étant donné** une demande de réaffectation en attente de la réponse du client
 - **Quand** le gérant envoie une nouvelle commande `reassign_ticket` pour ce ticket
 - **Alors** le message de l'erreur `queue.reassignment_pending` s'affiche (TRD §6.2)
 - **Alors** la demande en cours ne change pas
 
 ### 6 quinquies. Coiffeur indisponible
+
 - **Étant donné** un coiffeur absent ou désactivé
 - **Quand** une commande `reassign_ticket` vise ce coiffeur
 - **Alors** le message de l'erreur `queue.stylist_unavailable` s'affiche (TRD §6.2)
 - **Alors** le ticket ne change pas
 
 ### 7. Ticket qui ne peut plus être réaffecté
+
 - **Étant donné** un ticket en prestation, terminé, annulé ou absent
 - **Quand** une commande `reassign_ticket` est envoyée pour ce ticket
 - **Alors** le message de l'erreur `queue.invalid_transition` s'affiche
 - **Alors** le ticket ne change pas
 
 ### 8. Aucun numéro de téléphone (confidentialité)
+
 - **Étant donné** le message qui annonce la demande au client
 - **Quand** le gérant le lit
 - **Alors** aucun numéro de téléphone du client n'est affiché
 - **Alors** la demande part de la plateforme, jamais du gérant (H6)
 
 ### 9. Isolation par salon
+
 - **Étant donné** le gérant du salon A
 - **Quand** une commande `reassign_ticket` vise un ticket du salon B
 - **Alors** la commande est refusée avec l'erreur `queue.ticket_other_salon` (TRD v0.5 §6.2) et le ticket ne change pas
 
 ### 10. Seul le gérant réaffecte
+
 - **Étant donné** un coiffeur connecté
 - **Quand** une commande `reassign_ticket` est envoyée depuis son compte
 - **Alors** la commande est refusée avec l'erreur `queue.forbidden` (TRD §6.2, codes communs)
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.ticket_panel.reassign` | « Changer de coiffeur » | Libellé indicatif (APP_FLOW F-M10) |
-| `pro-manager.reassign.delay_warning` | « L'heure du client reculerait de {minutes} min : il recevra une demande. » | APP_FLOW F-M10 ; variable en minutes ; partagée avec U-17 |
-| `pro-manager.reassign.new_time` | « Passage estimé à {time} » | Nouvelle heure dans la liste des coiffeurs |
-| `pro-manager.reassign.send_request` | « Envoyer la demande » | — |
-| `pro-manager.reassign.request_sent` | « Demande envoyée. Sans réponse du client en 10 min, rien ne change. » | E9 |
-| Résultat « refusé » / « sans réponse » | _À rédiger_ (aucune clé dans le dictionnaire) | Libellés du PRD §5.1 (E27) ; partagée avec S-09 |
-| `errors.queue.ticket_other_salon` | « Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. » | TRD v0.5 §6.2 |
-| `pro-manager.board.ticket.awaiting_client_answer` | « En attente de réponse » | Partagée avec S-09 et U-12 |
-| `common.change_reason.reassigned` | « Le salon vous a confié à un autre coiffeur. » | Raison montrée au client (push seulement) |
-| `notifications.reassignment_request.push` | Voir `notifications.reassignment_request.push.*` dans le dictionnaire (2 textes) | Partagée avec U-17 ; push seulement, « Accepter » et « Refuser » ; pas de modèle SMS |
-| `errors.queue.reassignment_pending` | « Une demande de changement de coiffeur attend déjà la réponse du client. Patientez 10 min au plus. » | TRD §6.2 |
-| `errors.queue.stylist_unavailable` | « Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. » | TRD §6.2 ; partagée avec U-04 et U-17 |
-| `errors.queue.invalid_transition` | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. » | Partagée avec S-02 et S-12 |
-| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
+
+| Clé (anglais)                                     | Texte (français)                                                                                                  | Contrainte                                                                           |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `pro-manager.ticket_panel.reassign`               | « Changer de coiffeur »                                                                                           | Libellé indicatif (APP_FLOW F-M10)                                                   |
+| `pro-manager.reassign.delay_warning`              | « L'heure du client reculerait de {minutes} min : il recevra une demande. »                                       | APP_FLOW F-M10 ; variable en minutes ; partagée avec U-17                            |
+| `pro-manager.reassign.new_time`                   | « Passage estimé à {time} »                                                                                       | Nouvelle heure dans la liste des coiffeurs                                           |
+| `pro-manager.reassign.send_request`               | « Envoyer la demande »                                                                                            | —                                                                                    |
+| `pro-manager.reassign.request_sent`               | « Demande envoyée. Sans réponse du client en 10 min, rien ne change. »                                            | E9                                                                                   |
+| Résultat « refusé » / « sans réponse »            | _À rédiger_ (aucune clé dans le dictionnaire)                                                                     | Libellés du PRD §5.1 (E27) ; partagée avec S-09                                      |
+| `errors.queue.ticket_other_salon`                 | « Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. »                            | TRD v0.5 §6.2                                                                        |
+| `pro-manager.board.ticket.awaiting_client_answer` | « En attente de réponse »                                                                                         | Partagée avec S-09 et U-12                                                           |
+| `common.change_reason.reassigned`                 | « Le salon vous a confié à un autre coiffeur. »                                                                   | Raison montrée au client (push seulement)                                            |
+| `notifications.reassignment_request.push`         | Voir `notifications.reassignment_request.push.*` dans le dictionnaire (2 textes)                                  | Partagée avec U-17 ; push seulement, « Accepter » et « Refuser » ; pas de modèle SMS |
+| `errors.queue.reassignment_pending`               | « Une demande de changement de coiffeur attend déjà la réponse du client. Patientez 10 min au plus. »             | TRD §6.2                                                                             |
+| `errors.queue.stylist_unavailable`                | « Ce coiffeur n'est pas disponible pour le moment. Choisissez-en un autre, puis réessayez. »                      | TRD §6.2 ; partagée avec U-04 et U-17                                                |
+| `errors.queue.invalid_transition`                 | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. »                                | Partagée avec S-02 et S-12                                                           |
+| `errors.queue.forbidden`                          | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2)                                                               |
 
 ## Questions ouvertes
+
 - **Résolu le 18/10** (E9, PRD §5.1 ; TRD §6.2) : un recul crée une demande au client (`reassignment_request`), réponse par `respond_reassignment` (U-17) ; sans réponse en 10 min, rien ne change. `reassign_ticket` n'a plus de paramètre `client_agreed`, et la case « Le client est d'accord » disparaît.
 - **Résolu le 18/10** (K1, TRD §6.2) : `reassign_ticket` renvoie `queue.stylist_unavailable`, `queue.reassignment_pending`, et les codes communs (`queue.forbidden` pour un coiffeur).
 - **Résolu le 19/10** (K39, TRD ADR-015 et §6.2) : `reassign_ticket` modifie `requested_member_id` pour un ticket de file, `assigned_member_id` pour un rendez-vous.

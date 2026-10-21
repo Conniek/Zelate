@@ -10,17 +10,20 @@
 ## Scénarios
 
 ### 1. Bandeau « Fin de journée » à partir de 2 h avant la fermeture
+
 - **Étant donné** un salon qui ferme à 19:00, avec la fenêtre d'alerte par défaut de 120 min
 - **Quand** il est 17:00
 - **Alors** le bandeau « Fin de journée » s'affiche sur le dashboard
 - **Alors** le bandeau liste les clients dont la fin estimée dépasse 19:00, avec leur réponse : « reste », « annule » ou « sans réponse »
 
 ### 2. Pas de bandeau avant la fenêtre
+
 - **Étant donné** un salon qui ferme à 19:00, avec la fenêtre d'alerte par défaut de 120 min
 - **Quand** il est 16:59
 - **Alors** le bandeau « Fin de journée » n'est pas affiché
 
 ### 2 bis. Journée en plusieurs plages : seule la dernière compte
+
 - **Étant donné** un salon ouvert de 09:00 à 12:00 puis de 14:00 à 19:00, avec la fenêtre d'alerte par défaut de 120 min
 - **Quand** il est 10:00
 - **Alors** le bandeau « Fin de journée » n'est pas affiché, et aucune alerte n'est envoyée (H9 : « dernière fermeture de la journée », E5)
@@ -30,6 +33,7 @@
 - **Alors** le bandeau « Fin de journée » s'affiche
 
 ### 3. Une seule alerte par client à risque
+
 - **Étant donné** un client dont la fin estimée dépasse la fermeture pendant la fenêtre d'alerte
 - **Quand** le moteur recalcule la file
 - **Alors** le client reçoit une seule alerte « Vous risquez de ne pas être pris avant la fermeture » avec « Je reste » et « J'annule »
@@ -38,12 +42,14 @@
 - **Alors** aucune deuxième alerte ne lui est envoyée
 
 ### 4. Canal de l'alerte et plafond SMS
+
 - **Étant donné** un client à risque sans push actif, qui a coché « Me prévenir »
 - **Quand** l'alerte de fin de journée part
 - **Alors** elle part par SMS si le ticket a reçu moins de 3 SMS
 - **Alors** aucun SMS ne part si le ticket a déjà reçu 3 SMS (la notification est marquée `skipped`, `sms_cap_reached`)
 
 ### 4 bis. Client à risque sans consentement
+
 - **Étant donné** un client à risque qui n'a pas coché « Me prévenir »
 - **Quand** la fenêtre de fin de journée le détecte
 - **Alors** aucune alerte ne lui est envoyée (notification `skipped`, `no_consent` : message d'anticipation ; BACKEND_SCHEMA §4.16, E17)
@@ -51,6 +57,7 @@
 - **Alors** le dashboard le montre « sans réponse » dans le bandeau « Fin de journée »
 
 ### 5. Réponse du client visible par le gérant
+
 - **Étant donné** un client à risque affiché « sans réponse » dans le bandeau
 - **Quand** le client répond « Je reste »
 - **Alors** le bandeau affiche « reste » pour ce client
@@ -59,6 +66,7 @@
 - **Alors** le bandeau affiche « annule » pour ce client
 
 ### 6. Fermer la file avant l'heure
+
 - **Étant donné** le bandeau « Fin de journée » affiché
 - **Quand** le gérant clique sur « Fermer la file maintenant »
 - **Alors** la commande `set_queue_status` (`closed`) est envoyée
@@ -66,11 +74,13 @@
 - **Alors** les clients déjà inscrits restent dans la file, aucun n'est annulé (APP_FLOW F-M12 ; PRD §5.2)
 
 ### 6 bis. Fermeture du jour changée dans la journée
+
 - **Étant donné** un salon qui devait fermer à 19:00, et dont le gérant avance la fermeture du jour à 18:00
 - **Quand** il est 16:00
 - **Alors** le bandeau « Fin de journée » s'affiche, calculé sur 18:00 (PRD §5.1, E16)
 
 ### 7. Boîte de décision à l'heure de fermeture : tous les clients restants
+
 - **Étant donné** 3 clients encore en attente à 19:00, heure de fermeture : Léa a répondu « Je reste », Sam n'a pas répondu, et Inès n'a reçu aucune alerte faute d'avoir coché « Me prévenir »
 - **Quand** l'heure de fermeture est atteinte
 - **Alors** la boîte « 3 clients attendent encore » s'ouvre sur le dashboard, avec les 3 clients (PRD §5.2, E5)
@@ -79,6 +89,7 @@
 - **Alors** un choix « Tous » applique la même décision à tous les clients restants
 
 ### 8. Servir un client restant
+
 - **Étant donné** la boîte de décision ouverte
 - **Quand** le gérant choisit « Servir » pour Léa
 - **Alors** la commande `resolve_closing` (`serve`) est envoyée pour son ticket
@@ -86,6 +97,7 @@
 - **Alors** il ne sera pas annulé automatiquement 15 min après la fermeture
 
 ### 8 bis. Client « servi » qui n'est pas pris avant minuit
+
 - **Étant donné** Léa, que le gérant a choisi de « Servir », toujours en attente
 - **Quand** il est minuit, heure de Paris, sans qu'un coiffeur l'ait appelée (tolérance des tests ±60 s, K7)
 - **Alors** `queue-tick` annule son ticket avec le motif `end_of_day` (PRD §5.2, E24 ; TRD §6.1, §6.2 `resolve_closing`)
@@ -96,6 +108,7 @@
 - **Alors** le ticket de Léa est toujours en attente
 
 ### 9. Annuler avec excuses
+
 - **Étant donné** la boîte de décision ouverte
 - **Quand** le gérant choisit « Annuler avec excuses » pour Sam
 - **Alors** la commande `resolve_closing` (`cancel`) est envoyée pour son ticket
@@ -104,12 +117,14 @@
 - **Alors** l'événement `closing_resolved` est inscrit au journal du salon
 
 ### 10. Décision pour tous
+
 - **Étant donné** la boîte de décision ouverte avec 3 clients
 - **Quand** le gérant choisit « Tous » puis « Annuler avec excuses »
 - **Alors** les 3 tickets passent au statut `cancelled` avec le motif `end_of_day`
 - **Alors** chacun des 3 clients reçoit le message d'excuse et des salons proches
 
 ### 11. Décisions mélangées
+
 - **Étant donné** la boîte de décision ouverte avec 3 clients
 - **Quand** le gérant sert Léa et annule Sam, sans rien décider pour le troisième client
 - **Alors** Léa reste dans la file
@@ -117,6 +132,7 @@
 - **Alors** le troisième client reste en attente d'une décision
 
 ### 12. Aucune décision du gérant : annulation 15 min après la fermeture
+
 - **Étant donné** un client resté sans décision du gérant après une fermeture à 19:00
 - **Quand** il est 19:15 (tolérance des tests ±60 s, TRD §10.1, K7)
 - **Alors** son ticket est annulé automatiquement avec le motif `end_of_day`
@@ -124,12 +140,14 @@
 - **Alors** le client reçoit une notification push et un SMS, même au-delà du plafond et même sans « Me prévenir », avec un message d'excuse et des salons proches (E17)
 
 ### 12 bis. Rendez-vous restants à la fermeture
+
 - **Étant donné** le rendez-vous confirmé de Karim à 18:40, pas encore appelé à 19:00, heure de fermeture
 - **Quand** l'heure de fermeture est atteinte
 - **Alors** Karim figure dans la boîte de décision comme les autres clients restants (PRD §5.2, E24)
 - **Alors** « Servir » et « Annuler avec excuses » s'appliquent à lui comme aux autres
 
 ### 12 ter. Rendez-vous encore à confirmer à la fermeture
+
 - **Étant donné** Inès, qui s'est signalée pour un rendez-vous et que personne n'a confirmé à 19:00, dernière fermeture de la journée
 - **Quand** l'heure de fermeture est atteinte
 - **Alors** son ticket `pending_confirmation` est annulé avec excuses par `queue-tick`, motif `end_of_day` (PRD §5.1, E19 ; TRD §6.1)
@@ -137,56 +155,63 @@
 - **Alors** Inès reçoit un message d'excuse
 
 ### 13. Décision après l'annulation automatique
+
 - **Étant donné** un ticket déjà annulé automatiquement 15 min après la fermeture
 - **Quand** une commande `resolve_closing` est envoyée pour ce ticket
 - **Alors** le message de l'erreur `queue.invalid_transition` s'affiche
 - **Alors** le ticket reste annulé
 
 ### 14. Décision avant l'heure de fermeture
+
 - **Étant donné** une file avant son heure de fermeture
 - **Quand** une commande `resolve_closing` est envoyée
 - **Alors** la commande est refusée avec l'erreur `queue.closing_not_reached` (TRD v0.5 §6.2)
 - **Alors** le message « Ce choix sera possible à l'heure de fermeture. » s'affiche
 
 ### 14 bis. Seul le gérant décide
+
 - **Étant donné** un coiffeur connecté
 - **Quand** une commande `resolve_closing` est envoyée depuis son compte
 - **Alors** la commande est refusée avec l'erreur `queue.forbidden` (TRD §6.2, codes communs)
 
 ### 15. Aucun ticket ne passe au lendemain
+
 - **Étant donné** la fin de la journée de service
 - **Quand** la journée suivante commence
 - **Alors** aucun ticket de la veille n'est actif dans la file
 
 ### 16. Aucun numéro de téléphone (confidentialité)
+
 - **Étant donné** le bandeau et la boîte de décision
 - **Quand** le gérant les consulte
 - **Alors** seuls les prénoms et les réponses des clients sont affichés, sans numéro de téléphone
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.end_of_day.banner.title` | « Fin de journée » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.end_of_day.banner.body` | « {count, plural, =0 {Aucun client ne risque de passer après la fermeture de {time}.} one {# client risque de ne pas être pris avant la fermeture de {time}.} other {# clients risquent de ne pas être pris avant la fermeture de {time}.}} » | Pluriel ICU |
-| `pro-manager.end_of_day.response.stay` | « Reste » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.end_of_day.response.cancel` | « Annule » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.end_of_day.response.none` | « Sans réponse » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.end_of_day.close_now` | « Fermer la file maintenant » | Libellé indicatif (APP_FLOW F-M12) |
-| `pro-manager.end_of_day.closing.title` | « {count, plural, one {# client attend encore} other {# clients attendent encore}} » | APP_FLOW F-M12 ; pluriel ICU |
-| `pro-manager.end_of_day.closing.body` | « Décidez pour chaque client. Sans décision de votre part, ils seront annulés avec excuses à {time}. » | `{time}` = fermeture + 15 min |
-| `pro-manager.end_of_day.closing.serve_hint` | « Servir : le client reste dans la file. S'il n'est pas pris avant la fin de la journée, il est annulé avec excuses. » | E24 (minuit, heure de Paris) |
-| `pro-manager.end_of_day.closing.serve` | « Servir » | PRD §5.2 |
-| `pro-manager.end_of_day.closing.cancel` | « Annuler avec excuses » | PRD §5.2 |
-| `pro-manager.end_of_day.closing.all` | « Tous » | Libellé indicatif (APP_FLOW F-M12) |
-| `notifications.end_of_day_risk.push` | Voir `notifications.end_of_day_risk.push.*` dans le dictionnaire (2 textes) | PRD §5.2 ; boutons `notifications.end_of_day_risk.actions.*` « Je reste » et « J'annule » ; message d'anticipation (E17) |
-| `notifications.end_of_day_risk.sms` | « {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link} » | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
-| `notifications.cancelled_by_salon.end_of_day.push` | Voir `notifications.cancelled_by_salon.end_of_day.push.*` dans le dictionnaire (2 textes) | Excuses et salons proches |
-| `notifications.cancelled_by_salon.end_of_day.sms` | « {salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. Salons proches : {link} » | **SMS : 160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5) ; excuses et salons proches ; hors plafond |
-| `errors.queue.closing_not_reached` | « Ce choix sera possible à l'heure de fermeture. » | TRD v0.5 §6.2 |
-| `errors.queue.invalid_transition` | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. » | Partagée avec S-02, S-12, S-13 |
-| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
+
+| Clé (anglais)                                      | Texte (français)                                                                                                                                                                                                                              | Contrainte                                                                                                                                                                                                             |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pro-manager.end_of_day.banner.title`              | « Fin de journée »                                                                                                                                                                                                                            | Libellé indicatif (APP_FLOW F-M12)                                                                                                                                                                                     |
+| `pro-manager.end_of_day.banner.body`               | « {count, plural, =0 {Aucun client ne risque de passer après la fermeture de {time}.} one {# client risque de ne pas être pris avant la fermeture de {time}.} other {# clients risquent de ne pas être pris avant la fermeture de {time}.}} » | Pluriel ICU                                                                                                                                                                                                            |
+| `pro-manager.end_of_day.response.stay`             | « Reste »                                                                                                                                                                                                                                     | Libellé indicatif (APP_FLOW F-M12)                                                                                                                                                                                     |
+| `pro-manager.end_of_day.response.cancel`           | « Annule »                                                                                                                                                                                                                                    | Libellé indicatif (APP_FLOW F-M12)                                                                                                                                                                                     |
+| `pro-manager.end_of_day.response.none`             | « Sans réponse »                                                                                                                                                                                                                              | Libellé indicatif (APP_FLOW F-M12)                                                                                                                                                                                     |
+| `pro-manager.end_of_day.close_now`                 | « Fermer la file maintenant »                                                                                                                                                                                                                 | Libellé indicatif (APP_FLOW F-M12)                                                                                                                                                                                     |
+| `pro-manager.end_of_day.closing.title`             | « {count, plural, one {# client attend encore} other {# clients attendent encore}} »                                                                                                                                                          | APP_FLOW F-M12 ; pluriel ICU                                                                                                                                                                                           |
+| `pro-manager.end_of_day.closing.body`              | « Décidez pour chaque client. Sans décision de votre part, ils seront annulés avec excuses à {time}. »                                                                                                                                        | `{time}` = fermeture + 15 min                                                                                                                                                                                          |
+| `pro-manager.end_of_day.closing.serve_hint`        | « Servir : le client reste dans la file. S'il n'est pas pris avant la fin de la journée, il est annulé avec excuses. »                                                                                                                        | E24 (minuit, heure de Paris)                                                                                                                                                                                           |
+| `pro-manager.end_of_day.closing.serve`             | « Servir »                                                                                                                                                                                                                                    | PRD §5.2                                                                                                                                                                                                               |
+| `pro-manager.end_of_day.closing.cancel`            | « Annuler avec excuses »                                                                                                                                                                                                                      | PRD §5.2                                                                                                                                                                                                               |
+| `pro-manager.end_of_day.closing.all`               | « Tous »                                                                                                                                                                                                                                      | Libellé indicatif (APP_FLOW F-M12)                                                                                                                                                                                     |
+| `notifications.end_of_day_risk.push`               | Voir `notifications.end_of_day_risk.push.*` dans le dictionnaire (2 textes)                                                                                                                                                                   | PRD §5.2 ; boutons `notifications.end_of_day_risk.actions.*` « Je reste » et « J'annule » ; message d'anticipation (E17)                                                                                               |
+| `notifications.end_of_day_risk.sms`                | « {salon_name} : vous risquez de ne pas être pris avant la fermeture. Vous restez ? Répondez : {link} »                                                                                                                                       | **SMS : 160 caractères GSM-7 maximum** avec les valeurs les plus longues : prénom ≤ 30, nom du salon tronqué à 40, accents translittérés, lien court `zelate.fr/t/xxxxxxxx` (TRD §9, K5) ; lien de suivi pour répondre |
+| `notifications.cancelled_by_salon.end_of_day.push` | Voir `notifications.cancelled_by_salon.end_of_day.push.*` dans le dictionnaire (2 textes)                                                                                                                                                     | Excuses et salons proches                                                                                                                                                                                              |
+| `notifications.cancelled_by_salon.end_of_day.sms`  | « {salon_name} ferme et n'a pas pu vous prendre aujourd'hui. Toutes nos excuses. Salons proches : {link} »                                                                                                                                    | **SMS : 160 caractères GSM-7 maximum**, mêmes valeurs maximales (K5) ; excuses et salons proches ; hors plafond                                                                                                        |
+| `errors.queue.closing_not_reached`                 | « Ce choix sera possible à l'heure de fermeture. »                                                                                                                                                                                            | TRD v0.5 §6.2                                                                                                                                                                                                          |
+| `errors.queue.invalid_transition`                  | « Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. »                                                                                                                                                            | Partagée avec S-02, S-12, S-13                                                                                                                                                                                         |
+| `errors.queue.forbidden`                           | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. »                                                                                                                             | Code commun (TRD §6.2)                                                                                                                                                                                                 |
 
 ## Questions ouvertes
+
 - **Résolu le 18/10** (correction PRD H9) : la fenêtre de 2 h est une valeur par défaut, réglable par salon après le pilote ; elle n'est pas modifiable par le gérant pendant le pilote.
 - **Résolu le 18/10** (E5, PRD H9 et §5.2) : la fin de journée s'applique à la dernière plage de la journée.
 - **Résolu le 18/10** (E5, PRD §5.2) : à la fermeture, le gérant voit tous les clients restants, qu'ils aient répondu ou non ; « Je reste » ne vaut pas « Servir ».

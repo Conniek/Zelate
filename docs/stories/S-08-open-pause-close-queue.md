@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Ouvrir la file
+
 - **Étant donné** un salon publié dont la file est fermée
 - **Quand** le gérant clique sur « Ouvrir » dans le commutateur en haut du dashboard
 - **Alors** la commande `set_queue_status` (`open`) est envoyée
@@ -18,12 +19,14 @@
 - **Alors** l'événement `queue_opened` est inscrit au journal du salon
 
 ### 1 bis. Ouvrir la file d'un salon non publié
+
 - **Étant donné** un salon qui n'est pas encore publié
 - **Quand** une commande `set_queue_status` (`open`) est envoyée
 - **Alors** la commande est refusée avec l'erreur `queue.salon_not_published` (TRD §6.2)
 - **Alors** la file reste fermée
 
 ### 2. Mettre la file en pause
+
 - **Étant donné** une file ouverte avec des clients en attente
 - **Quand** le gérant clique sur « Pause »
 - **Alors** la commande `set_queue_status` (`paused`) est envoyée
@@ -35,21 +38,24 @@
 - **Alors** l'événement `queue_paused` est inscrit au journal du salon
 
 ### 2 bis. Les coiffeurs continuent d'appeler pendant la pause
+
 - **Étant donné** une file en pause avec des clients en attente, et un coiffeur disponible
 - **Quand** le coiffeur appuie sur « Appeler »
 - **Alors** le premier ticket éligible passe au statut « appelé » (PRD §5.1, E4 ; TRD §6.2 `call_ticket`)
 - **Alors** le client reçoit « votre tour » par push et par SMS
 
 ### 3. Reprendre après une pause
+
 - **Étant donné** une file en pause avec des tickets en attente
 - **Quand** le gérant clique sur « Ouvrir »
 - **Alors** la file accepte de nouveau des tickets
 - **Alors** les tickets en attente gardent leur ordre
 
 ### 4. Fermer la file
-- **Étant donné** une file ouverte avec *n* clients en attente
+
+- **Étant donné** une file ouverte avec _n_ clients en attente
 - **Quand** le gérant clique sur « Fermer »
-- **Alors** une confirmation s'affiche : « Les *n* clients en attente seront servis jusqu'à la fin de journée »
+- **Alors** une confirmation s'affiche : « Les _n_ clients en attente seront servis jusqu'à la fin de journée »
 - **Quand** il confirme
 - **Alors** la commande `set_queue_status` (`closed`) est envoyée
 - **Alors** aucun nouveau ticket n'est accepté
@@ -59,23 +65,27 @@
 - **Alors** l'événement `queue_closed` est inscrit au journal du salon
 
 ### 5. Renoncer à la fermeture
+
 - **Étant donné** la confirmation de fermeture affichée
 - **Quand** le gérant la ferme sans confirmer
 - **Alors** la file reste dans son état précédent
 
 ### 6. Rejoindre une file fermée
+
 - **Étant donné** une file fermée
 - **Quand** un client envoie `join_queue`, ou que le gérant envoie `register_walk_in`
 - **Alors** la commande est refusée avec l'erreur `queue.queue_closed` (TRD §6.2)
 - **Alors** le client voit le message et le lien « Salons proches » (F-C3)
 
 ### 6 bis. Rejoindre une file en pause
+
 - **Étant donné** une file en pause
 - **Quand** un client envoie `join_queue`, ou que le gérant envoie `register_walk_in`
 - **Alors** la commande est refusée avec l'erreur `queue.queue_paused` (TRD §6.2)
 - **Alors** le client voit le message et le lien « Salons proches » (F-C3)
 
 ### 7. File complète (état automatique)
+
 - **Étant donné** une file ouverte dont la prochaine prestation finirait après la fermeture
 - **Quand** le moteur recalcule la file
 - **Alors** `salons.is_full` passe à vrai, sans action du gérant (K36)
@@ -84,6 +94,7 @@
 - **Alors** la fiche salon affiche le bouton désactivé « Complet pour aujourd'hui » et le lien « Salons proches », d'après `is_full` lu dans `public_salons`, sans recalcul dans le navigateur (K36)
 
 ### 7 bis. Rendez-vous saisi avec la file fermée ou en pause
+
 - **Étant donné** une file fermée ou en pause pendant les horaires d'ouverture
 - **Quand** le gérant saisit un rendez-vous (`create_appointment`)
 - **Alors** le rendez-vous est accepté : la condition « file ouverte et non complète » ne s'applique pas aux rendez-vous (PRD §5.2 transition 1 ; TRD §6.2 : ni `queue_closed` ni `queue_paused` pour `create_appointment`)
@@ -91,49 +102,55 @@
 - **Alors** il est refusé avec `queue.outside_opening_hours` (E26 ; détail dans S-18)
 
 ### 8. Repli sans temps réel
+
 - **Étant donné** un client dont la page n'est pas mise à jour en temps réel
 - **Quand** le gérant change l'état de la file
 - **Alors** la page du client affiche le nouvel état au plus tard au rafraîchissement suivant, toutes les 30 s
 - **Alors** un autre écran du dashboard affiche le nouvel état au plus tard 10 s après
 
 ### 9. Dashboard hors ligne
+
 - **Étant donné** un dashboard qui a perdu la connexion
 - **Quand** le gérant regarde le commutateur
 - **Alors** le commutateur est désactivé et un bandeau signale la perte de connexion
 
 ### 10. Double clic
+
 - **Étant donné** une file fermée
 - **Quand** le gérant clique deux fois rapidement sur « Ouvrir »
 - **Alors** un seul événement `queue_opened` est inscrit au journal
 
 ### 11. Seul le gérant change l'état de la file
+
 - **Étant donné** un coiffeur connecté du salon
 - **Quand** une commande `set_queue_status` est envoyée depuis son compte
 - **Alors** la commande est refusée avec l'erreur `queue.forbidden` (TRD §6.2, codes communs)
 - **Alors** l'état de la file ne change pas
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.queue_status.open` | « Ouvrir » | Libellé indicatif (APP_FLOW F-M5) |
-| `pro-manager.queue_status.pause` | « Pause » | Libellé indicatif (APP_FLOW F-M5) |
-| `pro-manager.queue_status.close` | « Fermer » | Libellé indicatif (APP_FLOW F-M5) |
-| `pro-manager.queue_status.pause_hint` | « Plus de nouveaux clients ; les inscrits restent et continuent d'être appelés. » | E4 |
-| `pro-manager.queue_status.close_confirm_title` | « Fermer la file ? » | — |
-| `pro-manager.queue_status.close_confirm` | « Aucun nouveau client ne pourra rejoindre la file. {count, plural, =0 {Aucun client n'attend en ce moment.} one {Le client en attente sera servi jusqu'à la fin de journée.} other {Les # clients en attente seront servis jusqu'à la fin de journée.}} » | APP_FLOW F-M5 ; pluriel ICU (0, 1, plusieurs) |
-| `pro-manager.queue_status.close_confirm_submit` | « Fermer la file » | — |
-| `common.queue_status.closed` | « Fermée » | PRD §5.2 |
-| `common.queue_status.open` | « Ouverte » | PRD §5.2 |
-| `common.queue_status.paused` | « En pause » | PRD §5.2 |
-| `common.queue_status.full` | « Complète » | PRD §5.2 |
-| `pro-manager.board.offline_banner` | « Connexion perdue : les actions sont bloquées jusqu'au retour du réseau. » | Commun aux écrans du dashboard (APP_FLOW §8) |
-| `errors.queue.queue_closed` | « La file est fermée : aucune nouvelle inscription n'est possible pour le moment. » | — |
-| `errors.queue.queue_paused` | « La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise. » | TRD §6.2 |
-| `errors.queue.queue_full` | « La file est complète pour aujourd'hui : les prochaines prestations finiraient après la fermeture. » | — |
-| `errors.queue.salon_not_published` | « Votre salon n'est pas encore publié : la file ne peut pas être ouverte. Publiez-le d'abord. » | TRD §6.2 |
-| `errors.queue.forbidden` | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. » | Code commun (TRD §6.2) |
+
+| Clé (anglais)                                   | Texte (français)                                                                                                                                                                                                                                           | Contrainte                                    |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `pro-manager.queue_status.open`                 | « Ouvrir »                                                                                                                                                                                                                                                 | Libellé indicatif (APP_FLOW F-M5)             |
+| `pro-manager.queue_status.pause`                | « Pause »                                                                                                                                                                                                                                                  | Libellé indicatif (APP_FLOW F-M5)             |
+| `pro-manager.queue_status.close`                | « Fermer »                                                                                                                                                                                                                                                 | Libellé indicatif (APP_FLOW F-M5)             |
+| `pro-manager.queue_status.pause_hint`           | « Plus de nouveaux clients ; les inscrits restent et continuent d'être appelés. »                                                                                                                                                                          | E4                                            |
+| `pro-manager.queue_status.close_confirm_title`  | « Fermer la file ? »                                                                                                                                                                                                                                       | —                                             |
+| `pro-manager.queue_status.close_confirm`        | « Aucun nouveau client ne pourra rejoindre la file. {count, plural, =0 {Aucun client n'attend en ce moment.} one {Le client en attente sera servi jusqu'à la fin de journée.} other {Les # clients en attente seront servis jusqu'à la fin de journée.}} » | APP_FLOW F-M5 ; pluriel ICU (0, 1, plusieurs) |
+| `pro-manager.queue_status.close_confirm_submit` | « Fermer la file »                                                                                                                                                                                                                                         | —                                             |
+| `common.queue_status.closed`                    | « Fermée »                                                                                                                                                                                                                                                 | PRD §5.2                                      |
+| `common.queue_status.open`                      | « Ouverte »                                                                                                                                                                                                                                                | PRD §5.2                                      |
+| `common.queue_status.paused`                    | « En pause »                                                                                                                                                                                                                                               | PRD §5.2                                      |
+| `common.queue_status.full`                      | « Complète »                                                                                                                                                                                                                                               | PRD §5.2                                      |
+| `pro-manager.board.offline_banner`              | « Connexion perdue : les actions sont bloquées jusqu'au retour du réseau. »                                                                                                                                                                                | Commun aux écrans du dashboard (APP_FLOW §8)  |
+| `errors.queue.queue_closed`                     | « La file est fermée : aucune nouvelle inscription n'est possible pour le moment. »                                                                                                                                                                        | —                                             |
+| `errors.queue.queue_paused`                     | « La file est en pause : aucune nouvelle inscription pour le moment. Réessayez à sa reprise. »                                                                                                                                                             | TRD §6.2                                      |
+| `errors.queue.queue_full`                       | « La file est complète pour aujourd'hui : les prochaines prestations finiraient après la fermeture. »                                                                                                                                                      | —                                             |
+| `errors.queue.salon_not_published`              | « Votre salon n'est pas encore publié : la file ne peut pas être ouverte. Publiez-le d'abord. »                                                                                                                                                            | TRD §6.2                                      |
+| `errors.queue.forbidden`                        | « Cette action ne vous est pas autorisée. Si vous pensez que c'est une erreur, reconnectez-vous puis réessayez. »                                                                                                                                          | Code commun (TRD §6.2)                        |
 
 ## Questions ouvertes
+
 - **Résolu le 18/10** : « Fermer la file » n'annule aucun ticket ; seule la fin de journée (H9) annule. PRD (transition 6, §5.4) et BACKEND_SCHEMA (`cancel_reason`) sont corrigés. Question d'origine : selon PRD §5.2 (transition 6), §5.4 (« Annulation par le salon : retrait, fermeture, fin de journée ») et `cancel_reason` = `queue_closed`, la fermeture annule les tickets en attente. Selon APP_FLOW F-M5 et F-M12, les clients en attente « seront servis » et « restent ». Lequel est juste ?
 - **Résolu le 18/10** (E4, PRD §5.1) : pendant une pause de la file, les coiffeurs continuent d'appeler les clients déjà inscrits ; seules les nouvelles inscriptions sont bloquées.
 - **Résolu le 18/10** (K1, TRD §6.2) : `join_queue` et `register_walk_in` sur une file en pause renvoient `queue.queue_paused` ; un compte sans droit reçoit `queue.forbidden`.

@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Consulter le journal du jour
+
 - **Étant donné** Nadia, gérante du salon « Démo Enghien », connectée au dashboard
 - **Et** des actions faites aujourd'hui dans son salon : ouverture de la file, appels, retraits, changements de statut des coiffeurs
 - **Quand** elle ouvre `/dashboard/audit`
@@ -18,6 +19,7 @@
 - **Et** les événements des tickets (`ticket_events`) et ceux du salon (`salon_events`) figurent dans la même liste
 
 ### 2. Qui a agi
+
 - **Étant donné** un appel fait par Inès, une ouverture de file faite par Nadia, une libération automatique à 10 min faite par `queue-tick` et une annulation faite par un client
 - **Quand** Nadia consulte ces événements
 - **Alors** l'appel indique Inès comme actrice (coiffeur)
@@ -26,6 +28,7 @@
 - **Et** l'annulation indique un client comme acteur, sans son prénom
 
 ### 3. Prestation close par le gérant (E15)
+
 - **Étant donné** qu'Inès a oublié de terminer une prestation et que Nadia l'a close depuis le panneau du ticket (F-M6, `complete_service`)
 - **Quand** Nadia consulte le journal
 - **Alors** l'événement `completed` de ce ticket apparaît
@@ -33,34 +36,40 @@
 - **Et** il se distingue d'une prestation terminée par le coiffeur lui-même
 
 ### 4. Motif d'un retrait, sans la précision libre (K10)
+
 - **Étant donné** que Nadia a retiré un ticket avec le motif « urgence » et la précision « client malade »
 - **Quand** elle consulte l'événement `cancelled` de ce ticket
 - **Alors** le motif « urgence » est affiché (valeur de `removal_reason`, libellé du dictionnaire)
 - **Et** la précision « client malade » n'apparaît pas dans le journal (elle reste dans `tickets.removal_note`)
 
 ### 4 bis. Motif d'un rendez-vous annulé ou refusé (E29)
+
 - **Étant donné** que Nadia a refusé un rendez-vous signalé avec un motif de la liste
 - **Quand** elle consulte l'événement `appointment_rejected`
 - **Alors** le motif choisi est affiché (valeur de `removal_reason` dans `reason_code`, TRD §6.2)
 
 ### 4 ter. Résultat d'une réaffectation (E27)
+
 - **Étant donné** une demande de réaffectation restée sans réponse 10 min
 - **Quand** Nadia consulte l'événement `reassignment_resolved`
 - **Alors** le résultat `expired` est affiché (« sans réponse »), comme `accepted` ou `refused` pour les autres demandes (`reason_code`, BACKEND_SCHEMA §3)
 
 ### 4 quater. Réglages modifiés, sans valeur
+
 - **Étant donné** que Nadia a changé le message d'accueil du salon et un horaire
 - **Quand** elle consulte les événements `settings_updated`
 - **Alors** chacun indique la table et les colonnes modifiées, avec Nadia comme actrice
 - **Et** ni l'ancien ni le nouveau message d'accueil, ni les heures n'apparaissent (BACKEND_SCHEMA §4.15, K10)
 
 ### 5. Motif d'un recul (H5)
+
 - **Étant donné** qu'Inès a choisi « Prendre le suivant » pour une cliente qui avait déclaré un retard
 - **Quand** Nadia consulte l'événement `postponed`
 - **Alors** la raison du recul est affichée
 - **Et** le nombre de places reculées est affiché (2 au plus)
 
 ### 6. Ni prénom, ni téléphone, ni jeton (K10, H6)
+
 - **Étant donné** des événements de tickets créés depuis l'app, par le QR, à l'accueil et par un rendez-vous saisi avec téléphone
 - **Quand** Nadia consulte ces événements, valeurs avant et après comprises
 - **Alors** aucun prénom de client n'apparaît
@@ -69,49 +78,58 @@
 - **Et** aucun texte libre n'apparaît
 
 ### 7. Modification du prénom d'un rendez-vous
+
 - **Étant donné** que Nadia a corrigé le prénom d'un rendez-vous (`update_appointment` avec `first_name`)
 - **Quand** elle consulte l'événement `appointment_updated`
 - **Alors** l'événement indique que le rendez-vous a été modifié
 - **Et** ni l'ancien ni le nouveau prénom n'apparaissent
 
 ### 8. Filtrer par date
+
 - **Étant donné** le journal affiché
 - **Quand** Nadia choisit une période (du, au)
 - **Alors** seuls les événements dont l'heure est dans cette période sont affichés, heures en heure de Paris
 
 ### 9. Filtrer par coiffeur
+
 - **Étant donné** le journal affiché
 - **Quand** Nadia choisit Inès dans le filtre « Coiffeur »
 - **Alors** la lecture `get_audit_log` part avec `member_id` = Inès
 - **Alors** seuls les événements dont Inès est l'actrice ou le membre concerné (`subject_member_id`) sont affichés (BACKEND_SCHEMA §8.1)
 
 ### 10. Filtrer par type
+
 - **Étant donné** le journal affiché
 - **Quand** Nadia choisit un type d'action, par exemple les retraits
 - **Alors** seuls les événements de ce type sont affichés
 
 ### 11. Filtres combinés
+
 - **Étant donné** une période, un coiffeur et un type choisis
 - **Quand** le journal se met à jour
 - **Alors** seuls les événements qui correspondent aux trois filtres à la fois sont affichés
 
 ### 12. Pagination
+
 - **Étant donné** une période qui contient plus d'événements qu'une page n'en affiche
 - **Quand** Nadia demande la suite
 - **Alors** les événements suivants s'affichent (`cursor`)
 - **Et** aucun événement n'est affiché deux fois ni sauté
 
 ### 12 bis. Pas de mise à jour en temps réel
+
 - **Étant donné** le journal ouvert
 - **Quand** un coiffeur appelle un client
 - **Alors** le nouvel événement n'apparaît qu'au rechargement du journal (K25)
 
 ### 13. Aucun événement
+
 - **Étant donné** des filtres pour lesquels aucun événement n'existe
 - **Quand** le journal se met à jour
 - **Alors** l'état vide s'affiche avec sa phrase (APP_FLOW §8)
 
 ### 14. Journal inaltérable
+
 - **Étant donné** un événement du journal
 - **Quand** Nadia regarde la ligne
 - **Alors** aucune action de modification ni de suppression ne lui est proposée
@@ -120,11 +138,13 @@
 - **Et** l'événement reste identique
 
 ### 15. Isolation par salon
+
 - **Étant donné** Nadia, gérante du salon A
 - **Quand** une lecture `get_audit_log` est envoyée depuis son compte avec l'identifiant du salon B
 - **Alors** aucun événement du salon B n'est renvoyé
 
 ### 16. Accès réservé au gérant
+
 - **Étant donné** Inès, coiffeuse connectée sur son téléphone
 - **Quand** elle regarde son espace coiffeur
 - **Alors** aucun accès au journal du salon ne lui est proposé
@@ -133,29 +153,32 @@
 - **Et** aucun événement ne lui est montré
 
 ### 17. Gérant révoqué ou désactivé
+
 - **Étant donné** un compte de membre désactivé ou dont les sessions ont été coupées
 - **Quand** une lecture `get_audit_log` est envoyée depuis ce compte
 - **Alors** la lecture est refusée (ADR-019)
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-manager.audit.title` | « Journal du salon » | Libellé indicatif (APP_FLOW §2.2) |
-| `pro-manager.audit.columns.actor` | « Qui » | PRD §5.3 S-17 |
-| `pro-manager.audit.columns.date` | « Quand » | PRD §5.3 S-17 ; format fr-FR, heure de Paris |
-| `pro-manager.audit.columns.action` | « Quoi » | PRD §5.3 S-17 |
-| `pro-manager.audit.columns.reason` | « Motif » | PRD §5.3 S-17 |
-| `pro-manager.audit.filters.date` | « Période » | Filtre par date (APP_FLOW F-M11) ; avec `.from` « Du » et `.to` « Au » |
-| `pro-manager.audit.filters.stylist` | « Coiffeur » | Filtre par coiffeur (APP_FLOW F-M11) ; avec `.all_stylists` « Tous les coiffeurs » |
-| `pro-manager.audit.filters.type` | « Type d'action » | Filtre par type (APP_FLOW F-M11) ; avec `.all_types` « Tous les types » |
-| `pro-manager.audit.event_type.<type>` | Voir `pro-manager.audit.event_type.*` dans le dictionnaire (42 textes) | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; **manque `appointment_merged`** (43e valeur, K14) |
-| `pro-manager.audit.actor_type.<type>` | Voir `pro-manager.audit.actor_type.*` dans le dictionnaire (5 textes) | Une clé par valeur de `actor_type` ; le client sans prénom |
-| `pro-manager.audit.reason.<reason_code>` | Voir `pro-manager.audit.reason.*` dans le dictionnaire (6 textes) | Motifs d'annulation et `take_next` ; les retraits et rendez-vous annulés ou refusés reprennent `pro-manager.remove.reason.<removal_reason>` (S-12, E29) ; **manquent `merged` (K14) et les résultats de réaffectation `accepted`, `refused`, `expired` (E27)** |
-| `pro-manager.audit.postponed_places` | « {count, plural, one {Reculé de # place} other {Reculé de # places}} » | Scénario 5 ; 2 au plus |
-| `pro-manager.audit.load_more` | « Afficher plus » | Pagination |
-| `pro-manager.audit.empty` | « Aucune action pour ces filtres. Élargissez la période ou retirez un filtre. » | État vide (APP_FLOW §8) |
+
+| Clé (anglais)                            | Texte (français)                                                                | Contrainte                                                                                                                                                                                                                                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pro-manager.audit.title`                | « Journal du salon »                                                            | Libellé indicatif (APP_FLOW §2.2)                                                                                                                                                                                                                              |
+| `pro-manager.audit.columns.actor`        | « Qui »                                                                         | PRD §5.3 S-17                                                                                                                                                                                                                                                  |
+| `pro-manager.audit.columns.date`         | « Quand »                                                                       | PRD §5.3 S-17 ; format fr-FR, heure de Paris                                                                                                                                                                                                                   |
+| `pro-manager.audit.columns.action`       | « Quoi »                                                                        | PRD §5.3 S-17                                                                                                                                                                                                                                                  |
+| `pro-manager.audit.columns.reason`       | « Motif »                                                                       | PRD §5.3 S-17                                                                                                                                                                                                                                                  |
+| `pro-manager.audit.filters.date`         | « Période »                                                                     | Filtre par date (APP_FLOW F-M11) ; avec `.from` « Du » et `.to` « Au »                                                                                                                                                                                         |
+| `pro-manager.audit.filters.stylist`      | « Coiffeur »                                                                    | Filtre par coiffeur (APP_FLOW F-M11) ; avec `.all_stylists` « Tous les coiffeurs »                                                                                                                                                                             |
+| `pro-manager.audit.filters.type`         | « Type d'action »                                                               | Filtre par type (APP_FLOW F-M11) ; avec `.all_types` « Tous les types »                                                                                                                                                                                        |
+| `pro-manager.audit.event_type.<type>`    | Voir `pro-manager.audit.event_type.*` dans le dictionnaire (42 textes)          | Une clé par valeur de `ticket_event_type` et de `salon_event_type` ; **manque `appointment_merged`** (43e valeur, K14)                                                                                                                                         |
+| `pro-manager.audit.actor_type.<type>`    | Voir `pro-manager.audit.actor_type.*` dans le dictionnaire (5 textes)           | Une clé par valeur de `actor_type` ; le client sans prénom                                                                                                                                                                                                     |
+| `pro-manager.audit.reason.<reason_code>` | Voir `pro-manager.audit.reason.*` dans le dictionnaire (6 textes)               | Motifs d'annulation et `take_next` ; les retraits et rendez-vous annulés ou refusés reprennent `pro-manager.remove.reason.<removal_reason>` (S-12, E29) ; **manquent `merged` (K14) et les résultats de réaffectation `accepted`, `refused`, `expired` (E27)** |
+| `pro-manager.audit.postponed_places`     | « {count, plural, one {Reculé de # place} other {Reculé de # places}} »         | Scénario 5 ; 2 au plus                                                                                                                                                                                                                                         |
+| `pro-manager.audit.load_more`            | « Afficher plus »                                                               | Pagination                                                                                                                                                                                                                                                     |
+| `pro-manager.audit.empty`                | « Aucune action pour ces filtres. Élargissez la période ou retirez un filtre. » | État vide (APP_FLOW §8)                                                                                                                                                                                                                                        |
 
 ## Questions ouvertes
+
 - **Résolu le 19/10** (constat 29, TRD v0.5 §6.3, BACKEND_SCHEMA §8.1) : `get_audit_log` a `type?` et `member_id?` dans les deux documents.
 - **Résolu en partie le 19/10** (BACKEND_SCHEMA §8.1) : `member_id?` = acteur ou membre concerné. **Reste ouvert (APP_FLOW F-M11)** : faut-il aussi les événements des tickets attribués à ce coiffeur ?
 - **BACKEND_SCHEMA §8.1** : `type?` est une seule valeur, alors qu'il existe deux enums (`ticket_event_type`, `salon_event_type`). Le filtre porte-t-il sur une valeur précise ou sur une famille (« retraits », « rendez-vous », « équipe ») ? Plusieurs types à la fois ?

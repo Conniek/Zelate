@@ -10,6 +10,7 @@
 ## Scénarios
 
 ### 1. Arrivée validée
+
 - **Étant donné** Inès qui a appelé Léa (code AF2K9) il y a 4 min
 - **Quand** Léa donne son code, Inès touche « Saisir le code » et saisit AF2K9
 - **Alors** l'arrivée de Léa est horodatée (`arrived_at` renseigné)
@@ -19,17 +20,20 @@
 - **Et** le dashboard affiche le statut d'approche « arrivé » en moins de 2 s
 
 ### 2. Arrivée avant le rappel
+
 - **Étant donné** Léa appelée, dont l'arrivée est validée 4 min après l'appel
 - **Quand** 5 min se sont écoulées depuis l'appel
 - **Alors** aucun rappel n'est envoyé à Léa
 
 ### 3. Arrivée juste avant la libération
+
 - **Étant donné** Léa appelée, dont l'arrivée est validée 9 min après l'appel
 - **Quand** 10 min se sont écoulées depuis l'appel
 - **Alors** la place de Léa n'est pas libérée
 - **Et** son ticket reste au statut « Appelé », prêt à commencer
 
 ### 4. Code inconnu
+
 - **Étant donné** Inès sur le pavé de saisie du code
 - **Quand** elle saisit un code de 5 caractères qui ne correspond à aucun ticket de son salon
 - **Alors** la commande est refusée avec `queue.unknown_code`
@@ -37,6 +41,7 @@
 - **Et** aucun ticket ne change
 
 ### 5. Code d'un autre salon
+
 - **Étant donné** un code qui ne correspond à aucun ticket du salon d'Inès mais à un ticket actif d'un autre salon
 - **Quand** Inès le saisit
 - **Alors** la commande est refusée avec `queue.ticket_other_salon`
@@ -45,6 +50,7 @@
 - **Et** aucune information sur le ticket de l'autre salon (prénom, prestation) n'est montrée à Inès
 
 ### 6. Code d'un ticket clos
+
 - **Étant donné** Léa, dont la place a été libérée 10 min après l'appel (statut « Absent »), qui arrive au salon
 - **Quand** Inès saisit le code de Léa
 - **Alors** la commande est refusée avec `queue.ticket_closed` (TRD §6.2)
@@ -52,44 +58,50 @@
 - **Et** le ticket de Léa reste « Absent »
 
 ### 6 bis. Rendez-vous : code donné à l'appel (E21)
+
 - **Étant donné** Marc, rendez-vous à 14h30 avec Inès, appelé par Inès à 14h30
 - **Quand** Marc donne son code et Inès le saisit
 - **Alors** l'arrivée de Marc est horodatée (`arrived_at` renseigné)
 - **Et** le bouton « Commencer » devient actif
 
 ### 7. Code déjà utilisé
+
 - **Étant donné** Léa dont l'arrivée a déjà été validée par son code
 - **Quand** un coiffeur saisit à nouveau ce code
 - **Alors** la commande est refusée (code non nommé dans TRD §6.2 ; voir questions)
 - **Et** l'horodatage d'arrivée de Léa ne change pas
 
 ### 8. Confidentialité
+
 - **Étant donné** Inès qui valide l'arrivée de Léa
 - **Quand** l'arrivée est confirmée
 - **Alors** l'écran ne montre que le prénom de Léa
 - **Et** aucun numéro de téléphone n'est affiché
 
 ### 9. Connexion perdue
+
 - **Étant donné** Inès dont l'écran affiche « Connexion perdue »
 - **Quand** elle veut saisir un code
 - **Alors** « Saisir le code » est désactivé
 - **Et** aucune arrivée n'est enregistrée
 
 ## Textes à prévoir
-| Clé (anglais) | Texte (français) | Contrainte |
-| --- | --- | --- |
-| `pro-stylist.arrival.enter_code` | Saisir le code | APP_FLOW F-S5 |
-| `pro-stylist.arrival.code_hint` | Demandez son code au client | Aide au-dessus du pavé |
-| `pro-stylist.arrival.code_pad_label` | Code du ticket, 5 caractères | Pavé de 5 caractères ; nom accessible pour lecteur d'écran |
-| `pro-stylist.arrival.submit` | Valider | Envoi du code (envoi automatique au 5e caractère : voir questions) |
-| `pro-stylist.arrival.arrived` | Arrivé | APP_FLOW F-S5 |
-| `client.ticket.arrived.title` / `.body` | Titre : Installez-vous<br>Corps : Votre arrivée est enregistrée. Votre prestation va bientôt commencer. | Écran du client (F-C7) |
-| `errors.queue.ticket_closed` | Ce ticket est déjà terminé ou annulé. | Ticket terminé, annulé ou absent (TRD §6.2) |
-| `errors.queue.unknown_code` | Ce code ne correspond à aucun ticket. Vérifiez-le avec le client, puis réessayez. | « Message clair, aucun changement » (APP_FLOW F-S5) |
-| `errors.queue.ticket_other_salon` | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné. | Ne doit rien révéler du ticket de l'autre salon |
-| `errors.queue.invalid_transition` | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran. | Code commun ; code déjà utilisé, si ce code est retenu (voir questions) |
+
+| Clé (anglais)                           | Texte (français)                                                                                        | Contrainte                                                              |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `pro-stylist.arrival.enter_code`        | Saisir le code                                                                                          | APP_FLOW F-S5                                                           |
+| `pro-stylist.arrival.code_hint`         | Demandez son code au client                                                                             | Aide au-dessus du pavé                                                  |
+| `pro-stylist.arrival.code_pad_label`    | Code du ticket, 5 caractères                                                                            | Pavé de 5 caractères ; nom accessible pour lecteur d'écran              |
+| `pro-stylist.arrival.submit`            | Valider                                                                                                 | Envoi du code (envoi automatique au 5e caractère : voir questions)      |
+| `pro-stylist.arrival.arrived`           | Arrivé                                                                                                  | APP_FLOW F-S5                                                           |
+| `client.ticket.arrived.title` / `.body` | Titre : Installez-vous<br>Corps : Votre arrivée est enregistrée. Votre prestation va bientôt commencer. | Écran du client (F-C7)                                                  |
+| `errors.queue.ticket_closed`            | Ce ticket est déjà terminé ou annulé.                                                                   | Ticket terminé, annulé ou absent (TRD §6.2)                             |
+| `errors.queue.unknown_code`             | Ce code ne correspond à aucun ticket. Vérifiez-le avec le client, puis réessayez.                       | « Message clair, aucun changement » (APP_FLOW F-S5)                     |
+| `errors.queue.ticket_other_salon`       | Aucun ticket de votre salon ne correspond. Vérifiez le code ou le client concerné.                      | Ne doit rien révéler du ticket de l'autre salon                         |
+| `errors.queue.invalid_transition`       | Cette action n'est pas possible à ce stade. Vérifiez l'état affiché à l'écran.                          | Code commun ; code déjà utilisé, si ce code est retenu (voir questions) |
 
 ## Questions ouvertes
+
 - **Résolu le 19/10 (TRD §6.2 v0.5, constat 21)** en partie : un ticket clos (terminé, annulé, absent) est refusé avec `queue.ticket_closed` (scénario 6). Reste [TRD §6.2] : code d'un code « déjà utilisé » (PRD C-05) sur un ticket encore « Appelé » ou « En prestation » dont l'arrivée est déjà horodatée (scénario 7) : `invalid_transition`, ou une réponse acceptée sans effet ?
 - [TRD] Le code n'est unique que par salon et par journée (`unique (salon_id, service_date, short_code)`) : la recherche porte-t-elle seulement sur les tickets du jour du salon ? Un code d'hier qui correspond à un ticket d'aujourd'hui serait accepté pour ce ticket.
 - [PRD / TRD] Un coiffeur peut-il valider l'arrivée d'un client appelé par un autre coiffeur, ou d'un client encore « En attente » (H8 : il reprend la tête de file à son arrivée ; sens de « arrivée » **en attente d'Ely, E34**) ? `confirm_arrival` est autorisé à « Coiffeur, gérant » sans `not_assigned_to_you`. Si oui, où se trouve le pavé de saisie hors de la carte « Appel en cours » (F-S5) ?
