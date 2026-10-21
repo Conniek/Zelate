@@ -9,6 +9,7 @@ import {
   calledTicket,
   cancelTicket,
   inServiceTicket,
+  joinQueue,
   makeManager,
   makeMember,
   makeState,
@@ -113,6 +114,48 @@ describe('E11 — 10-minute rule measured against the last announced time, small
       }),
     ]);
     expect(ticketOf(out.state, 'a').last_notified_start_at).toBe(at('15:00'));
+  });
+
+  it('E11 — a ticket created without estimate gets its first time silently, then later changes are told', () => {
+    const offline = makeState({
+      members: [
+        makeMember('ines', { presence: presence('offline') }),
+        makeManager(),
+      ],
+    });
+    const joined = ok(offline, joinQueue('a'), at('08:55'));
+    expect(ticketOf(joined.state, 'a')).toMatchObject({
+      estimated_start_at: null,
+      last_notified_start_at: null,
+    });
+    const ready = ok(
+      joined.state,
+      setPresence('ines', 'ines', 'available'),
+      at('09:00'),
+    );
+    expect(ticketOf(ready.state, 'a')).toMatchObject({
+      estimated_start_at: at('09:00'),
+      last_notified_start_at: at('09:00'),
+    });
+    expect(changes(ready)).toEqual([]);
+    const pause = ok(
+      ready.state,
+      setPresence('ines', 'ines', 'on_break', {
+        break_type: 'meal',
+        until: at('10:00'),
+      }),
+      at('09:00'),
+    );
+    expect(changes(pause)).toEqual([
+      expect.objectContaining({
+        ticket_id: 'a',
+        params: expect.objectContaining({
+          estimated_start_at: at('10:00'),
+          previous_start_at: at('09:00'),
+          reason: 'stylist_break',
+        }),
+      }),
+    ]);
   });
 
   it('no change notification without a previous announced time or without a new estimate version', () => {
@@ -350,13 +393,43 @@ describe('K26 — estimate_change_reason inference', () => {
     expect(changes(out)[0]?.params.reason).toBe('stylist_choice');
   });
 
-  it('a called client put back at the head is always told, reason stylist_unavailable (E6, E36 default)', () => {
-    const state = twoStylists([calledTicket('a', 'ines', at('09:59'))]);
+  it('E6/E36 — a called client put back at the head is always told, as an essential message', () => {
+    const state = twoStylists([
+      calledTicket('a', 'ines', at('09:59'), {
+        notifications_consent_at: null,
+      }),
+    ]);
     const out = ok(state, setPresence('gerant', 'ines', 'absent'), at('10:00'));
     expect(changes(out)).toEqual([
       expect.objectContaining({
         ticket_id: 'a',
-        params: expect.objectContaining({ reason: 'stylist_unavailable' }),
+        dedupe_key: 'estimate_changed:requeued:1',
+        requires_consent: false,
+        params: expect.objectContaining({
+          reason: 'stylist_unavailable',
+          estimated_start_at: at('10:00'),
+        }),
+        on_sent: { last_notified_start_at: at('10:00') },
+      }),
+    ]);
+  });
+
+  it('E6/E36 — told even when no stylist is left to give him a time (single hairdresser absent)', () => {
+    const state = makeState({
+      members: [makeMember('ines'), makeManager()],
+      tickets: [calledTicket('a', 'ines', at('09:59'))],
+    });
+    const out = ok(state, setPresence('gerant', 'ines', 'absent'), at('10:00'));
+    expect(ticketOf(out.state, 'a').estimated_start_at).toBeNull();
+    expect(changes(out)).toEqual([
+      expect.objectContaining({
+        dedupe_key: 'estimate_changed:requeued:1',
+        requires_consent: false,
+        params: expect.objectContaining({
+          reason: 'stylist_unavailable',
+          estimated_start_at: null,
+        }),
+        on_sent: null,
       }),
     ]);
   });

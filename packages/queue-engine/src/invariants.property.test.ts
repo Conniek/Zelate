@@ -5,6 +5,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { canServe, compareQueueOrder } from './rules.ts';
 import {
   applyCommand,
   computeSchedule,
@@ -465,6 +466,17 @@ const runs: fc.Arbitrary<Run> = fc.record({
   }),
   steps: fc.array(stepArb, { minLength: 5, maxLength: 60, size: 'max' }),
 });
+/** Counterexample found by the per-stylist H5 property before the take_next fix. */
+const H5_REGRESSION: Run = {
+  start: 420,
+  prefill: [0, 1, 1, 0, 0],
+  steps: [
+    { kind: 'eta', ticket: 0, response: 'late', delay: 5 },
+    { kind: 'call', member: 2 },
+    { kind: 'take_next', ticket: 0, member: 1 },
+  ],
+};
+
 const PARAMS = { numRuns: Number(process.env.FC_RUNS ?? 150) };
 
 describe('Invariants (zelate-domain §7)', () => {
@@ -568,6 +580,73 @@ describe('Invariants (zelate-domain §7)', () => {
         }
       }),
       PARAMS,
+    );
+  });
+
+  it('invariant 3 / H5 — a late client loses at most 2 places over his life at every stylist who could take him, and nobody else loses a place', () => {
+    const waitingOrder = (state: QueueState, extra?: TicketState) =>
+      [
+        ...state.tickets.filter((t) => t.status === 'waiting'),
+        ...(extra ? [extra] : []),
+      ]
+        .sort(compareQueueOrder)
+        .map((t) => t.id);
+    fc.assert(
+      fc.property(runs, (run) => {
+        const lost = new Map<string, number>();
+        for (const { before, after, command } of simulate(run)) {
+          const target =
+            command?.command === 'take_next' ? command.payload.ticket_id : null;
+          // Nobody but the postponed client moves behind a ticket that was after him.
+          const kept = (state: QueueState) =>
+            new Map(
+              state.tickets
+                .filter((t) => t.status === 'waiting' && t.id !== target)
+                .map((t) => [t.id, t]),
+            );
+          const was = kept(before);
+          const now = kept(after);
+          const stable = [...was.keys()].filter(
+            (id) =>
+              now.has(id) &&
+              was.get(id)?.priority_since === now.get(id)?.priority_since,
+          );
+          const posBefore = waitingOrder(before);
+          const posAfter = waitingOrder(after);
+          for (const x of stable) {
+            for (const y of stable) {
+              if (posBefore.indexOf(x) < posBefore.indexOf(y)) {
+                expect(posAfter.indexOf(x)).toBeLessThan(posAfter.indexOf(y));
+              }
+            }
+          }
+          if (target === null) continue;
+          const postponedBefore = before.tickets.find((t) => t.id === target);
+          if (!postponedBefore) continue;
+          const order1 = waitingOrder(before, postponedBefore);
+          const order2 = waitingOrder(after);
+          for (const stylist of before.members) {
+            if (!canServe(before, stylist, postponedBefore)) continue;
+            const passed = before.tickets.filter(
+              (x) =>
+                x.status === 'waiting' &&
+                order2.includes(x.id) &&
+                canServe(before, stylist, x) &&
+                order1.indexOf(x.id) > order1.indexOf(target) &&
+                order2.indexOf(x.id) < order2.indexOf(target),
+            ).length;
+            const key = `${target}|${stylist.id}`;
+            lost.set(key, (lost.get(key) ?? 0) + passed);
+            expect(lost.get(key)).toBeLessThanOrEqual(2);
+          }
+        }
+      }),
+      {
+        numRuns: Math.max(PARAMS.numRuns, 600),
+        // Shrunk counterexample of the review (21/10): a manager's take_next made
+        // a client pass three tickets Inès could also serve.
+        examples: [[H5_REGRESSION]],
+      },
     );
   });
 
