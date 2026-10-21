@@ -227,7 +227,9 @@
     },
     "empty": "Aucun client dans la file pour l'instant. Les inscriptions apparaîtront ici en direct.",
     "page_title": "File du salon – {app}",
-    "columns_label": "Coiffeurs"
+    "columns_label": "Coiffeurs",
+    "menu_label": "Menu du salon",
+    "setup_link": "Préparer mon salon"
   },
   "walk_in": {
     "open": "+ Client à l'accueil",

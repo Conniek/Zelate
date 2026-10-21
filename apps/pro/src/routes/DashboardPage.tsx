@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useOutletContext } from 'react-router';
+import { Link, Navigate, useOutletContext } from 'react-router';
 import { Banner, ConnectionBanner, Skeleton } from '@zelate/ui';
+import { BoardControls } from './BoardControls';
 import { boardColumns, loadBoard, ticketStylistId } from '../lib/board-api';
 import type { BoardStylist, BoardTicket } from '../lib/board-api';
 import { AccessLost, loadServiceOptions } from '../lib/queue-api';
@@ -182,6 +183,20 @@ export function DashboardPage() {
           ) : null}
         </p>
         <ConnectionBanner lost={lost} lostLabel={t('board.offline_banner')} />
+        <BoardControls
+          disabled={lost}
+          indicators={indicators}
+          manager={stylists.find((s) => s.role === 'manager')}
+          salonId={salon.id}
+        />
+        <nav aria-label={t('board.menu_label')}>
+          <Link
+            className="inline-flex min-h-11 items-center text-body-sm font-semibold text-link"
+            to="/dashboard/setup"
+          >
+            {t('board.setup_link')}
+          </Link>
+        </nav>
       </header>
 
       {tickets.length === 0 ? <Banner>{t('board.empty')}</Banner> : null}
