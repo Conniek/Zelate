@@ -1,0 +1,233 @@
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { parisInstant } from '@zelate/queue-service/time';
+import { Banner, Button, Dialog, TextField } from '@zelate/ui';
+import { previewPresence } from '../lib/board-api';
+import type {
+  BoardStylist,
+  BoardTicket,
+  PresenceChange,
+} from '../lib/board-api';
+import { timeParts, todayInParis } from '../lib/stylist';
+import { useCommand } from '../lib/use-command';
+
+export type PresenceAction = 'absent' | 'late' | 'leaving_early' | 'break';
+
+const BREAK_TYPES = ['meal', 'short', 'unexpected'] as const;
+const BREAK_MINUTES = [5, 10, 15, 30, 45, 60] as const;
+
+interface Props {
+  action: PresenceAction;
+  onClose: () => void;
+  stylist: BoardStylist;
+  tickets: BoardTicket[];
+}
+
+/** The change a form describes, or null while it is incomplete. */
+function buildChange(
+  action: PresenceAction,
+  memberId: string,
+  time: string,
+  breakType: (typeof BREAK_TYPES)[number],
+  breakMinutes: number,
+): PresenceChange | null {
+  const instant = /^\d{2}:\d{2}$/.test(time)
+    ? new Date(parisInstant(todayInParis(), time)).toISOString()
+    : null;
+  const base = {
+    member_id: memberId,
+    break_type: null,
+    until: null,
+    shift_end_at: null,
+  };
+  switch (action) {
+    case 'absent':
+      return { ...base, status: 'absent' };
+    case 'late':
+      return instant && Date.parse(instant) > Date.now()
+        ? { ...base, status: 'late', until: instant }
+        : null;
+    case 'leaving_early':
+      return instant && Date.parse(instant) > Date.now()
+        ? { ...base, status: 'off_duty', shift_end_at: instant }
+        : null;
+    case 'break':
+      return {
+        ...base,
+        status: 'on_break',
+        break_type: breakType,
+        until: new Date(Date.now() + breakMinutes * 60_000).toISOString(),
+      };
+  }
+}
+
+/** F-M8 (S-11): the form, the impact preview, then « Confirmer » (`set_presence`). */
+export function PresenceDialog({ action, onClose, stylist, tickets }: Props) {
+  const { t } = useTranslation('pro-manager');
+  const { t: tCommon } = useTranslation('common');
+  const { t: tErrors } = useTranslation('errors');
+  const { busy, error, run } = useCommand();
+  const [time, setTime] = useState('');
+  const [breakType, setBreakType] =
+    useState<(typeof BREAK_TYPES)[number]>('short');
+  const [breakMinutes, setBreakMinutes] = useState<number>(15);
+
+  const change = buildChange(
+    action,
+    stylist.member_id,
+    time,
+    breakType,
+    breakMinutes,
+  );
+  // A break is previewed once: the instant moves every second.
+  const previewKey = change
+    ? [change.status, change.break_type, time, breakMinutes]
+    : null;
+  const preview = useQuery({
+    queryKey: ['presence-preview', stylist.member_id, previewKey],
+    queryFn: () => previewPresence(change!),
+    enabled: change !== null,
+    retry: false,
+    staleTime: Infinity,
+  });
+  const names = new Map(tickets.map((ticket) => [ticket.id, ticket]));
+  const impact = preview.data ?? [];
+  const toConfirm = impact.filter((item) => item.choice_required).length;
+  const needsTime = action === 'late' || action === 'leaving_early';
+
+  async function confirm() {
+    if (!change) return;
+    const outcome = await run('set_presence', { ...change });
+    if (outcome.ok) onClose();
+  }
+
+  return (
+    <Dialog
+      closeLabel={tCommon('actions.close')}
+      onOpenChange={(open) => !open && onClose()}
+      open
+      title={t(`presence.form.title.${action}`, {
+        stylist_name: stylist.first_name,
+      })}
+    >
+      <div className="grid gap-4">
+        {needsTime ? (
+          <TextField
+            label={t(
+              action === 'late'
+                ? 'presence.form.expected_back_at'
+                : 'presence.form.shift_end_at',
+            )}
+            onChange={(e) => setTime(e.target.value)}
+            step={300}
+            type="time"
+            value={time}
+          />
+        ) : null}
+        {action === 'break' ? (
+          <>
+            <fieldset className="grid gap-2">
+              <legend className="font-semibold text-body-sm">
+                {t('presence.form.break_type')}
+              </legend>
+              {BREAK_TYPES.map((type) => (
+                <label className="flex min-h-11 items-center gap-3" key={type}>
+                  <input
+                    checked={breakType === type}
+                    name="break-type"
+                    onChange={() => setBreakType(type)}
+                    type="radio"
+                  />
+                  {tCommon(`break_type.${type}`)}
+                </label>
+              ))}
+            </fieldset>
+            <fieldset className="grid gap-2">
+              <legend className="font-semibold text-body-sm">
+                {t('presence.form.break_duration')}
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {BREAK_MINUTES.map((minutes) => (
+                  <label
+                    className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3"
+                    key={minutes}
+                  >
+                    <input
+                      checked={breakMinutes === minutes}
+                      name="break-minutes"
+                      onChange={() => setBreakMinutes(minutes)}
+                      type="radio"
+                    />
+                    {tCommon('units.minutes', { count: minutes })}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </>
+        ) : null}
+
+        <section aria-live="polite" className="grid gap-2">
+          <h3 className="font-semibold">{t('presence.impact.title')}</h3>
+          {change === null ? null : preview.isPending ? (
+            <p className="text-body-sm text-text-muted">…</p>
+          ) : preview.isError ? (
+            <Banner role="alert" tone="danger">
+              {tErrors('generic.unexpected')}
+            </Banner>
+          ) : impact.length === 0 ? (
+            <p className="text-body-sm">{t('presence.impact.none')}</p>
+          ) : (
+            <>
+              <ul className="grid gap-1 text-body-sm">
+                {impact.map((item) => {
+                  const ticket = names.get(item.ticket_id);
+                  const old = item.estimated_start_at_before;
+                  const next = item.estimated_start_at_after;
+                  return (
+                    <li key={item.ticket_id}>
+                      <span className="font-semibold">
+                        {ticket?.display_name ?? item.short_code}
+                      </span>
+                      {old && next && old !== next
+                        ? ` : ${t('presence.impact.new_time', {
+                            new_time: tCommon('formats.time', timeParts(next)),
+                            old_time: tCommon('formats.time', timeParts(old)),
+                          })}`
+                        : null}
+                    </li>
+                  );
+                })}
+              </ul>
+              {toConfirm > 0 ? (
+                <p className="text-body-sm">
+                  {t('presence.impact.client_to_confirm', { count: toConfirm })}
+                </p>
+              ) : null}
+            </>
+          )}
+          <p className="text-body-sm text-text-muted">
+            {t('presence.impact.nobody_notified_yet')}
+          </p>
+        </section>
+
+        {error ? (
+          <Banner role="alert" tone="danger">
+            {error}
+          </Banner>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button onClick={onClose} variant="secondary">
+            {tCommon('actions.cancel')}
+          </Button>
+          <Button
+            disabled={change === null || !preview.isSuccess || busy !== null}
+            onClick={() => void confirm()}
+          >
+            {t('presence.confirm')}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
+  );
+}

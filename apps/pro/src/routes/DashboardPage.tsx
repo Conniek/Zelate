@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useOutletContext } from 'react-router';
-import { Banner, ConnectionBanner, Skeleton } from '@zelate/ui';
+import { Banner, Button, ConnectionBanner, Skeleton } from '@zelate/ui';
 import { BoardControls } from './BoardControls';
+import { PresenceDialog } from './PresenceDialog';
+import type { PresenceAction } from './PresenceDialog';
 import { WalkInDialog } from './WalkInDialog';
 import { boardColumns, loadBoard, ticketStylistId } from '../lib/board-api';
 import type { BoardStylist, BoardTicket } from '../lib/board-api';
@@ -74,15 +76,22 @@ function TicketLine({
   );
 }
 
+const ACTIONS: PresenceAction[] = ['absent', 'late', 'leaving_early', 'break'];
+
 function StylistColumn({
+  disabled,
+  onAction,
   serviceNames,
   stylist,
   tickets,
 }: {
+  disabled: boolean;
+  onAction: (action: PresenceAction) => void;
   serviceNames: Map<string, string>;
   stylist: BoardStylist;
   tickets: BoardTicket[];
 }) {
+  const { t } = useTranslation('pro-manager');
   const { t: tCommon } = useTranslation('common');
   const status: PresenceStatus = stylist.status ?? 'offline';
   return (
@@ -96,6 +105,25 @@ function StylistColumn({
       <p className="text-body-sm text-text-muted">
         {tCommon(`presence_status.${status}`)}
       </p>
+      <div
+        aria-label={t('presence.menu.label', {
+          stylist_name: stylist.first_name,
+        })}
+        className="flex flex-wrap gap-1"
+        role="group"
+      >
+        {ACTIONS.map((action) => (
+          <Button
+            disabled={disabled}
+            key={action}
+            onClick={() => onAction(action)}
+            size="sm"
+            variant="secondary"
+          >
+            {t(`presence.menu.${action}`)}
+          </Button>
+        ))}
+      </div>
       <ul className="grid gap-2">
         {tickets.map((ticket) => (
           <TicketLine
@@ -121,6 +149,10 @@ export function DashboardPage() {
   useBoardTitle();
   const [live, setLive] = useState(false);
   const [message, setMessage] = useState('');
+  const [presence, setPresence] = useState<{
+    action: PresenceAction;
+    memberId: string;
+  } | null>(null);
   const realtime = useSalonRealtime(salon.id);
   useEffect(() => setLive(realtime), [realtime]);
   const online = useOnline();
@@ -221,7 +253,11 @@ export function DashboardPage() {
       >
         {columns.map((stylist) => (
           <StylistColumn
+            disabled={lost}
             key={stylist.member_id}
+            onAction={(action) =>
+              setPresence({ action, memberId: stylist.member_id })
+            }
             serviceNames={serviceNames}
             stylist={stylist}
             tickets={tickets.filter(
@@ -250,6 +286,14 @@ export function DashboardPage() {
             ))}
           </ul>
         </section>
+      ) : null}
+      {presence && columns.find((c) => c.member_id === presence.memberId) ? (
+        <PresenceDialog
+          action={presence.action}
+          onClose={() => setPresence(null)}
+          stylist={columns.find((c) => c.member_id === presence.memberId)!}
+          tickets={tickets}
+        />
       ) : null}
     </main>
   );

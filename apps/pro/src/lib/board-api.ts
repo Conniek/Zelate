@@ -86,3 +86,31 @@ export function ticketStylistId(ticket: BoardTicket): string | null {
 export function boardColumns(stylists: BoardStylist[]): BoardStylist[] {
   return stylists.filter((s) => s.role === 'stylist' || s.is_hairdressing);
 }
+
+export interface PresenceChange {
+  member_id: string;
+  status: 'absent' | 'late' | 'off_duty' | 'on_break';
+  break_type: 'meal' | 'short' | 'unexpected' | null;
+  until: string | null;
+  shift_end_at: string | null;
+}
+
+export interface ImpactTicket {
+  ticket_id: string;
+  short_code: string;
+  estimated_start_at_before: string | null;
+  estimated_start_at_after: string | null;
+  choice_required: boolean;
+}
+
+/** `preview-presence-change` (K2): the engine runs, nothing is written. */
+export async function previewPresence(
+  change: PresenceChange,
+): Promise<ImpactTicket[]> {
+  const { data, error } = await supabase.functions.invoke(
+    'preview-presence-change',
+    { body: change },
+  );
+  if (error || !data?.ok) throw new Error('preview failed');
+  return (data.data as { tickets: ImpactTicket[] }).tickets;
+}
