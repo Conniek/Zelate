@@ -335,7 +335,7 @@ Contraintes et index :
 
 - `unique (salon_id, service_date, short_code)`.
 - **Un seul ticket actif par client** : index unique partiel sur `client_id` où `status in ('pending_confirmation','waiting','called','in_service') and not is_test`.
-- Rendez-vous : `check ((kind = 'appointment') = (scheduled_at is not null and appointment_source is not null))` ; un rendez-vous a toujours `assigned_member_id` rempli, sauf au statut `pending_confirmation` sans coiffeur choisi.
+- Rendez-vous : `check ((kind = 'appointment') = (scheduled_at is not null and appointment_source is not null))` ; un rendez-vous a toujours `assigned_member_id` rempli, sauf aux statuts `pending_confirmation` et `cancelled` (contrainte `tickets_appointment_has_stylist`), où le coiffeur peut être absent.
 - Pas deux rendez-vous qui se chevauchent chez un même coiffeur : contrôlé par le moteur (`appointment_overlap`), pas par une contrainte, car la durée réelle varie.
 - Un seul ticket `called` ou `in_service` par coiffeur : index unique partiel sur `assigned_member_id` où `status in ('called','in_service')`.
 - Cohérence des horodatages par statut (contrainte `check`) : `called` ⇒ `called_at` ; `in_service` ⇒ `started_at` ; `completed` ⇒ `completed_at` ; `cancelled` ⇒ `cancelled_at` et `cancel_reason` ; `no_show` ⇒ `no_show_at`.
@@ -477,12 +477,15 @@ Les deux vues sont créées avec `security_invoker = false` : elles s'exécutent
 
 ### 7.1 Fonctions d'aide (schéma `private`, `security definer`, `search_path = ''`)
 
-| Fonction                      | Renvoie                                                                         |
-| ----------------------------- | ------------------------------------------------------------------------------- |
-| `private.is_platform_admin()` | Vrai si `auth.uid()` est dans `platform_admins`                                 |
-| `private.managed_salon_id()`  | Le salon dont `auth.uid()` est gérant actif (un seul au MVP), sinon `null`      |
-| `private.member_id()`         | Le membre actif correspondant à `auth.uid()` (gérant ou coiffeur), sinon `null` |
-| `private.staff_salon_id()`    | Le salon de ce membre actif (gérant ou coiffeur), sinon `null`                  |
+| Fonction                               | Renvoie                                                                         |
+| -------------------------------------- | ------------------------------------------------------------------------------- |
+| `private.is_platform_admin()`          | Vrai si `auth.uid()` est dans `platform_admins`                                 |
+| `private.managed_salon_id()`           | Le salon dont `auth.uid()` est gérant actif (un seul au MVP), sinon `null`      |
+| `private.member_id()`                  | Le membre actif correspondant à `auth.uid()` (gérant ou coiffeur), sinon `null` |
+| `private.staff_salon_id()`             | Le salon de ce membre actif (gérant ou coiffeur), sinon `null`                  |
+| `private.is_published_salon(salon_id)` | Vrai si le salon est publié                                                     |
+| `private.member_salon_id(member_id)`   | Le salon d'un membre                                                            |
+| `private.owns_ticket(ticket_id)`       | Vrai si `auth.uid()` est le client du ticket                                    |
 
 ### 7.2 Matrice
 
@@ -518,17 +521,18 @@ Règles transverses :
 
 ### 8.1 RPC de lecture
 
-| Fonction                  | Paramètres                                                                                                        | Renvoie                                                                                                                                                                                                                                                                                                 | Sécurité                                                                 |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `search_salons`           | `lat`, `lng`, `radius_m` (défaut 5000, max 20000), `query?`                                                       | Salons publiés triés par distance, avec attente, `is_full` et `next_free_slots`                                                                                                                                                                                                                         | `security definer`, `search_path = ''`, limitée aux salons publiés (K32) |
-| `get_salon_public`        | `slug`                                                                                                            | Salon, prestations, horaires, coiffeurs ; attente « premier disponible » et nombre de clients en attente (E31)                                                                                                                                                                                          | `security definer`, `search_path = ''`, limitée aux salons publiés (K32) |
-| `resolve_qr_token`        | `qr_token`                                                                                                        | `slug` du salon publié                                                                                                                                                                                                                                                                                  | `security definer`                                                       |
-| `my_active_ticket`        | —                                                                                                                 | Ticket actif du client + `salon` + `assigned_stylist_first_name`                                                                                                                                                                                                                                        | `security invoker`                                                       |
-| `get_stylist_queue`       | —                                                                                                                 | Pour le coiffeur connecté : ticket en cours, ticket appelé, rendez-vous à confirmer qui le visent, « Ensuite » = tickets dont il est le coiffeur pressenti (`estimated_member_id`) ou qui le demandent, avec statut d'approche, et ses rendez-vous du jour (F-S10, C-11) ; jamais de jeton ni de numéro | `security definer`, vérifie `member_id()`                                |
-| `get_salon_board`         | `salon_id`                                                                                                        | Coiffeurs avec présence, tickets actifs (dont rendez-vous à confirmer), dernier résultat de réaffectation de chaque ticket (`reassignment_resolved`, E27), indicateurs ; aucun compteur d'absences d'un client (E28) ; jamais de jeton ni de numéro                                                     | `security definer`, vérifie `managed_salon_id()` (gérant seulement, K9)  |
-| `preview_presence_change` | `member_id`, `status`, `break_type?`, `until?`, `shift_end_at?`                                                   | Clients touchés avec leur heure actuelle et la nouvelle, sans rien écrire (K2)                                                                                                                                                                                                                          | `security definer`, vérifie `managed_salon_id()`                         |
-| `get_audit_log`           | `salon_id?`, `from` (défaut : il y a 7 jours), `to`, `type?`, `member_id?` (acteur ou membre concerné), `cursor?` | Événements paginés, avec le prénom du membre qui a agi et le code du ticket, jamais le prénom du client (K25)                                                                                                                                                                                           | Gérant (son salon) ou admin                                              |
-| `get_day_summary`         | `salon_id`, `service_date`, `member_id?`                                                                          | Clients servis, attente annoncée et réelle, absences, annulations                                                                                                                                                                                                                                       | Gérant ; coiffeur connecté pour lui-même                                 |
+| Fonction            | Paramètres                                                                                                        | Renvoie                                                                                                                                                                                                                                                                                                 | Sécurité                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `search_salons`     | `lat`, `lng`, `radius_m` (défaut 5000, max 20000), `query?`                                                       | Salons publiés triés par distance, avec attente, `is_full` et `next_free_slots`                                                                                                                                                                                                                         | `security definer`, `search_path = ''`, limitée aux salons publiés (K32) |
+| `get_salon_public`  | `slug`                                                                                                            | Salon, prestations, horaires, coiffeurs ; attente « premier disponible » et nombre de clients en attente (E31)                                                                                                                                                                                          | `security definer`, `search_path = ''`, limitée aux salons publiés (K32) |
+| `resolve_qr_token`  | `qr_token`                                                                                                        | `slug` du salon publié                                                                                                                                                                                                                                                                                  | `security definer`                                                       |
+| `my_active_ticket`  | —                                                                                                                 | Ticket actif du client + `salon` + `assigned_stylist_first_name`                                                                                                                                                                                                                                        | `security invoker`                                                       |
+| `get_stylist_queue` | —                                                                                                                 | Pour le coiffeur connecté : ticket en cours, ticket appelé, rendez-vous à confirmer qui le visent, « Ensuite » = tickets dont il est le coiffeur pressenti (`estimated_member_id`) ou qui le demandent, avec statut d'approche, et ses rendez-vous du jour (F-S10, C-11) ; jamais de jeton ni de numéro | `security definer`, vérifie `member_id()`                                |
+| `get_salon_board`   | `salon_id`                                                                                                        | Coiffeurs avec présence, tickets actifs (dont rendez-vous à confirmer), dernier résultat de réaffectation de chaque ticket (`reassignment_resolved`, E27), indicateurs ; aucun compteur d'absences d'un client (E28) ; jamais de jeton ni de numéro                                                     | `security definer`, vérifie `managed_salon_id()` (gérant seulement, K9)  |
+| `get_audit_log`     | `salon_id?`, `from` (défaut : il y a 7 jours), `to`, `type?`, `member_id?` (acteur ou membre concerné), `cursor?` | Événements paginés, avec le prénom du membre qui a agi et le code du ticket, jamais le prénom du client (K25)                                                                                                                                                                                           | Gérant (son salon) ou admin                                              |
+| `get_day_summary`   | `salon_id`, `service_date`, `member_id?`                                                                          | Clients servis, attente annoncée et réelle, absences, annulations                                                                                                                                                                                                                                       | Gérant ; coiffeur connecté pour lui-même                                 |
+
+`preview_presence_change` n'est pas une fonction SQL : elle a besoin du moteur de file TypeScript (`packages/queue-engine`) et sera une Edge Function (DEV-2 partie 2 ou DEV-3). Les RPC ci-dessus sont déjà dans les migrations de DEV-1.
 
 ### 8.2 Écritures
 
@@ -542,7 +546,7 @@ Toutes les écritures de file passent par le module commun `supabase/functions/_
 | --------------- | ------------------------------------------- | -------------------------------------------------------- |
 | `salon-photos`  | Photos du salon, WebP ≤ 300 Ko, 1600 px max | Lecture publique ; écriture gérant (dossier `salon_id/`) |
 | `member-photos` | Photos des coiffeurs, WebP ≤ 150 Ko         | Lecture publique ; écriture gérant                       |
-| `qr-posters`    | PDF A4 du QR généré                         | Lecture et écriture gérant                               |
+| `qr-posters`    | PDF A4 du QR généré, ≤ 2 Mo                 | Lecture et écriture gérant                               |
 
 ---
 
@@ -616,6 +620,24 @@ Les abonnements push liés à un ticket sont supprimés à la clôture du ticket
 11. Tâches pg_cron (§10).
 
 Chaque étape a ses tests pgTAP dans `supabase/tests/`, écrits dans la même pull request.
+
+---
+
+## 13. Décisions d'implémentation de DEV-1
+
+À valider par Koni ; les points 🟡 restent ouverts.
+
+1. `set_updated_at()` et `prevent_update_delete()` sont dans `public`. `salons.qr_token` a une valeur aléatoire par défaut.
+2. Droits (K32) : `revoke all` sur les tables `public` pour `anon` et `authenticated`, puis droits par colonne. Lire une table sans droit donne l'erreur `42501`, pas zéro ligne. `tracking_token` et `tracking_short_code` ne sont accordés à aucun rôle API.
+3. `ticket_events` visibles du client : types `duration_adjusted`, `appointment_merged`, `appointment_updated`, `reassignment_*` et `end_of_day_responded` exclus. `before` et `after` des journaux ne sont lisibles que par `get_audit_log`. `log_settings_update()` ne journalise jamais les valeurs (K10).
+4. 🟡 Le gérant lit `salon_verifications` sans `siret_check_payload` ; l'admin lit ce champ par une RPC à écrire.
+5. 🟡 Un coiffeur lit les lignes complètes de ses collègues dans `salon_members`, e-mail compris.
+6. `public_stylists` montre un membre actif qui coiffe, avec une présence du jour (heure de Paris) autre que `off_duty`. `offline`, `late`, `absent` et `on_break` donnent `away`.
+7. `phone_e164` : `^\+[1-9][0-9]{6,14}$`. `get_salon_board` renvoie les prénoms d'affichage des clients au gérant.
+8. 🟡 `member-photos` : écriture gérant seul (§8.3), alors que §7.2 laisse un coiffeur changer sa propre photo.
+9. pg_cron appelle les Edge Functions par `private.invoke_edge_function(nom)`, avec les secrets Vault `edge_functions_url` et `cron_secret` (en-tête `Authorization: Bearer`). Sans secrets, l'appel ne fait rien. Les Edge Functions doivent vérifier ce secret (à ajouter au TRD §6).
+10. `private.daily_maintenance()` (01:30 UTC) applique les purges de K40 et anonymise les tickets clos de plus de 12 mois. Un brouillon expiré qui a déjà des `salon_events` est conservé. Les durées dépendent de la revue RGPD (K40).
+11. Seed : deux gérants (un par salon), stylistes sans compte au statut `invited`.
 
 ---
 
