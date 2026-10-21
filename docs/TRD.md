@@ -1,6 +1,7 @@
 # TRD — Zelaté
 
-> **Technical Requirements Document** · version 0.6 · 21/10/2026 · statut : en vigueur (lots DEV)
+> **Technical Requirements Document** · version 0.7 · 21/10/2026 · statut : en vigueur (lots DEV)
+> v0.7 · 21/10/2026 : lot DEV-6 — `revoke-member-sessions` et `deactivate-member` (paquet `queue-service`), contrôle de session dans les lectures du personnel (ADR-019), RPC `stylist_context()`, tests de bout en bout dans la CI.
 > v0.6 · 21/10/2026 : lot DEV-5 — paquet `queue-service` (validation, orchestration, adaptateur SQL) derrière `queue-command`, `queue-tick`, `ticket-public` et `preview-presence-change` ; `preview_presence_change` devient une Edge Function ; code `link_expired` de `ticket-public` ; secret `CRON_SECRET` de `queue-tick` ; `packages/contracts` reporté (validation dans `queue-service`).
 > v0.5 · 19/10/2026 : décisions de Koni K28 à K41 et impact technique des réponses d'Ely E17 à E31 (PRD v1.2) ; alignements de la revue d'architecture du 19/10 (constats 6, 7, 13, 14, 19, 22 à 28, 31 à 34, 37). Nouvelles commandes `set_notifications_consent` (K34) et `publish_salon` (K35) ; module commun `queue-transaction` (K38) ; consentement limité aux messages d'anticipation et plafond SMS hors `no_show_warning` (E17, E28) ; motif obligatoire pour annuler ou refuser un rendez-vous (E29) ; annulation à minuit des clients « servis » non pris (E24) ; rappel au salon d'un rendez-vous à confirmer (E19) ; canaux temps réel du membre révoqué non fermés par le serveur (K41).
 > v0.4 · 19/10/2026 : réponses de Koni K13 à K27 (heure annoncée, fusion des rendez-vous, limites de saisie, codes d'erreur complétés, export et suppression du compte, consentement par ticket, push aux membres, raisons d'un changement d'heure, remplissage automatique du code SMS).
@@ -396,7 +397,7 @@ packages/i18n/src/fr/
 
 ### 10.3 Intégration continue
 
-Ordre : installation → lint et formatage → types → tests unitaires → base locale (`supabase start`, migrations, pgTAP) → tests Edge Functions → build des deux apps → Playwright + axe sur préversion → Lighthouse CI. La fusion est bloquée si une étape échoue.
+Ordre : installation → lint et formatage → types → tests unitaires → base locale (`supabase start`, migrations, pgTAP) → tests Edge Functions → build des deux apps → Playwright + axe. Depuis DEV-6, trois jobs : vérifications et build ; base (migrations, pgTAP, tests d'intégration de `queue-service`) ; bout en bout (pile Supabase complète, `supabase functions serve`, Playwright sur Chromium, secrets de test écrits par la CI). axe n'est pas encore branché sur préversion → Lighthouse CI. La fusion est bloquée si une étape échoue.
 
 ---
 

@@ -1,6 +1,7 @@
 # PLAN D'IMPLÉMENTATION — Zelaté
 
-> version 1.4 · 21/10/2026 · statut : **DEV-0 à DEV-4 faits ; DEV-5 en revue** (commandes de file)
+> version 1.5 · 21/10/2026 · statut : **DEV-0 à DEV-5 faits ; DEV-6 en revue** (espace coiffeur)
+> v1.5 : DEV-6 sur `feat/dev-6-stylist-space` (rapport `docs/reviews/2026-10-21-dev-6.md`) ; tests de bout en bout dans la CI.
 > v1.4 : DEV-5 livré en deux étapes sur `feat/dev-5-queue-commands` (rapport `docs/reviews/2026-10-21-dev-5.md`).
 > v1.3 : déploiement en deux projets Vercel (`apps/client`, `apps/pro`) conformément à ADR-002 ; abandon du projet multi-services avec Pro sous `/pro` (404 : un service reçoit le chemin d'origine `/pro/…` alors que ses fichiers sont à la racine de sa sortie).
 > v1.2 : correction du routage Vercel de `/pro` et `/pro/` vers le fichier d'entrée du service Pro.
