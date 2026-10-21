@@ -143,14 +143,34 @@ async function signIn(page: Page, who: Account, next: string) {
     .click();
 }
 
+/** Where each page went and what it logged, for failure messages. */
+const trail = new WeakMap<Page, string[]>();
+function track(page: Page): Page {
+  const lines: string[] = [];
+  trail.set(page, lines);
+  page.on('framenavigated', (frame) => {
+    if (frame === page.mainFrame()) lines.push(`nav ${frame.url()}`);
+  });
+  page.on('console', (m) =>
+    lines.push(`${m.type()} ${m.text().slice(0, 160)}`),
+  );
+  page.on('response', (r) => {
+    if (r.status() >= 400) lines.push(`${r.status()} ${r.url().slice(0, 120)}`);
+  });
+  return page;
+}
+
 /** Waits for a text; on failure, says where the page is and what it shows. */
 async function waitForText(page: Page, text: string, timeout: number) {
   try {
     await expect(page.getByText(text)).toBeVisible({ timeout });
   } catch {
     const body = (await page.locator('body').innerText()).slice(0, 600);
+    const staff = await page.evaluate(() =>
+      localStorage.getItem('zelate-pro-staff'),
+    );
     throw new Error(
-      `« ${text} » not shown at ${page.url()}; page shows: ${body}`,
+      `« ${text} » not shown at ${page.url()}; staff flag: ${staff}; trail: ${trail.get(page)?.join(' | ')}; page shows: ${body}`,
     );
   }
 }
@@ -158,7 +178,7 @@ async function waitForText(page: Page, text: string, timeout: number) {
 /** The stylist uses his own phone (ADR-007). */
 async function phone(browser: Browser): Promise<Page> {
   const context = await browser.newContext({ ...devices['iPhone 13'] });
-  return context.newPage();
+  return track(await context.newPage());
 }
 
 /** Everything a page could have kept on the device. */
