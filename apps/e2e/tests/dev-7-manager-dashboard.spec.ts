@@ -120,12 +120,16 @@ async function readySalon(name: string) {
     'members',
   );
   const stylistMember = members?.find((m) => m.role === 'stylist');
-  if (!stylistMember) throw new Error('member creation failed');
+  const managerMember = members?.find((m) => m.role === 'manager');
+  if (!stylistMember || !managerMember) {
+    throw new Error('member creation failed');
+  }
   return {
     salonId: salon.id as string,
     manager,
     stylist,
     stylistMemberId: stylistMember.id as string,
+    managerMemberId: managerMember.id as string,
   };
 }
 
@@ -409,4 +413,97 @@ test('at closing, the manager decides for each client still waiting (DEV-7, S-15
     })
     .toBe('waiting/serve');
   await expect(box).toHaveCount(0);
+});
+
+test('the manager sees the new time before changing the stylist (DEV-7, S-13)', async ({
+  browser,
+}) => {
+  const now = parisNow();
+  const { salonId, manager, stylistMemberId, managerMemberId } =
+    await readySalon('reassign');
+  // Two people cut hair today: Sam, and Léa the manager, both available.
+  must(
+    await db
+      .from('salon_members')
+      .update({ is_hairdressing: true })
+      .eq('id', managerMemberId),
+    'manager cuts hair',
+  );
+  must(
+    await db.from('stylist_presence').insert(
+      [stylistMemberId, managerMemberId].map((member_id) => ({
+        salon_id: salonId,
+        member_id,
+        service_date: now.date,
+        status: 'available',
+        status_since: new Date().toISOString(),
+      })),
+    ),
+    'presence',
+  );
+  must(
+    await db
+      .from('salons')
+      .update({ status: 'published', published_at: new Date().toISOString() })
+      .eq('id', salonId),
+    'publish',
+  );
+  const ticket = must(
+    await db
+      .from('tickets')
+      .insert({
+        salon_id: salonId,
+        service_date: now.date,
+        short_code: 'RSTUV',
+        tracking_token: `tok-reassign-${run}`,
+        tracking_short_code: `r${run}`.slice(0, 8).padEnd(8, 'y'),
+        display_name: 'Nora',
+        channel: 'front_desk',
+        planned_duration_minutes: 30,
+        queue_rank: 1,
+        status: 'waiting',
+        requested_member_id: stylistMemberId,
+        estimated_member_id: stylistMemberId,
+      })
+      .select('id')
+      .single(),
+    'waiting ticket',
+  );
+  if (!ticket) throw new Error('ticket creation failed');
+
+  const page = await browser.newPage();
+  await signIn(page, manager, '/dashboard');
+  await page.getByRole('button', { name: /Nora/ }).click();
+  const panel = page.getByRole('dialog');
+  await panel
+    .getByRole('button', { name: fr('pro-manager', 'ticket_panel.reassign') })
+    .click();
+  // Scenario 1: the stylist comes with the client's new time.
+  const lea = panel.getByRole('radio', { name: /Léa/ });
+  await expect(panel.getByText(/Passage estimé à/)).toBeVisible();
+  await lea.check();
+  // Nothing written before the confirmation.
+  const { data: untouched } = await db
+    .from('tickets')
+    .select('requested_member_id, reassignment_member_id')
+    .eq('id', ticket.id)
+    .single();
+  expect(untouched?.requested_member_id).toBe(stylistMemberId);
+  expect(untouched?.reassignment_member_id).toBeNull();
+  await panel
+    .getByRole('button', { name: /Confirmer|Envoyer la demande/ })
+    .click();
+  await expect
+    .poll(async () => {
+      const { data } = await db
+        .from('tickets')
+        .select('requested_member_id, reassignment_member_id')
+        .eq('id', ticket.id)
+        .single();
+      return (
+        data?.requested_member_id === managerMemberId ||
+        data?.reassignment_member_id === managerMemberId
+      );
+    })
+    .toBe(true);
 });

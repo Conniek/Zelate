@@ -4,6 +4,7 @@
  */
 import { AccessLost } from './queue-api';
 import type { PresenceStatus } from './queue-api';
+import { readError } from './signup-api';
 import { supabase } from './supabase';
 import type { Json } from '@zelate/db-types';
 
@@ -43,7 +44,8 @@ export interface BoardTicket {
   stylist_change_pending_since: string | null;
   reassignment_member_id: string | null;
   reassignment_proposed_start_at: string | null;
-  reassignment_resolved: Record<string, unknown> | null;
+  /** Last answer to a reassignment request (E27). */
+  reassignment_resolved: 'accepted' | 'refused' | 'expired' | null;
   /** H9: warned of the end-of-day risk, the client's answer, the manager's decision. */
   end_of_day_warned_at: string | null;
   end_of_day_choice: 'stay' | 'cancel' | null;
@@ -147,6 +149,11 @@ export interface PresenceChange {
 export interface ImpactTicket {
   ticket_id: string;
   short_code: string;
+  kind: 'queue' | 'appointment';
+  status_before: string;
+  status_after: string;
+  member_before: string | null;
+  member_after: string | null;
   estimated_start_at_before: string | null;
   estimated_start_at_after: string | null;
   choice_required: boolean;
@@ -162,6 +169,32 @@ export async function previewPresence(
   );
   if (error || !data?.ok) throw new Error('preview failed');
   return (data.data as { tickets: ImpactTicket[] }).tickets;
+}
+
+export interface ReassignmentPreview {
+  ticket_id: string;
+  estimated_start_at_before: string | null;
+  estimated_start_at_after: string | null;
+  /** The new time is later: the client is asked first (E9). */
+  needs_client_answer: boolean;
+}
+
+/** `preview-reassignment` (S-13): the client's new time with this stylist, nothing written. */
+export async function previewReassignment(
+  ticketId: string,
+  memberId: string,
+): Promise<ReassignmentPreview | { refused: string }> {
+  const { data, error } = await supabase.functions.invoke(
+    'preview-reassignment',
+    { body: { ticket_id: ticketId, member_id: memberId } },
+  );
+  if (!error && data?.ok) {
+    return (data.data as { reassignment: ReassignmentPreview }).reassignment;
+  }
+  const detail = ((await readError(error)) ?? data) as {
+    error?: { messageKey?: string };
+  } | null;
+  return { refused: detail?.error?.messageKey ?? 'errors.generic.unexpected' };
 }
 
 export interface DaySummary {

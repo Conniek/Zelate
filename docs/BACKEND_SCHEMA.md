@@ -1,6 +1,7 @@
 # BACKEND SCHEMA — Zelaté
 
-> version 0.8 · 21/10/2026 · statut : à figer au lot DES-4, avant la première migration
+> version 0.9 · 21/10/2026 · statut : à figer au lot DES-4, avant la première migration
+> v0.9 · 21/10/2026 : `get_salon_board` lit la réponse du client à une réaffectation dans `ticket_events.reason_code` (elle lisait `after`, jamais rempli) (S-13, E27).
 > v0.8 · 21/10/2026 : revue du lot DEV-7 — `get_salon_board` donne la dernière fermeture du jour, les réglages de fin de journée et, pour chaque ticket, l'alerte, la réponse du client et la décision du gérant (F-M12, S-15).
 > v0.7 · 21/10/2026 : lot DEV-6 — contrôle de session dans les fonctions d'aide du personnel (ADR-019), RPC `stylist_context()`, colonnes d'appel dans `get_stylist_queue()`, révocation et désactivation (S-16).
 > v0.6 · 21/10/2026 : lot DEV-5 — écriture de l'outbox (une ligne push et une ligne SMS par message client, noms ajoutés à l'envoi), messages temps réel envoyés par `realtime.send` dans la transaction, `preview_presence_change` devenue l'Edge Function `preview-presence-change`.

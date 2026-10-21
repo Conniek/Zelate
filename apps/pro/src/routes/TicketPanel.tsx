@@ -1,9 +1,11 @@
+import { useQueries } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Banner, Button, Dialog, TextField } from '@zelate/ui';
 import type { BoardStylist, BoardTicket } from '../lib/board-api';
-import { ticketStylistId } from '../lib/board-api';
-import { useCommand } from '../lib/use-command';
+import { previewReassignment, ticketStylistId } from '../lib/board-api';
+import { timeParts } from '../lib/stylist';
+import { useCommand, useErrorText } from '../lib/use-command';
 
 const REASONS = [
   'emergency',
@@ -41,7 +43,24 @@ export function TicketPanel({
   const [note, setNote] = useState('');
   const body = useRef<HTMLDivElement>(null);
   const currentId = ticketStylistId(ticket);
-  const canReassign = ticket.status === 'waiting' || ticket.status === 'called';
+  // The engine reassigns a waiting client only, one request at a time (E9).
+  const canReassign =
+    ticket.status === 'waiting' && ticket.reassignment_member_id === null;
+  const errorText = useErrorText();
+  const [target, setTarget] = useState<string | null>(null);
+  const others = stylists.filter((s) => s.member_id !== currentId);
+  // S-13 scenario 1: each stylist with the client's new time, read without writing.
+  const previews = useQueries({
+    queries: others.map((stylist) => ({
+      queryKey: ['reassign-preview', ticket.id, stylist.member_id],
+      queryFn: () => previewReassignment(ticket.id, stylist.member_id),
+      enabled: view === 'reassign',
+      staleTime: 0,
+      gcTime: 0,
+      retry: false,
+    })),
+  });
+  const time = (iso: string) => tCommon('formats.time', timeParts(iso));
   const canRemove = ticket.status !== 'in_service';
   const name = ticket.display_name;
 
@@ -204,36 +223,109 @@ export function TicketPanel({
 
         {view === 'reassign' ? (
           <>
-            <ul className="grid gap-2">
-              {stylists
-                .filter((stylist) => stylist.member_id !== currentId)
-                .map((stylist) => (
-                  <li key={stylist.member_id}>
+            <fieldset className="grid gap-2">
+              <legend className="font-semibold text-body-sm">
+                {t('reassign.choose')}
+              </legend>
+              {others.map((stylist, index) => {
+                const preview = previews[index]?.data;
+                const after =
+                  preview && 'needs_client_answer' in preview
+                    ? preview.estimated_start_at_after
+                    : null;
+                return (
+                  <label
+                    className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-3 py-2"
+                    key={stylist.member_id}
+                  >
+                    <input
+                      checked={target === stylist.member_id}
+                      name="reassign-target"
+                      onChange={() => {
+                        setError(null);
+                        setTarget(stylist.member_id);
+                      }}
+                      type="radio"
+                    />
+                    <span className="font-semibold">{stylist.first_name}</span>
+                    <span className="ml-auto text-body-sm text-text-muted">
+                      {preview === undefined
+                        ? '…'
+                        : 'refused' in preview
+                          ? errorText(preview.refused)
+                          : after
+                            ? t('reassign.new_time', { time: time(after) })
+                            : null}
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+            {(() => {
+              const index = others.findIndex((s) => s.member_id === target);
+              const chosen = index >= 0 ? others[index] : undefined;
+              const preview = index >= 0 ? previews[index]?.data : undefined;
+              const ready =
+                chosen !== undefined &&
+                preview !== undefined &&
+                'needs_client_answer' in preview;
+              const asks = ready && preview.needs_client_answer;
+              const minutes =
+                ready &&
+                preview.estimated_start_at_before &&
+                preview.estimated_start_at_after
+                  ? Math.round(
+                      (Date.parse(preview.estimated_start_at_after) -
+                        Date.parse(preview.estimated_start_at_before)) /
+                        60_000,
+                    )
+                  : 0;
+              return (
+                <>
+                  {asks ? (
+                    <Banner tone="warning">
+                      {t('reassign.delay_warning', { minutes })}
+                    </Banner>
+                  ) : null}
+                  {target === null ? (
+                    <p
+                      className="text-body-sm text-text-muted"
+                      id="reassign-hint"
+                    >
+                      {t('reassign.choose_hint')}
+                    </p>
+                  ) : null}
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {back}
                     <Button
-                      aria-disabled={busy !== null || undefined}
-                      className="w-full"
+                      aria-describedby={
+                        target === null ? 'reassign-hint' : undefined
+                      }
+                      aria-disabled={!ready || undefined}
+                      loading={busy === 'reassign_ticket'}
                       onClick={() =>
+                        ready &&
                         void send(
                           'reassign_ticket',
-                          {
-                            ticket_id: ticket.id,
-                            member_id: stylist.member_id,
-                          },
-                          t('reassign.done', {
-                            first_name: name,
-                            stylist_name: stylist.first_name,
-                          }),
-                          stylist.member_id,
+                          { ticket_id: ticket.id, member_id: chosen.member_id },
+                          asks
+                            ? t('reassign.request_sent')
+                            : t('reassign.done', {
+                                first_name: name,
+                                stylist_name: chosen.first_name,
+                              }),
+                          asks ? currentId : chosen.member_id,
                         )
                       }
-                      variant="secondary"
                     >
-                      {stylist.first_name}
+                      {asks
+                        ? t('reassign.send_request')
+                        : tCommon('actions.confirm')}
                     </Button>
-                  </li>
-                ))}
-            </ul>
-            <div className="flex justify-end">{back}</div>
+                  </div>
+                </>
+              );
+            })()}
           </>
         ) : null}
 

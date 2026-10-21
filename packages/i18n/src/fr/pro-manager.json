@@ -324,7 +324,9 @@
     "delay_warning": "L'heure du client reculerait de {minutes} min : il recevra une demande.",
     "send_request": "Envoyer la demande",
     "request_sent": "Demande envoyée. Sans réponse du client en 10 min, rien ne change.",
-    "done": "{first_name} passe chez {stylist_name}."
+    "done": "{first_name} passe chez {stylist_name}.",
+    "choose": "Nouveau coiffeur",
+    "choose_hint": "Choisissez un coiffeur pour voir la nouvelle heure."
   },
   "end_of_day": {
     "banner": {

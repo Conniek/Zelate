@@ -5,11 +5,14 @@ import {
   readTicketLink,
   type TicketLinkReader,
 } from './link.ts';
-import { previewPresenceChange } from './service.ts';
+import { previewPresenceChange, previewReassignment } from './service.ts';
 import {
   ANNA,
   ANNA_PROFILE,
+  BEN,
+  BEN_PROFILE,
   CLIENT,
+  CLIENT_2,
   CUT,
   MANAGER_PROFILE,
   MONDAY_10H,
@@ -132,5 +135,127 @@ describe('preview_presence_change (K2)', () => {
         ),
       ),
     ).toMatch(/forbidden|invalid_payload/);
+  });
+});
+
+describe('previews of the manager board (S-11, S-13)', () => {
+  const depsOf = (h: ReturnType<typeof harness>) => ({
+    db: h.db,
+    clock: () => h.now,
+    random: sequenceRandom(),
+    phones: fakePhones,
+  });
+
+  it('S-11: an absence shows the called client sent back and who changes stylist', async () => {
+    const h = harness();
+    const first = data(
+      await h.send(CLIENT, 'join_queue', {
+        salon_id: SALON,
+        service_id: CUT,
+        channel: 'app',
+      }),
+    ).ticket_id;
+    data(await h.send(ANNA_PROFILE, 'call_ticket'));
+    const before = JSON.stringify([...h.db.tickets.values()]);
+    const { tickets } = data(
+      await previewPresenceChange(
+        depsOf(h),
+        { profileId: MANAGER_PROFILE },
+        { member_id: ANNA, status: 'absent' },
+      ),
+    ) as { tickets: Record<string, unknown>[] };
+    expect(tickets).toEqual([
+      expect.objectContaining({
+        ticket_id: first,
+        kind: 'queue',
+        status_before: 'called',
+        status_after: 'waiting',
+        member_before: ANNA,
+      }),
+    ]);
+    expect(JSON.stringify([...h.db.tickets.values()])).toBe(before);
+  });
+
+  it('S-13: a reassignment gives the new time, without writing', async () => {
+    const h = harness();
+    const ticket_id = data(
+      await h.send(CLIENT, 'join_queue', {
+        salon_id: SALON,
+        service_id: CUT,
+        channel: 'app',
+      }),
+    ).ticket_id as string;
+    const ticket = h.db.tickets.get(ticket_id)!;
+    const other = ticket.estimated_member_id === ANNA ? BEN : ANNA;
+    const before = JSON.stringify([...h.db.tickets.values()]);
+    const response = await previewReassignment(
+      depsOf(h),
+      { profileId: MANAGER_PROFILE },
+      { ticket_id, member_id: other },
+    );
+    const { reassignment } = data(response) as {
+      reassignment: Record<string, unknown>;
+    };
+    expect(reassignment).toEqual(
+      expect.objectContaining({ ticket_id, needs_client_answer: false }),
+    );
+    expect(reassignment.estimated_start_at_after).not.toBeNull();
+    expect(JSON.stringify([...h.db.tickets.values()])).toBe(before);
+    expect(h.db.processed.size).toBe(1);
+  });
+
+  it('S-13: a later time means the client is asked first', async () => {
+    const h = harness();
+    // Ben is busy with a first client; the second one waits for Anna, free now.
+    data(
+      await h.send(CLIENT, 'join_queue', {
+        salon_id: SALON,
+        service_id: CUT,
+        channel: 'app',
+        requested_member_id: BEN,
+      }),
+    );
+    data(await h.send(BEN_PROFILE, 'call_ticket'));
+    const ticket_id = data(
+      await h.send(CLIENT_2, 'join_queue', {
+        salon_id: SALON,
+        service_id: CUT,
+        channel: 'app',
+        first_name: 'Tom',
+      }),
+    ).ticket_id as string;
+    const { reassignment } = data(
+      await previewReassignment(
+        depsOf(h),
+        { profileId: MANAGER_PROFILE },
+        { ticket_id, member_id: BEN },
+      ),
+    ) as { reassignment: Record<string, string | boolean | null> };
+    expect(reassignment.needs_client_answer).toBe(true);
+    expect(
+      Date.parse(reassignment.estimated_start_at_after as string),
+    ).toBeGreaterThan(
+      Date.parse(reassignment.estimated_start_at_before as string),
+    );
+  });
+
+  it('S-13: only the manager may preview', async () => {
+    const h = harness();
+    const ticket_id = data(
+      await h.send(CLIENT, 'join_queue', {
+        salon_id: SALON,
+        service_id: CUT,
+        channel: 'app',
+      }),
+    ).ticket_id;
+    expect(
+      code(
+        await previewReassignment(
+          depsOf(h),
+          { profileId: ANNA_PROFILE },
+          { ticket_id, member_id: BEN },
+        ),
+      ),
+    ).toBe('forbidden');
   });
 });

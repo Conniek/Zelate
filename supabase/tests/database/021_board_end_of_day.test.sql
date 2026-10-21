@@ -3,7 +3,7 @@ begin;
 -- F-M12 (S-15): the board carries the closing time and the end-of-day answers.
 set local client_min_messages = warning;
 truncate public.salons, public.platform_admins, private.ticket_contacts cascade;
-select plan(6);
+select plan(7);
 
 alter table public.salons disable trigger salons_log_settings;
 alter table public.salon_members disable trigger salon_members_log_settings;
@@ -30,6 +30,9 @@ insert into public.tickets (id, salon_id, service_date, short_code, tracking_tok
 values ('b0000000-0000-0000-0000-000000000601', '90000000-0000-0000-0000-0000000006a1', (now() at time zone 'Europe/Paris')::date,
   'EEEEE', 'tokE', 'xxxxxxxE', 'Eva', 'app', 30, 1, 'waiting', now(), 'stay');
 
+insert into public.ticket_events (ticket_id, salon_id, type, actor_type, reason_code) values
+  ('b0000000-0000-0000-0000-000000000601', '90000000-0000-0000-0000-0000000006a1', 'reassignment_resolved', 'client', 'refused');
+
 create function pg_temp.login(p_uid text) returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated', 'aal', 'aal2')::text, true);
@@ -49,6 +52,8 @@ select is(public.get_salon_board('90000000-0000-0000-0000-0000000006a1') -> 'tic
   'each ticket carries the client''s end-of-day answer');
 select ok(public.get_salon_board('90000000-0000-0000-0000-0000000006a1') -> 'tickets' -> 0 ? 'closing_decision',
   'each ticket carries the manager''s closing decision');
+select is(public.get_salon_board('90000000-0000-0000-0000-0000000006a1') -> 'tickets' -> 0 ->> 'reassignment_resolved', 'refused',
+  'the board shows the client''s answer to a reassignment (E27)');
 reset role;
 
 insert into public.salon_closures (salon_id, starts_on, ends_on)
