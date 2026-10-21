@@ -365,9 +365,11 @@
       "announced_time": "Rendez-vous annoncé à {time}",
       "unknown_stylist": "Coiffeur non précisé par le client",
       "merge_suggestion": "Rapprocher du rendez-vous déjà saisi : {first_name}, {time}, avec {stylist_name}",
-      "reminder": "Signalé il y a plus de 10 min : confirmez ou refusez."
+      "reminder": "Signalé il y a plus de 10 min : confirmez ou refusez.",
+      "reject": "Refuser"
     },
-    "warning_stylist_absent": "{stylist_name} est déclaré absent aujourd'hui. Le rendez-vous est enregistré, pensez à le réaffecter."
+    "warning_stylist_absent": "{stylist_name} est déclaré absent aujourd'hui. Le rendez-vous est enregistré, pensez à le réaffecter.",
+    "back_to_board": "Retour à la file"
   },
   "summary": {
     "title": "Récapitulatif du jour",

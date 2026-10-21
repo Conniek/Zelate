@@ -220,6 +220,9 @@ export function DashboardPage() {
   );
   const lost = !online || (!live && board.isError);
   const columns = boardColumns(stylists);
+  const pendingCount = tickets.filter(
+    (x) => x.status === 'pending_confirmation',
+  ).length;
   const unassigned = tickets.filter((ticket) => {
     const id = ticketStylistId(ticket);
     return id === null || !columns.some((c) => c.member_id === id);
@@ -270,7 +273,26 @@ export function DashboardPage() {
         <p aria-live="polite" className="sr-only" role="status">
           {message}
         </p>
-        <nav aria-label={t('board.menu_label')}>
+        {pendingCount > 0 ? (
+          <Banner tone="warning">
+            <Link
+              className="font-semibold underline"
+              to="/dashboard/appointments"
+            >
+              {t('board.pending_appointments.banner', { count: pendingCount })}
+            </Link>
+          </Banner>
+        ) : null}
+        <nav
+          aria-label={t('board.menu_label')}
+          className="flex flex-wrap gap-x-4"
+        >
+          <Link
+            className="inline-flex min-h-11 items-center text-body-sm font-semibold text-link"
+            to="/dashboard/appointments"
+          >
+            {t('board.appointments')}
+          </Link>
           <Link
             className="inline-flex min-h-11 items-center text-body-sm font-semibold text-link"
             to="/dashboard/setup"
