@@ -104,6 +104,9 @@ test('a client with an appointment checks in from the poster (DEV-8, U-14)', asy
   await freeTestPhones();
   const { salonId, qrToken, stylist } = await openSalon('client-check-in');
   const sam = await memberId(salonId, stylist.id);
+  const asSam = await staff(stylist);
+  // The salon page lists the stylists working today.
+  await asSam('set_presence', { member_id: sam, status: 'available' });
 
   const client = await phone(browser);
   await client.goto(`${CLIENT_APP}/q/${qrToken}`);
@@ -129,7 +132,6 @@ test('a client with an appointment checks in from the poster (DEV-8, U-14)', asy
     client.getByText(fr('client', 'ticket.appointment.pending')),
   ).toBeVisible();
 
-  const asSam = await staff(stylist);
   await asSam('confirm_appointment', {
     ticket_id: await ticketId(salonId),
     decision: 'confirm',

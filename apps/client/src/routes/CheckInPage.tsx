@@ -46,6 +46,8 @@ export function CheckInPage() {
   const [step, setStep] = useState<Step>('time');
   const [scheduled, setScheduled] = useState('');
   const [timeError, setTimeError] = useState<string | null>(null);
+  // Each refused « Suivant » moves the focus back to the field (WCAG 3.3.1).
+  const [tries, setTries] = useState(0);
   const [stylistId, setStylistId] = useState(DONT_KNOW);
   const [known, setKnown] = useState<boolean | null>(null);
   const [firstName, setFirstName] = useState('');
@@ -82,10 +84,10 @@ export function CheckInPage() {
 
   useEffect(() => {
     if (timeError) document.getElementById('check-in-time')?.focus();
-  }, [timeError]);
+  }, [timeError, tries]);
   useEffect(() => {
     if (nameError) document.getElementById('check-in-first-name')?.focus();
-  }, [nameError]);
+  }, [nameError, tries]);
   // The first name appears after the SMS code of a new account (WCAG 2.4.3).
   useEffect(() => {
     if (step === 'identify' && signedIn && known === false) {
@@ -146,6 +148,7 @@ export function CheckInPage() {
   async function confirm() {
     if (known === false && firstName.trim() === '') {
       setNameError(t('join.summary.first_name_required'));
+      go('identify');
       return;
     }
     checkedIn.current = true;
@@ -170,7 +173,7 @@ export function CheckInPage() {
       <p className="font-semibold">
         {t('qr.header', { salon_name: data.salon.name })}
       </p>
-      <p className="text-body-sm text-text-muted">
+      <p aria-hidden="true" className="text-body-sm text-text-muted">
         {t('check_in.progress', { step: index + 1, total: steps.length })}
       </p>
       <h1
@@ -179,6 +182,11 @@ export function CheckInPage() {
         tabIndex={-1}
       >
         {title}
+        {/* Read with the heading when the focus moves to it. */}
+        <span className="sr-only">
+          {' – '}
+          {t('check_in.progress', { step: index + 1, total: steps.length })}
+        </span>
       </h1>
 
       {step === 'time' ? (
@@ -192,7 +200,7 @@ export function CheckInPage() {
             <select
               aria-describedby={timeError ? 'check-in-time-error' : undefined}
               aria-invalid={timeError ? true : undefined}
-              className="min-h-12 rounded-lg border border-border-strong bg-surface px-3"
+              className={`min-h-12 rounded-lg border bg-surface px-3 ${timeError ? 'border-danger' : 'border-border-strong'}`}
               id="check-in-time"
               onChange={(e) => {
                 setTimeError(null);
@@ -200,7 +208,7 @@ export function CheckInPage() {
               }}
               value={scheduled}
             >
-              <option value="">—</option>
+              <option value="">{t('check_in.time.placeholder')}</option>
               {slots.map((slot) => (
                 <option key={slot} value={slot}>
                   {tCommon('formats.time', {
@@ -293,11 +301,11 @@ export function CheckInPage() {
               <dd>{stylist?.first_name ?? t('check_in.stylist.dont_know')}</dd>
             </div>
           </dl>
-          <div className="flex items-start gap-3">
+          <div className="flex min-h-11 items-start gap-3">
             <input
               aria-describedby="check-in-consent-hint"
               checked={consent}
-              className="mt-1 size-5"
+              className="mt-1 size-6"
               id="check-in-consent"
               onChange={(e) => setConsent(e.target.checked)}
               type="checkbox"
@@ -336,11 +344,11 @@ export function CheckInPage() {
         </Button>
         {step === 'time' && slots.length > 0 ? (
           <Button
-            onClick={() =>
-              scheduled === ''
-                ? setTimeError(t('check_in.time.required'))
-                : forward()
-            }
+            onClick={() => {
+              if (scheduled !== '') return forward();
+              setTimeError(t('check_in.time.required'));
+              setTries((n) => n + 1);
+            }}
           >
             {tCommon('actions.next')}
           </Button>
@@ -351,6 +359,7 @@ export function CheckInPage() {
             onClick={() => {
               if (firstName.trim() === '') {
                 setNameError(t('join.summary.first_name_required'));
+                setTries((n) => n + 1);
                 return;
               }
               forward();
@@ -365,7 +374,7 @@ export function CheckInPage() {
           className="inline-flex min-h-11 items-center font-semibold text-link underline"
           to={`/salons/${slug}`}
         >
-          {data.salon.name}
+          {t('check_in.salon_link', { salon_name: data.salon.name })}
         </Link>
       ) : null}
     </main>

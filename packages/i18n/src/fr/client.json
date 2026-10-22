@@ -186,7 +186,8 @@
       "label": "Mon rendez-vous est à…",
       "choose": "Choisir l'heure",
       "required": "Choisissez l'heure de votre rendez-vous.",
-      "none_today": "Le salon est fermé aujourd'hui : impossible de vous signaler."
+      "none_today": "Le salon est fermé aujourd'hui : impossible de vous signaler.",
+      "placeholder": "Sélectionnez une heure"
     },
     "stylist": {
       "label": "Avec quel coiffeur ?",
@@ -199,7 +200,8 @@
       "stylist": "Coiffeur"
     },
     "confirm": "Me signaler",
-    "page_title": "Se signaler · {step} · {salon_name}"
+    "page_title": "Se signaler · {step} · {salon_name}",
+    "salon_link": "Voir la page de {salon_name}"
   },
   "ticket": {
     "code": {
@@ -248,7 +250,9 @@
       "first_available": "Premier disponible",
       "option_time": "Passage vers {time}",
       "no_answer_wait": "Sans réponse dans les 10 min, vous continuez d'attendre {first_name}.",
-      "no_answer_first_available": "Sans réponse dans les 10 min, vous passerez avec le premier coiffeur disponible."
+      "no_answer_first_available": "Sans réponse dans les 10 min, vous passerez avec le premier coiffeur disponible.",
+      "answered_wait": "C'est noté : vous attendez {first_name}.",
+      "answered_first_available": "C'est noté : vous passerez avec le premier coiffeur disponible."
     },
     "stylist_unavailable": {
       "wait": "Attendre {first_name}",
@@ -260,13 +264,18 @@
       "time_left": "{minutes, plural, =0 {Moins d'une minute pour répondre} other {Encore # min pour répondre}}",
       "no_answer_hint": "Sans réponse de votre part, rien ne change.",
       "accept": "Accepter",
-      "refuse": "Refuser"
+      "refuse": "Refuser",
+      "new_time_unnamed": "Avec un autre coiffeur : passage prévu vers {time}",
+      "answered_accept": "C'est noté : vous passez avec {first_name}.",
+      "answered_accept_unnamed": "C'est noté : vous changez de coiffeur.",
+      "answered_refuse": "C'est noté : vous gardez votre coiffeur."
     },
     "end_of_day": {
       "banner": "Vous risquez de ne pas être pris avant la fermeture",
       "hint": "Si vous restez, le salon décidera à la fermeture s'il peut encore vous prendre.",
       "stay": "Je reste",
-      "cancel": "J'annule"
+      "cancel": "J'annule",
+      "answered_stay": "C'est noté : vous restez dans la file."
     },
     "called": {
       "title": "C'est votre tour !",
@@ -284,7 +293,8 @@
       "title": {
         "completed": "Merci de votre visite",
         "cancelled": "Place annulée",
-        "no_show": "Place libérée"
+        "no_show": "Place libérée",
+        "appointment_rejected": "Rendez-vous non confirmé"
       },
       "reason": {
         "completed": "Votre passage chez {salon_name} est terminé. À bientôt !",

@@ -1,7 +1,7 @@
 # BACKEND SCHEMA — Zelaté
 
 > version 0.12 · 22/10/2026 · statut : à figer au lot DES-4, avant la première migration
-> v0.12 · 22/10/2026 : `private.client_ticket_view` ajoute `wait_offered` (« Attendre » encore possible, E7, E8) et `last_change` (dernier changement d'heure ou de place et son motif, E11, K26) (DEV-8, U-10, U-12).
+> v0.12 · 22/10/2026 : `private.client_ticket_view` ajoute `wait_offered` (« Attendre » encore possible, E7, E8) et `last_change` (dernier changement d'heure ou de place et son motif, masqué une fois le changement annulé, E11, K26) ; `ticket_events.before` de `estimate_changed` donne l'heure quittée (DEV-8, U-10, U-12).
 > v0.11 · 22/10/2026 : `search_salons` renvoie la position du salon et `next_free_slot` (DEV-8, U-01, U-16).
 > v0.10 · 22/10/2026 : lot DEV-8 — RPC `my_ticket()` et vue `private.client_ticket_view`, partagée avec `ticket-public`.
 > v0.9 · 21/10/2026 : `get_salon_board` lit la réponse du client à une réaffectation dans `ticket_events.reason_code` (elle lisait `after`, jamais rempli) ; le coiffeur d'une réaffectation est écrit dans `after` et non plus dans `reason_code`, que la contrainte refusait (S-13).
@@ -378,7 +378,7 @@ Le **statut d'approche** affiché dans l'espace coiffeur (« arrivé », « en r
 | `command_id`       | uuid                |                                     | Commande d'origine                                                                                                                                                       |
 | `created_at`       | timestamptz         | NN, défaut `now()`                  |                                                                                                                                                                          |
 
-Jamais de téléphone, de jeton, de prénom ni de texte libre dans `before` / `after` (K10). Déclencheur `prevent_update_delete()` : toute mise à jour ou suppression lève une erreur. Index `(salon_id, created_at desc)`, `(ticket_id, id)`.
+Pour `estimate_changed`, `before` vaut `{start_at}`, l'heure annoncée que le changement quitte : la vue du client cesse d'expliquer un changement revenu à moins de 10 min de cette heure (U-10). Jamais de téléphone, de jeton, de prénom ni de texte libre dans `before` / `after` (K10). Déclencheur `prevent_update_delete()` : toute mise à jour ou suppression lève une erreur. Index `(salon_id, created_at desc)`, `(ticket_id, id)`.
 
 ### 4.15 `salon_events` — journal d'audit du salon (ajout seul)
 
