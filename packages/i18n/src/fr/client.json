@@ -52,7 +52,9 @@
       "closed": "Fermé",
       "full": "Complet aujourd'hui"
     },
-    "error": "La liste n'a pas pu être chargée. Vérifiez votre connexion, puis réessayez."
+    "error": "La liste n'a pas pu être chargée. Vérifiez votre connexion, puis réessayez.",
+    "next_free_slot_now": "Créneau libre maintenant · {service_name}",
+    "display_label": "Affichage"
   },
   "salon": {
     "photos": {

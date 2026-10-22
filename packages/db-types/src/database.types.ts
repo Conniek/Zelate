@@ -1477,6 +1477,7 @@ export type Database = {
           name: string;
           next_free_slot: Json;
           next_free_slots: Json;
+          next_opening_at: string;
           photo_paths: string[];
           postal_code: string;
           queue_status: Database['public']['Enums']['queue_status'];

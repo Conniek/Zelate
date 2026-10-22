@@ -1,45 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { AddressField, Banner, Button, Skeleton } from '@zelate/ui';
 import { searchPlaces } from '../lib/address';
 import { isActive, searchSalons } from '../lib/client-api';
 import type { SalonResult } from '../lib/client-api';
-import {
-  useMyTicket,
-  useNow,
-  usePageTitle,
-  useSession,
-  useTime,
-} from '../lib/live';
+import { useMyTicket, useNow, usePageTitle, useSession } from '../lib/live';
+import { useSalonSummary } from '../lib/salon-summary';
 
 // MapLibre weighs more than the rest of the page: loaded with the tab (TRD §3).
 const SalonsMap = lazy(() => import('../components/SalonsMap'));
 
 const RADIUS_M = 5_000;
 const WIDE_RADIUS_M = 10_000;
-/** « à vérifier » beyond 5 min without an update (F-C1). */
-const STALE_MINUTES = 5;
 
 type Place = { lat: number; lng: number; fromDevice: boolean };
 
 function SalonCard({ salon, now }: { salon: SalonResult; now: number }) {
   const { t } = useTranslation('client');
-  const time = useTime();
-  const age =
-    salon.estimate_updated_at === null
-      ? null
-      : Math.max(
-          0,
-          Math.floor((now - Date.parse(salon.estimate_updated_at)) / 60_000),
-        );
-  const state =
-    salon.queue_status === 'open'
-      ? salon.is_full
-        ? t('home.queue_state.full')
-        : null
-      : t(`home.queue_state.${salon.queue_status}`);
+  const summary = useSalonSummary()(salon, now);
   const distance =
     salon.distance_m < 1_000
       ? t('home.distance.m', { meters: Math.round(salon.distance_m / 10) * 10 })
@@ -56,30 +36,25 @@ function SalonCard({ salon, now }: { salon: SalonResult; now: number }) {
       >
         <span className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="text-h3 font-semibold">{salon.name}</span>
-          {salon.queue_status === 'open' &&
-          !salon.is_full &&
-          salon.current_wait_minutes !== null ? (
+          {summary.wait ? (
             <span className="rounded-full bg-primary-subtle px-3 py-0.5 font-semibold text-link tabular-nums">
-              {t('home.wait_badge', { minutes: salon.current_wait_minutes })}
+              {summary.wait}
             </span>
           ) : null}
         </span>
         <span className="text-body-sm text-text-muted">
-          {[distance, salon.address_line, state].filter(Boolean).join(' · ')}
+          {[distance, salon.address_line, summary.state]
+            .filter(Boolean)
+            .join(' · ')}
         </span>
-        {salon.next_free_slot ? (
+        {summary.slot ? (
           <span className="text-body-sm font-semibold text-success-text">
-            {t('home.next_free_slot', {
-              time: time(salon.next_free_slot.start_at),
-              service_name: salon.next_free_slot.service_name,
-            })}
+            {summary.slot}
           </span>
         ) : null}
-        {age !== null && salon.queue_status === 'open' ? (
+        {summary.freshness ? (
           <span className="text-body-sm text-text-muted">
-            {age > STALE_MINUTES
-              ? t('home.freshness_stale')
-              : t('home.freshness', { minutes: age })}
+            {summary.freshness}
           </span>
         ) : null}
       </Link>
@@ -103,6 +78,8 @@ export function HomePage() {
   const [openOnly, setOpenOnly] = useState(true);
   const [tab, setTab] = useState<'list' | 'map'>('list');
   const [mapOpened, setMapOpened] = useState(false);
+  // A chosen address wins over a position that arrives later.
+  const addressChosen = useRef(false);
 
   function locate() {
     if (!('geolocation' in navigator)) {
@@ -113,6 +90,7 @@ export function HomePage() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocating(false);
+        if (addressChosen.current) return;
         setRadius(RADIUS_M);
         setPlace({
           lat: position.coords.latitude,
@@ -146,8 +124,11 @@ export function HomePage() {
     enabled: place !== null,
     refetchInterval: 60_000,
   });
-  const all = results.data ?? [];
-  const shown = openOnly ? all.filter((s) => s.queue_status === 'open') : all;
+  // The same array between renders: the map keeps its markers, and the focus.
+  const shown = useMemo(() => {
+    const all = results.data ?? [];
+    return openOnly ? all.filter((s) => s.queue_status === 'open') : all;
+  }, [openOnly, results.data]);
   const active = mine.query.data && isActive(mine.query.data.ticket);
 
   return (
@@ -205,6 +186,8 @@ export function HomePage() {
           onSearch={searchPlaces}
           onSelect={(suggestion) => {
             if (!suggestion) return;
+            addressChosen.current = true;
+            setLocating(false);
             setRadius(RADIUS_M);
             setAskAddress(false);
             setPlace({
@@ -219,26 +202,30 @@ export function HomePage() {
       {place !== null ? (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div
-              aria-label={t('home.tabs.list')}
-              className="flex gap-2"
-              role="group"
-            >
+            {/* SegmentedControl (DESIGN_SYSTEM): native radios, arrow keys included. */}
+            <fieldset className="flex rounded-lg border border-border-strong p-1">
+              <legend className="sr-only">{t('home.display_label')}</legend>
               {(['list', 'map'] as const).map((value) => (
-                <Button
-                  aria-pressed={tab === value}
+                <label
+                  className={`flex min-h-11 cursor-pointer items-center rounded-md px-4 font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus-ring ${
+                    tab === value ? 'bg-primary text-text-on-primary' : ''
+                  }`}
                   key={value}
-                  onClick={() => {
-                    setTab(value);
-                    if (value === 'map') setMapOpened(true);
-                  }}
-                  size="sm"
-                  variant={tab === value ? 'primary' : 'secondary'}
                 >
+                  <input
+                    checked={tab === value}
+                    className="sr-only"
+                    name="home-display"
+                    onChange={() => {
+                      setTab(value);
+                      if (value === 'map') setMapOpened(true);
+                    }}
+                    type="radio"
+                  />
                   {t(`home.tabs.${value}`)}
-                </Button>
+                </label>
               ))}
-            </div>
+            </fieldset>
             <label className="flex min-h-11 items-center gap-2 font-semibold">
               <input
                 checked={openOnly}

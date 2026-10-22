@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { fr } from './fr';
-import { db, must, openSalon } from './seed';
+import { db, must, openSalon, run } from './seed';
 
 /**
  * DEV-8 part 2 (U-01, U-16): salons around the client's position, the
@@ -51,16 +51,18 @@ test('the home lists open salons around me with their next free slot (DEV-8, U-0
   const page = await context.newPage();
   await page.goto(CLIENT_APP);
 
-  const card = page.getByRole('link', { name: new RegExp(`Salon home-open`) });
+  const card = page.getByRole('link', {
+    name: new RegExp(`Salon home-open ${run}`),
+  });
   await expect(card).toBeVisible();
   await expect(card).toContainText(/Créneau libre à \d{1,2}h\d{2} · Coupe/);
   // « Ouvert maintenant » hides the paused queue, unticked it shows it.
   await expect(
-    page.getByRole('link', { name: /Salon home-paused/ }),
+    page.getByRole('link', { name: new RegExp(`Salon home-paused ${run}`) }),
   ).toHaveCount(0);
   await page.getByLabel(fr('client', 'home.filters.open_now')).uncheck();
   await expect(
-    page.getByRole('link', { name: /Salon home-paused/ }),
+    page.getByRole('link', { name: new RegExp(`Salon home-paused ${run}`) }),
   ).toBeVisible();
 
   await card.click();

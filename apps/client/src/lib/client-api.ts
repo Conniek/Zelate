@@ -230,6 +230,8 @@ export interface SalonResult {
   longitude: number;
   /** U-16: the earliest free slot and its service, open queue only (E22). */
   next_free_slot: { start_at: string; service_name: string } | null;
+  /** U-01: when a closed salon opens again (within a week). */
+  next_opening_at: string | null;
 }
 
 /** F-C1: published salons within `radiusM` of a point, nearest first. */

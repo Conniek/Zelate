@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import type { SalonResult } from '../lib/client-api';
+import { useNow } from '../lib/live';
+import { useSalonSummary } from '../lib/salon-summary';
 
 /** OpenFreeMap: free tiles, no key, not openstreetmap.org's own servers (TRD §3). */
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
@@ -25,6 +27,9 @@ export default function SalonsMap({ center, salons, me }: Props) {
   const navigate = useNavigate();
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
+  const summarize = useSalonSummary();
+  // Rebuilt every 5 min at most: a new minute does not drop a focused marker.
+  const now = useNow(5 * 60_000);
 
   const initial = useRef(center);
   useEffect(() => {
@@ -56,18 +61,20 @@ export default function SalonsMap({ center, salons, me }: Props) {
       button.type = 'button';
       button.className =
         'min-h-11 min-w-11 rounded-full bg-primary px-3 font-semibold text-text-on-primary shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
-      button.textContent =
-        salon.current_wait_minutes !== null
-          ? t('home.wait_badge', { minutes: salon.current_wait_minutes })
-          : salon.name;
+      // The marker says what the list card says (U-01, U-16).
+      const summary = summarize(salon, now);
+      button.textContent = summary.wait ?? summary.state ?? salon.name;
       button.setAttribute(
         'aria-label',
-        salon.current_wait_minutes !== null
-          ? t('home.map.marker_aria', {
-              salon_name: salon.name,
-              minutes: salon.current_wait_minutes,
-            })
-          : t('home.map.open_salon', { salon_name: salon.name }),
+        [
+          salon.name,
+          summary.wait,
+          summary.state,
+          summary.slot,
+          summary.freshness,
+        ]
+          .filter(Boolean)
+          .join(', '),
       );
       button.addEventListener(
         'click',
@@ -78,7 +85,7 @@ export default function SalonsMap({ center, salons, me }: Props) {
         .addTo(instance);
     });
     return () => markers.forEach((m) => m.remove());
-  }, [navigate, salons, t]);
+  }, [navigate, now, salons, summarize]);
 
   return (
     <div className="grid gap-2">

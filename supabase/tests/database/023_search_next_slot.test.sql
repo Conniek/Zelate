@@ -3,7 +3,7 @@ begin;
 -- U-16 (F-C1, E22): the earliest free slot with its service name, open queue only.
 set local client_min_messages = warning;
 truncate public.salons, public.platform_admins, private.ticket_contacts cascade;
-select plan(4);
+select plan(5);
 
 alter table public.salons disable trigger salons_log_settings;
 alter table public.services disable trigger services_log_settings;
@@ -38,6 +38,16 @@ update public.salons set queue_status = 'paused' where id = '90000000-0000-0000-
 set local role anon;
 select is((select next_free_slot from public.search_salons(48.85, 2.35)), null,
   'no free slot while the queue is not open (E22)');
+reset role;
+
+-- U-01 scenario 9: a closed salon gives its next opening.
+alter table public.opening_hours disable trigger opening_hours_log_settings;
+insert into public.opening_hours (salon_id, weekday, opens_at, closes_at)
+select '90000000-0000-0000-0000-0000000008a1', d, '09:00', '19:00' from generate_series(1, 7) d;
+update public.salons set queue_status = 'closed' where id = '90000000-0000-0000-0000-0000000008a1';
+set local role anon;
+select ok((select next_opening_at > now() and next_opening_at < now() + interval '25 hours'
+           from public.search_salons(48.85, 2.35)), 'a closed salon gives its next opening');
 reset role;
 
 select * from finish();
