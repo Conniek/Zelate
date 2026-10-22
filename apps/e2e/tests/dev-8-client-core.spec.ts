@@ -37,9 +37,18 @@ async function join(page: Page, nationalDigits: string, firstName: string) {
   await page
     .getByRole('button', { name: fr('client', 'signin.send_code') })
     .click();
-  await page
-    .getByLabel(fr('client', 'signin.code.digit_aria', { index: 1 }))
-    .click();
+  const digit = page.getByLabel(
+    fr('client', 'signin.code.digit_aria', { index: 1 }),
+  );
+  try {
+    await expect(digit).toBeVisible();
+  } catch (error) {
+    const shown = (await page.locator('body').innerText()).slice(0, 800);
+    throw new Error(`no SMS code field; page shows: ${shown}`, {
+      cause: error,
+    });
+  }
+  await digit.click();
   await page.keyboard.type(CODE);
   // A first visit asks the first name (K30).
   const name = page.getByLabel(fr('client', 'signin.first_name.label'));
