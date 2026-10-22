@@ -205,7 +205,8 @@ test('from the SMS link, the client declares a delay then cancels (DEV-8, F-C10,
   const client = await phone(browser);
   await client.goto(`${CLIENT_APP}/salons/${slug}`);
   await client.getByRole('link', { name: fr('client', 'salon.join') }).click();
-  await join(client, '612345678', 'Inès');
+  // Its own test phone: Auth allows one code per number every 30 s.
+  await join(client, '612345680', 'Inès');
   const { data: ticket } = await db
     .from('tickets')
     .select('id, tracking_short_code')
