@@ -86,6 +86,12 @@ export function CheckInPage() {
   useEffect(() => {
     if (nameError) document.getElementById('check-in-first-name')?.focus();
   }, [nameError]);
+  // The first name appears after the SMS code of a new account (WCAG 2.4.3).
+  useEffect(() => {
+    if (step === 'identify' && signedIn && known === false) {
+      document.getElementById('check-in-first-name')?.focus();
+    }
+  }, [known, signedIn, step]);
   const heading = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
   useEffect(() => {

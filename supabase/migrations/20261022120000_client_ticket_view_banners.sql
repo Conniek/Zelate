@@ -34,10 +34,16 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       'wait_offered', rq.status = 'active' and rq.is_hairdressing
         and coalesce(rqp.status::text, 'offline') <> 'absent',
       -- U-10 (E11, K26): the last change of time or place, with its reason.
-      'last_change', (select jsonb_build_object('type', e.type, 'reason', e.reason_code, 'at', e.created_at)
-        from public.ticket_events e
-        where e.ticket_id = t.id and e.type in ('estimate_changed', 'postponed')
-        order by e.created_at desc, e.id desc limit 1),
+      -- An estimate back within 10 min of the time it left is no longer explained.
+      'last_change', (select jsonb_build_object('type', l.type, 'reason', l.reason_code, 'at', l.created_at)
+        from (select e.type, e.reason_code, e.created_at, e.before
+              from public.ticket_events e
+              where e.ticket_id = t.id and e.type in ('estimate_changed', 'postponed')
+              order by e.created_at desc, e.id desc limit 1) l
+        where l.type = 'postponed'
+           or (t.estimated_start_at is not null
+               and (l.before ->> 'start_at' is null
+                    or abs(extract(epoch from t.estimated_start_at - (l.before ->> 'start_at')::timestamptz)) >= 600))),
       -- E13, as the engine's positionOf: his stylist's called client and the
       -- earlier estimates at that stylist; none without a stylist or a time,
       -- and none for an appointment.

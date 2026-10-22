@@ -568,8 +568,8 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
       const { reason_code, after } = eventReason(e.reason_code);
       await q.query(
         `insert into public.ticket_events (ticket_id, salon_id, type, actor_type,
-           actor_member_id, actor_profile_id, reason_code, command_id, after)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9::text::jsonb)`,
+           actor_member_id, actor_profile_id, reason_code, command_id, after, before)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9::text::jsonb, $10::text::jsonb)`,
         [
           e.ticket_id,
           w.salon_id,
@@ -580,6 +580,12 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
           reason_code,
           e.command_id,
           after === null ? null : JSON.stringify(after),
+          // U-10: the client view hides an explanation once the change is undone.
+          typeof e.previous_start_at === 'number'
+            ? JSON.stringify({
+                start_at: new Date(e.previous_start_at).toISOString(),
+              })
+            : null,
         ],
       );
     } else {

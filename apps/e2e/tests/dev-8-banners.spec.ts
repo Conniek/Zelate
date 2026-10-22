@@ -143,7 +143,9 @@ test('a client whose stylist is late chooses to wait for him (DEV-8, U-12)', asy
 }) => {
   test.skip(lateEvening(), 'queue full before midnight');
   await freeTestPhones();
-  const { salonId, slug, stylist } = await openSalon('client-stylist-late');
+  const { salonId, slug, manager, stylist } = await openSalon(
+    'client-stylist-late',
+  );
   const sam = await memberId(salonId, stylist.id);
   const asSam = await staff(stylist);
   await asSam('set_presence', { member_id: sam, status: 'available' });
@@ -161,7 +163,10 @@ test('a client whose stylist is late chooses to wait for him (DEV-8, U-12)', asy
     .click();
   await expect(client).toHaveURL(/\/ticket$/);
 
-  await asSam('set_presence', {
+  // Late and absent are the manager's to declare (E7).
+  await (
+    await staff(manager)
+  )('set_presence', {
     member_id: sam,
     status: 'late',
     until: new Date(Date.now() + 15 * 60_000).toISOString(),
