@@ -120,7 +120,7 @@ test('a client with an appointment checks in from the poster (DEV-8, U-14)', asy
   await next(client);
   await client.getByRole('radio', { name: 'Sam' }).check();
   await next(client);
-  await identify(client, '612345681', 'Lina');
+  await identify(client, '639980081', 'Lina');
   await client
     .getByRole('button', { name: fr('client', 'check_in.confirm') })
     .click();
@@ -155,7 +155,7 @@ test('a client whose stylist is late chooses to wait for him (DEV-8, U-12)', asy
   await client.getByRole('radio', { name: /Sam/ }).check();
   await next(client);
   await next(client);
-  await identify(client, '612345682', 'Malo');
+  await identify(client, '639980082', 'Malo');
   await client
     .getByRole('button', { name: fr('client', 'join.confirm') })
     .click();

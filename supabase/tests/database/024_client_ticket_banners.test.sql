@@ -3,7 +3,7 @@ begin;
 -- DEV-8 part 3 (U-10, U-12): « Attendre » offered or not, last change and reason.
 set local client_min_messages = warning;
 truncate public.salons, public.platform_admins, private.ticket_contacts cascade;
-select plan(4);
+select plan(7);
 
 alter table public.salons disable trigger salons_log_settings;
 alter table public.salon_members disable trigger salon_members_log_settings;
@@ -51,7 +51,12 @@ update public.stylist_presence set status = 'available' where member_id = 'a0000
 update public.salon_members set is_hairdressing = false where id = 'a0000000-0000-0000-0000-000000000902';
 select pg_temp.login('00000000-0000-0000-0000-000000000903');
 select is((public.my_ticket() -> 'ticket' ->> 'wait_offered')::boolean, false, 'no « Attendre » for someone who no longer cuts hair (E8)');
+select ok(not (public.my_ticket() -> 'ticket' ? 'tracking_token'), 'the view never carries the tracking token');
 reset role;
+
+-- The replaced view keeps its rights: only `my_ticket()` and `ticket-public` read it.
+select ok(not has_function_privilege('anon', 'private.client_ticket_view(uuid)', 'execute'), 'anon cannot call the view');
+select ok(not has_function_privilege('authenticated', 'private.client_ticket_view(uuid)', 'execute'), 'a signed-in user cannot call the view');
 
 select * from finish();
 rollback;

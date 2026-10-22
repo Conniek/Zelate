@@ -264,12 +264,14 @@ template = "Your code is {{ .Code }}"
 max_frequency = "30s"
 
 # Fixed code for local and CI end-to-end tests (no SMS provider involved).
+# Numbers of the ARCEP range kept for fiction (06 39 98 xx xx): nobody owns
+# them. Never push this section to a hosted project (TRD §11).
 [auth.sms.test_otp]
-33612345678 = "123456"
-33612345679 = "123456"
-33612345680 = "123456"
-33612345681 = "123456"
-33612345682 = "123456"
+33639980078 = "123456"
+33639980079 = "123456"
+33639980080 = "123456"
+33639980081 = "123456"
+33639980082 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]

@@ -1,6 +1,7 @@
 # TRD — Zelaté
 
-> **Technical Requirements Document** · version 0.9 · 22/10/2026 · statut : en vigueur (lots DEV)
+> **Technical Requirements Document** · version 0.10 · 22/10/2026 · statut : en vigueur (lots DEV)
+> v0.10 · 22/10/2026 : téléphones de test (`[auth.sms.test_otp]`) dans la plage ARCEP réservée à la fiction, jamais sur un projet hébergé (§11).
 > v0.9 · 22/10/2026 : lot DEV-8 — `my_ticket()` et `ticket-public` renvoient la même vue du ticket (`private.client_ticket_view`) ; la page client lit à nouveau toutes les 30 s et écoute `ticket:{id}` (session) ou `ticket-token:{clé}` (lien SMS) et `salon-public:{id}`.
 > v0.8 · 21/10/2026 : fin du lot DEV-7 — Edge Function `preview-reassignment` (S-13) ; `preview-presence-change` renvoie aussi le statut et le coiffeur avant et après (S-11).
 > v0.7 · 21/10/2026 : lot DEV-6 — `revoke-member-sessions` et `deactivate-member` (paquet `queue-service`), contrôle de session dans les lectures du personnel (ADR-019), RPC `stylist_context()`, tests de bout en bout dans la CI.
@@ -411,6 +412,8 @@ Ordre : installation → lint et formatage → types → tests unitaires → bas
 | Local         | `supabase start` (Docker)           | `pnpm dev`                         | `seed.sql` (salons fictifs) |
 | Préversion    | Projet Supabase « staging » (UE)    | Préversion Vercel par pull request | Jeu de démonstration        |
 | Production    | Projet Supabase « production » (UE) | Vercel production                  | Réelles                     |
+
+Les téléphones de test de `supabase/config.toml` (`[auth.sms.test_otp]`, code fixe, local et CI seulement) sont pris dans la plage ARCEP réservée à la fiction (06 39 98 xx xx) : aucun abonné réel. Cette section n'est jamais envoyée vers un projet hébergé (`supabase config push`) : en préversion et en production, `test_otp` reste vide.
 
 Variables d'environnement (noms définitifs, valeurs hors dépôt) : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_VAPID_PUBLIC_KEY`, `VITE_MAP_STYLE_URL`, `VITE_SENTRY_DSN` ; côté fonctions : `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `SMS_PROVIDER`, `SMS_API_KEY`, `SMS_SENDER`, `EMAIL_API_KEY`, `PHONE_HASH_SECRET` (32 caractères ou plus), `CRON_SECRET` (même valeur que le secret Vault `cron_secret`), `APP_CLIENT_URL`, `APP_PRO_URL`.
 

@@ -157,7 +157,7 @@ test('a client joins from the app and is served (DEV-8, U-04, U-06)', async ({
   const client = await phone(browser);
   await client.goto(`${CLIENT_APP}/salons/${slug}`);
   await client.getByRole('link', { name: fr('client', 'salon.join') }).click();
-  await join(client, '612345678', 'Inès');
+  await join(client, '639980078', 'Inès');
   const code = await ticketCode(client);
   expect(code).toMatch(/^[A-HJ-NP-Z2-9]{5}$/);
   await expect(
@@ -185,7 +185,7 @@ test('a client joins through the QR poster without an account and is served (DEV
   await client
     .getByRole('link', { name: fr('client', 'qr.choice.join_queue') })
     .click();
-  await join(client, '612345679', 'Noé', true);
+  await join(client, '639980079', 'Noé', true);
   const { data } = await db
     .from('tickets')
     .select('channel')
@@ -206,7 +206,7 @@ test('from the SMS link, the client declares a delay then cancels (DEV-8, F-C10,
   await client.goto(`${CLIENT_APP}/salons/${slug}`);
   await client.getByRole('link', { name: fr('client', 'salon.join') }).click();
   // Its own test phone: Auth allows one code per number every 30 s.
-  await join(client, '612345680', 'Inès');
+  await join(client, '639980080', 'Inès');
   const { data: ticket } = await db
     .from('tickets')
     .select('id, tracking_short_code')
