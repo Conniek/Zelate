@@ -75,13 +75,26 @@ async function join(
 
 /** The ticket code shown to the client, as the stylist will type it. */
 async function ticketCode(page: Page): Promise<string> {
-  const label = page.getByText(fr('client', 'ticket.code.label')).first();
-  await expect(label).toBeVisible();
-  const code = await page
-    .locator('[aria-label^="Code du ticket"]')
-    .first()
-    .innerText();
-  return code.trim();
+  // Read from the screen-reader text « Code du ticket : A F 2 K 9 ».
+  const spoken = page.getByText(/^Code du ticket :/).first();
+  await expect(spoken).toBeAttached();
+  return (await spoken.innerText())
+    .replace(/^Code du ticket :/, '')
+    .replace(/\s/g, '');
+}
+
+/** Runs a step; on failure, says what the page shows. */
+async function step<T>(
+  page: Page,
+  name: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    const shown = (await page.locator('body').innerText()).slice(0, 900);
+    throw new Error(`${name} failed; page shows: ${shown}`, { cause: error });
+  }
 }
 
 /** C-04 to C-08 on the stylist's phone, checked on the client's screen. */
@@ -203,38 +216,40 @@ test('from the SMS link, the client declares a delay then cancels (DEV-8, F-C10,
   // A new device without a session: only the link of the SMS.
   const link = await phone(browser);
   await link.goto(`${CLIENT_APP}/t/${ticket.tracking_short_code}`);
-  await link
-    .getByRole('button', { name: fr('client', 'ticket.actions.late') })
-    .click();
-  await link
-    .getByRole('dialog')
-    .getByRole('button', {
-      name: fr('client', 'ticket.late.option', { minutes: 10 }),
-    })
-    .click();
-  await expect
-    .poll(async () => {
-      const { data } = await db
-        .from('tickets')
-        .select('eta_response, declared_delay_minutes')
-        .eq('id', ticket.id)
-        .single();
-      return `${data?.eta_response}/${data?.declared_delay_minutes}`;
-    })
-    .toBe('late/10');
+  await step(link, 'link page', async () => {
+    await link
+      .getByRole('button', { name: fr('client', 'ticket.actions.late') })
+      .click();
+    await link
+      .getByRole('dialog')
+      .getByRole('button', {
+        name: fr('client', 'ticket.late.option', { minutes: 10 }),
+      })
+      .click();
+    await expect
+      .poll(async () => {
+        const { data } = await db
+          .from('tickets')
+          .select('eta_response, declared_delay_minutes')
+          .eq('id', ticket.id)
+          .single();
+        return `${data?.eta_response}/${data?.declared_delay_minutes}`;
+      })
+      .toBe('late/10');
 
-  await link
-    .getByRole('button', { name: fr('client', 'ticket.actions.cancel') })
-    .click();
-  await link
-    .getByRole('dialog')
-    .getByRole('button', { name: fr('client', 'cancel_dialog.confirm') })
-    .click();
-  await expect(
-    link.getByRole('heading', {
-      name: fr('client', 'ticket.end.title.cancelled'),
-    }),
-  ).toBeVisible();
+    await link
+      .getByRole('button', { name: fr('client', 'ticket.actions.cancel') })
+      .click();
+    await link
+      .getByRole('dialog')
+      .getByRole('button', { name: fr('client', 'cancel_dialog.confirm') })
+      .click();
+    await expect(
+      link.getByRole('heading', {
+        name: fr('client', 'ticket.end.title.cancelled'),
+      }),
+    ).toBeVisible();
+  });
   // The signed-in phone follows: its place is cancelled too.
   await expect(
     client.getByRole('heading', {
