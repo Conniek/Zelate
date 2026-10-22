@@ -48,7 +48,8 @@ select is((public.my_ticket() -> 'ticket' ->> 'wait_offered')::boolean, false, '
 reset role;
 
 update public.stylist_presence set status = 'available' where member_id = 'a0000000-0000-0000-0000-000000000902';
-update public.salon_members set is_hairdressing = false where id = 'a0000000-0000-0000-0000-000000000902';
+-- A stylist always cuts hair (check): a manager who stopped is the case.
+update public.salon_members set role = 'manager', is_hairdressing = false where id = 'a0000000-0000-0000-0000-000000000902';
 select pg_temp.login('00000000-0000-0000-0000-000000000903');
 select is((public.my_ticket() -> 'ticket' ->> 'wait_offered')::boolean, false, 'no « Attendre » for someone who no longer cuts hair (E8)');
 select ok(not (public.my_ticket() -> 'ticket' ? 'tracking_token'), 'the view never carries the tracking token');
