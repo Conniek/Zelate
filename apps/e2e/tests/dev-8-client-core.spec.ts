@@ -1,7 +1,7 @@
 import { devices, expect, test } from '@playwright/test';
 import type { Browser, Page } from '@playwright/test';
 import { fr } from './fr';
-import { db, forgetPhone, lateEvening, openSalon, proSignIn } from './seed';
+import { db, freeTestPhones, lateEvening, openSalon, proSignIn } from './seed';
 
 /**
  * DEV-8 « Fini quand » (IMPLEMENTATION_PLAN): a client joins from the app,
@@ -125,7 +125,7 @@ test('a client joins from the app and is served (DEV-8, U-04, U-06)', async ({
   browser,
 }) => {
   test.skip(lateEvening(), 'queue full before midnight');
-  await forgetPhone('33612345678');
+  await freeTestPhones();
   const { slug, stylist } = await openSalon('client-app');
 
   const stylistPage = await phone(browser);
@@ -151,7 +151,7 @@ test('a client joins through the QR poster without an account and is served (DEV
   browser,
 }) => {
   test.skip(lateEvening(), 'queue full before midnight');
-  await forgetPhone('33612345679');
+  await freeTestPhones();
   const { salonId, qrToken, stylist } = await openSalon('client-qr');
 
   const stylistPage = await phone(browser);

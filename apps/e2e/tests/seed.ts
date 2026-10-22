@@ -183,10 +183,25 @@ export async function proSignIn(page: Page, who: Account, next: string) {
     .click();
 }
 
-/** A test phone of `supabase/config.toml` starts the run with no account. */
-export async function forgetPhone(e164Digits: string) {
-  const { data } = await db.auth.admin.listUsers({ perPage: 1000 });
-  for (const user of data?.users ?? []) {
-    if (user.phone === e164Digits) await db.auth.admin.deleteUser(user.id);
-  }
+/**
+ * The test phones of `supabase/config.toml` are shared by every run: their
+ * places left by an earlier local run are cancelled, so that a new one can
+ * join (one active place per client).
+ */
+export async function freeTestPhones() {
+  const { data: salons } = await db
+    .from('salons')
+    .select('id')
+    .like('slug', 'e2e-client-%');
+  const ids = (salons ?? []).map((s) => s.id as string);
+  if (ids.length === 0) return;
+  await db
+    .from('tickets')
+    .update({
+      status: 'cancelled',
+      cancelled_at: new Date().toISOString(),
+      cancel_reason: 'client_cancelled',
+    })
+    .in('salon_id', ids)
+    .in('status', ['waiting', 'called', 'in_service', 'pending_confirmation']);
 }
