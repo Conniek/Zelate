@@ -15,14 +15,27 @@ export default defineConfig({
     locale: 'fr-FR',
     trace: 'retain-on-failure',
   },
-  webServer: {
-    command: 'corepack pnpm --filter @zelate/pro dev',
-    cwd: '../..',
-    url: 'http://localhost:5174',
-    reuseExistingServer: true,
-    env: {
-      VITE_SUPABASE_URL: env.apiUrl,
-      VITE_SUPABASE_ANON_KEY: env.anonKey,
+  // Zelaté Pro on 5174 (default base URL), the client app on 5173 (DEV-8).
+  webServer: [
+    {
+      command: 'corepack pnpm --filter @zelate/pro dev',
+      cwd: '../..',
+      url: 'http://localhost:5174',
+      reuseExistingServer: true,
+      env: {
+        VITE_SUPABASE_URL: env.apiUrl,
+        VITE_SUPABASE_ANON_KEY: env.anonKey,
+      },
     },
-  },
+    {
+      command: 'corepack pnpm --filter @zelate/client dev',
+      cwd: '../..',
+      url: 'http://localhost:5173',
+      reuseExistingServer: true,
+      env: {
+        VITE_SUPABASE_URL: env.apiUrl,
+        VITE_SUPABASE_ANON_KEY: env.anonKey,
+      },
+    },
+  ],
 });

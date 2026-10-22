@@ -71,6 +71,9 @@ importers:
       '@zelate/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@zelate/queue-service':
+        specifier: workspace:*
+        version: link:../../packages/queue-service
       '@zelate/ui':
         specifier: workspace:*
         version: link:../../packages/ui

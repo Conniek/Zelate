@@ -26,7 +26,7 @@ import {
   TICKET_INSTANT_FIELDS,
   eventReason,
 } from './mapping.ts';
-import type { LinkView, TicketLinkReader } from './link.ts';
+import type { TicketLinkReader } from './link.ts';
 import type {
   Broadcast,
   DayData,
@@ -665,33 +665,26 @@ async function applyWrites(q: SqlRunner, w: WriteSet): Promise<void> {
 export function sqlTicketLinkReader(q: SqlRunner): TicketLinkReader {
   return {
     async byLinkCode(code) {
+      // The same view as `my_ticket()` (F-C10 shows what F-C5 shows).
       const [row] = await q.query<{
-        view: Omit<LinkView, 'tracking_token'>;
+        view: {
+          ticket: Record<string, unknown>;
+          salon: Record<string, unknown>;
+        };
         tracking_token: string;
         created_at: unknown;
       }>(
-        `select jsonb_build_object(
-           'ticket', jsonb_build_object(
-             'id', t.id, 'salon_id', t.salon_id, 'service_date', t.service_date,
-             'short_code', t.short_code, 'kind', t.kind, 'scheduled_at', t.scheduled_at,
-             'display_name', t.display_name, 'status', t.status, 'queue_rank', t.queue_rank,
-             'planned_duration_minutes', t.planned_duration_minutes,
-             'estimated_start_at', t.estimated_start_at, 'eta_response', t.eta_response,
-             'declared_delay_minutes', t.declared_delay_minutes, 'arrived_at', t.arrived_at,
-             'called_at', t.called_at, 'started_at', t.started_at,
-             'notifications_consent', t.notifications_consent_at is not null),
-           'salon', to_jsonb(sv),
-           'assigned_stylist_first_name', st.first_name) as view,
-           t.tracking_token, t.created_at
+        `select private.client_ticket_view(t.id) as view, t.tracking_token, t.created_at
          from public.tickets t
-         join public.public_salons sv on sv.id = t.salon_id
-         left join public.public_stylists st on st.id = t.assigned_member_id
          where t.tracking_short_code = $1 and not t.is_test`,
         [code],
       );
-      if (!row) return null;
+      if (!row || !row.view) return null;
+      const name = row.view.ticket.assigned_stylist_first_name;
       return {
-        ...row.view,
+        ticket: row.view.ticket,
+        salon: row.view.salon,
+        assigned_stylist_first_name: typeof name === 'string' ? name : null,
         tracking_token: row.tracking_token,
         created_at: ms(row.created_at)!,
       };

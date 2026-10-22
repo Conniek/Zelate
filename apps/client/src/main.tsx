@@ -20,6 +20,36 @@ const router = createBrowserRouter([
     }),
     path: '/signin',
   },
+  {
+    lazy: async () => ({
+      Component: (await import('./routes/SalonPage')).SalonPage,
+    }),
+    path: '/salons/:slug',
+  },
+  {
+    lazy: async () => ({
+      Component: (await import('./routes/JoinPage')).JoinPage,
+    }),
+    path: '/salons/:slug/join',
+  },
+  {
+    lazy: async () => ({
+      Component: (await import('./routes/QrPage')).QrPage,
+    }),
+    path: '/q/:qrToken',
+  },
+  {
+    lazy: async () => ({
+      Component: (await import('./routes/TicketPage')).TicketPage,
+    }),
+    path: '/ticket',
+  },
+  {
+    lazy: async () => ({
+      Component: (await import('./routes/LinkTicketPage')).LinkTicketPage,
+    }),
+    path: '/t/:shortCode',
+  },
 ]);
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 
