@@ -32,14 +32,17 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       'reassignment_proposed_start_at', t.reassignment_proposed_start_at,
       'end_of_day_warned_at', t.end_of_day_warned_at,
       'end_of_day_choice', t.end_of_day_choice,
-      -- E13: clients before him at his stylist; no position for an appointment.
-      'position', case when t.status = 'waiting' and t.kind = 'queue' then (
+      -- E13, as the engine's positionOf: his stylist's called client and the
+      -- earlier estimates at that stylist; none without a stylist or a time,
+      -- and none for an appointment.
+      'position', case
+        when t.status = 'waiting' and t.kind = 'queue'
+         and t.estimated_member_id is not null and t.estimated_start_at is not null then (
         select count(*)::int from public.tickets o
-        where o.salon_id = t.salon_id and o.service_date = t.service_date
-          and o.status = 'waiting' and o.id <> t.id
-          and coalesce(o.assigned_member_id, o.estimated_member_id)
-              is not distinct from coalesce(t.assigned_member_id, t.estimated_member_id)
-          and o.estimated_start_at < t.estimated_start_at) end),
+        where o.salon_id = t.salon_id and o.service_date = t.service_date and o.id <> t.id
+          and ((o.status = 'called' and o.assigned_member_id = t.estimated_member_id)
+            or (o.status = 'waiting' and o.estimated_member_id = t.estimated_member_id
+                and o.estimated_start_at < t.estimated_start_at))) end),
     'salon', jsonb_build_object(
       'id', s.id, 'slug', s.slug, 'name', s.name, 'address_line', s.address_line,
       'postal_code', s.postal_code, 'city', s.city,

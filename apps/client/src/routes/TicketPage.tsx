@@ -34,13 +34,16 @@ export function TicketPage() {
         <TicketScreen live={live} stale={query.isError} view={query.data} />
       ) : query.isError ? (
         <Banner role="alert" tone="danger">
-          {t('ticket.offline', { time: '' })}
+          {t('ticket.offline_unknown')}
         </Banner>
       ) : (
         <section className="grid gap-3">
           <h2 className="text-h3">{t('ticket.none.title')}</h2>
           <p className="text-text-muted">{t('ticket.none.body')}</p>
-          <Link className="font-semibold text-link underline" to="/">
+          <Link
+            className="inline-flex min-h-11 items-center font-semibold text-link underline"
+            to="/"
+          >
             {t('ticket.none.find')}
           </Link>
         </section>

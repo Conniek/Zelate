@@ -21,7 +21,10 @@ export function LinkTicketPage() {
         <section className="grid gap-3">
           <h2 className="text-h3">{t('tracking.expired')}</h2>
           <p className="text-text-muted">{t('tracking.expired_hint')}</p>
-          <Link className="font-semibold text-link underline" to="/">
+          <Link
+            className="inline-flex min-h-11 items-center font-semibold text-link underline"
+            to="/"
+          >
             {t('ticket.end.rejoin')}
           </Link>
         </section>
@@ -34,7 +37,7 @@ export function LinkTicketPage() {
             view={query.data}
           />
           <Link
-            className="text-body-sm text-link underline"
+            className="inline-flex min-h-11 items-center text-body-sm text-link underline"
             to="/signin?next=%2Fticket"
           >
             {t('tracking.create_account')}
@@ -42,7 +45,7 @@ export function LinkTicketPage() {
         </>
       ) : query.isError ? (
         <Banner role="alert" tone="danger">
-          {t('ticket.offline', { time: '' })}
+          {t('ticket.offline_unknown')}
         </Banner>
       ) : (
         <div aria-busy="true">

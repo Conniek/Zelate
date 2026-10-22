@@ -1,0 +1,49 @@
+/** Map links and opening times shown by the client app (F-C2, F-C5). */
+import { parisDate, parisTime, isoWeekday } from '@zelate/queue-service/time';
+
+export interface Address {
+  address_line: string;
+  postal_code: string;
+  city: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+/** The device's map app: Apple Plans on Apple devices, `geo:` elsewhere. */
+export function directionsUrl(place: Address): string {
+  const address = `${place.address_line}, ${place.postal_code} ${place.city}`;
+  if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+    return `https://maps.apple.com/?daddr=${encodeURIComponent(address)}`;
+  }
+  const at =
+    place.latitude != null && place.longitude != null
+      ? `${place.latitude},${place.longitude}`
+      : '0,0';
+  return `geo:${at}?q=${encodeURIComponent(address)}`;
+}
+
+export interface OpeningRange {
+  weekday: number;
+  opens_at: string;
+  closes_at: string;
+}
+
+/** The next opening after `now`: days ahead (0 = today) and « 9:00 ». */
+export function nextOpening(
+  hours: readonly OpeningRange[],
+  now: number,
+): { daysAhead: number; weekday: number; time: string } | null {
+  const today = parisDate(now);
+  const nowTime = parisTime(now);
+  const start = isoWeekday(today);
+  for (let ahead = 0; ahead < 7; ahead += 1) {
+    const weekday = ((start - 1 + ahead) % 7) + 1;
+    const ranges = hours
+      .filter((h) => h.weekday === weekday)
+      .map((h) => h.opens_at.slice(0, 5))
+      .sort();
+    const next = ranges.find((opens) => ahead > 0 || opens > nowTime);
+    if (next) return { daysAhead: ahead, weekday, time: next };
+  }
+  return null;
+}

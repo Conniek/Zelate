@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Banner, Button, OtpField, PhoneField, useCountdown } from '@zelate/ui';
+import { Button, OtpField, PhoneField, useCountdown } from '@zelate/ui';
 import { confirmCode, hasProfile, requestCode } from '../lib/auth-api';
 import type { AuthErrorKey } from '../lib/auth-api';
 
@@ -25,11 +25,28 @@ export function PhoneCode({
   const [error, setError] = useState<AuthErrorKey | null>(null);
   const [busy, setBusy] = useState(false);
   const countdown = useCountdown(RESEND_SECONDS);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const errorText = error ? tErrors(error) : undefined;
+  const codeBox = useRef<HTMLDivElement>(null);
+  // The send button is gone once the code is asked: the focus goes to digit 1.
+  useEffect(() => {
+    if (step === 'code') codeBox.current?.querySelector('input')?.focus();
+  }, [step]);
+  // An error is linked to its field once it is rendered, then focused.
+  useEffect(() => {
+    if (phoneError || (error && step === 'phone')) {
+      document.getElementById('signin-phone')?.focus();
+    }
+  }, [error, phoneError, step]);
 
   async function sendCode(event?: FormEvent) {
     event?.preventDefault();
-    if (busy || phone.length !== 9) return;
+    if (busy) return;
+    if (phone.length !== 9) {
+      setPhoneError(t('signin.phone.invalid'));
+      return;
+    }
+    setPhoneError(null);
     setBusy(true);
     setError(null);
     const result = await requestCode(phone);
@@ -67,25 +84,20 @@ export function PhoneCode({
   if (step === 'phone') {
     return (
       <form className="grid gap-4" onSubmit={(e) => void sendCode(e)}>
-        {error ? (
-          <Banner role="alert" tone="danger">
-            {errorText}
-          </Banner>
-        ) : null}
         <PhoneField
+          error={phoneError ?? errorText}
           helpText={t('signin.phone.hint')}
+          id="signin-phone"
           label={t('signin.phone.label')}
-          onChange={setPhone}
+          onChange={(digits) => {
+            setPhoneError(null);
+            setError(null);
+            setPhone(digits);
+          }}
           prefix={t('signin.phone.prefix')}
           value={phone}
         />
-        <Button
-          aria-disabled={phone.length !== 9 || undefined}
-          fullWidth
-          loading={busy}
-          size="lg"
-          type="submit"
-        >
+        <Button fullWidth loading={busy} size="lg" type="submit">
           {t('signin.send_code')}
         </Button>
       </form>
@@ -93,7 +105,7 @@ export function PhoneCode({
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4" ref={codeBox}>
       <OtpField
         digitLabel={(index) => t('signin.code.digit_aria', { index })}
         disabled={busy}

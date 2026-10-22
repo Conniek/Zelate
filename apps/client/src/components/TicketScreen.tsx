@@ -1,12 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import { Banner, Button, ConnectionBanner, Dialog } from '@zelate/ui';
+import {
+  Banner,
+  Button,
+  ConnectionBanner,
+  CountdownBadge,
+  Dialog,
+} from '@zelate/ui';
 import { isActive } from '../lib/client-api';
 import type { ClientTicket, TicketSalon, TicketView } from '../lib/client-api';
-import { useClientCommand, useNow, useOnline, useTime } from '../lib/live';
+import {
+  useClientCommand,
+  useOnline,
+  usePageTitle,
+  useTime,
+} from '../lib/live';
+import { directionsUrl } from '../lib/places';
 
 const DELAYS = [5, 10, 15, 20, 30] as const;
+const STAGE_HEADING = 'stage-title';
 
 interface Props {
   view: TicketView;
@@ -14,106 +27,37 @@ interface Props {
   trackingToken?: string;
   /** Realtime is up; without it the page reads again every 30 s. */
   live: boolean;
-  /** The last read failed (offline, server down). */
+  /** The last reads failed (offline, server down). */
   stale: boolean;
 }
 
-/** Map app link: Apple Plans on iOS, `geo:` elsewhere (F-C2, F-C5). */
-function directionsUrl(salon: TicketSalon): string {
-  const address = `${salon.address_line}, ${salon.postal_code} ${salon.city}`;
-  if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
-    return `https://maps.apple.com/?daddr=${encodeURIComponent(address)}`;
-  }
-  if (salon.latitude !== null && salon.longitude !== null) {
-    return `geo:${salon.latitude},${salon.longitude}?q=${encodeURIComponent(address)}`;
-  }
-  return `geo:0,0?q=${encodeURIComponent(address)}`;
-}
-
+/** The code, spelled out for screen readers (« A F 2 K 9 »). */
 function TicketCode({ code }: { code: string }) {
   const { t } = useTranslation('client');
   return (
     <div className="grid gap-1 text-center">
       <p className="text-body-sm text-text-muted">{t('ticket.code.label')}</p>
-      <p
-        aria-label={t('ticket.code.aria', { code: code.split('').join(' ') })}
-        className="font-display text-display font-bold tracking-[0.2em] tabular-nums"
-      >
-        {code}
+      <p className="font-display text-display font-bold tracking-[0.2em] tabular-nums">
+        <span aria-hidden="true">{code}</span>
+        <span className="sr-only">
+          {t('ticket.code.aria', { code: code.split('').join(' ') })}
+        </span>
       </p>
     </div>
   );
 }
 
-/** F-C5 « C'est votre tour » with the 10-min countdown (H4). */
-function CalledScreen({
-  ticket,
-  salon,
-}: {
-  ticket: ClientTicket;
-  salon: TicketSalon;
-}) {
-  const { t } = useTranslation('client');
-  const { t: tCommon } = useTranslation('common');
-  const now = useNow();
-  const due = ticket.release_due_at ? Date.parse(ticket.release_due_at) : null;
-  const left = due === null ? null : Math.max(0, due - now);
-  const minutes = left === null ? null : Math.floor(left / 60_000);
-  const seconds = left === null ? 0 : Math.floor((left % 60_000) / 1000);
-  // Announced once a minute, not every second.
-  const [spoken, setSpoken] = useState('');
-  useEffect(() => {
-    if (minutes === null) return;
-    setSpoken(
-      t('ticket.called.countdown_aria', { minutes: Math.max(1, minutes + 1) }),
-    );
-  }, [minutes, t]);
+function Directions({ salon }: { salon: TicketSalon }) {
+  const { t } = useTranslation('common');
   return (
-    <section
-      aria-labelledby="called-title"
-      className="grid gap-5 rounded-xl bg-primary p-6 text-center text-text-on-primary"
+    <a
+      className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-strong px-4 font-semibold"
+      href={directionsUrl(salon)}
+      rel="noreferrer"
+      target="_blank"
     >
-      <h2
-        className="font-display text-h1 font-bold"
-        id="called-title"
-        tabIndex={-1}
-      >
-        {t('ticket.called.title')}
-      </h2>
-      <p className="text-body-lg">
-        {t('ticket.called.stylist', {
-          first_name: ticket.assigned_stylist_first_name ?? '',
-          salon_name: salon.name,
-        })}
-      </p>
-      <p className="text-body-sm">
-        {salon.address_line}, {salon.postal_code} {salon.city}
-      </p>
-      <div className="rounded-lg bg-surface p-4 text-text">
-        <TicketCode code={ticket.short_code} />
-        <p className="text-body-sm text-text-muted">
-          {t('ticket.called.code_hint')}
-        </p>
-      </div>
-      {left !== null ? (
-        <p aria-hidden="true" className="font-display text-h2 tabular-nums">
-          {t('ticket.called.countdown', {
-            remaining: `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
-          })}
-        </p>
-      ) : null}
-      <p aria-live="polite" className="sr-only">
-        {spoken}
-      </p>
-      <a
-        className="inline-flex min-h-11 items-center justify-center rounded-lg bg-surface px-4 font-semibold text-text"
-        href={directionsUrl(salon)}
-        rel="noreferrer"
-        target="_blank"
-      >
-        {tCommon('actions.directions')}
-      </a>
-    </section>
+      {t('actions.directions')}
+    </a>
   );
 }
 
@@ -142,10 +86,10 @@ function EndScreen({
         ? t('ticket.end.reason.no_show')
         : t(`ticket.end.reason.${cancelReason}`);
   return (
-    <section aria-labelledby="end-title" className="grid gap-4 text-center">
+    <section aria-labelledby={STAGE_HEADING} className="grid gap-4 text-center">
       <h2
-        className="font-display text-h1 font-bold"
-        id="end-title"
+        className="font-display text-h1 font-bold focus:outline-none"
+        id={STAGE_HEADING}
         tabIndex={-1}
       >
         {t(`ticket.end.title.${status}`)}
@@ -170,6 +114,33 @@ function EndScreen({
   );
 }
 
+/** One polite line when the position or the time really changes (DESIGN_SYSTEM §9). */
+function useChangeAnnouncement(ticket: ClientTicket): string {
+  const { t } = useTranslation('client');
+  const time = useTime();
+  const previous = useRef<{
+    position: number | null;
+    start: string | null;
+  } | null>(null);
+  const [text, setText] = useState('');
+  const start = ticket.estimated_start_at;
+  const position = ticket.position;
+  useEffect(() => {
+    const before = previous.current;
+    previous.current = { position, start };
+    if (!before || ticket.status !== 'waiting') return;
+    const parts: string[] = [];
+    if (position !== null && position !== before.position) {
+      parts.push(t('ticket.position', { count: position }));
+    }
+    if (start && start !== before.start) {
+      parts.push(t('ticket.estimated_time', { time: time(start) }));
+    }
+    if (parts.length > 0) setText(parts.join('. '));
+  }, [position, start, t, ticket.status, time]);
+  return text;
+}
+
 /** F-C5 to F-C8 and F-C10: the tracking screen of one ticket. */
 export function TicketScreen({ view, trackingToken, live, stale }: Props) {
   const { t } = useTranslation('client');
@@ -180,8 +151,16 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
   const { ticket, salon } = view;
   const [dialog, setDialog] = useState<'late' | 'cancel' | null>(null);
   const [notice, setNotice] = useState('');
+  const change = useChangeAnnouncement(ticket);
 
-  // The stage changes (called, arrived, ended): the focus follows (WCAG 2.4.3).
+  const called = ticket.status === 'called' && ticket.arrived_at === null;
+  const seated =
+    ticket.status === 'in_service' ||
+    (ticket.status === 'called' && ticket.arrived_at !== null);
+  usePageTitle(called ? t('ticket.called.title') : t('ticket.page_title'));
+
+  // The stage changes (called, arrived, ended): any dialog closes and the
+  // focus goes to the new heading (WCAG 2.4.3).
   const stage = `${ticket.status}|${ticket.arrived_at ?? ''}`;
   const first = useRef(true);
   useEffect(() => {
@@ -189,13 +168,18 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
       first.current = false;
       return;
     }
-    document.getElementById('stage-title')?.focus();
-    document.getElementById('called-title')?.focus();
-    document.getElementById('end-title')?.focus();
+    setDialog(null);
+    window.setTimeout(() => document.getElementById(STAGE_HEADING)?.focus(), 0);
   }, [stage]);
 
+  // The button that opened a dialog may be gone: the focus goes to the stage.
+  const focusStage = (event: Event) => {
+    event.preventDefault();
+    document.getElementById(STAGE_HEADING)?.focus();
+  };
+
   const lost = !online || (stale && !live);
-  const updated = salon.estimate_updated_at ?? ticket.estimated_start_at;
+  const updated = salon.estimate_updated_at;
 
   async function answerEta(
     response: 'on_time' | 'late' | 'cancel',
@@ -206,10 +190,9 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
       response,
       ...(delay ? { delay_minutes: delay } : {}),
     });
-    if (outcome.ok) {
-      setDialog(null);
-      if (response === 'late') setNotice(t('ticket.late.sent'));
-    }
+    if (!outcome.ok) return;
+    setDialog(null);
+    if (response === 'late') setNotice(t('ticket.late.sent'));
   }
 
   async function cancel() {
@@ -219,14 +202,17 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
     if (outcome.ok) setDialog(null);
   }
 
+  async function setConsent(consent: boolean) {
+    await command.run('set_notifications_consent', {
+      ticket_id: ticket.id,
+      consent,
+    });
+  }
+
   if (!isActive(ticket)) {
     return <EndScreen salon={salon} ticket={ticket} />;
   }
 
-  const called = ticket.status === 'called' && ticket.arrived_at === null;
-  const seated =
-    ticket.status === 'in_service' ||
-    (ticket.status === 'called' && ticket.arrived_at !== null);
   const askEta =
     ticket.status === 'waiting' &&
     ticket.turn_approaching_sent_at !== null &&
@@ -236,22 +222,67 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
     <div className="grid gap-5">
       <ConnectionBanner
         lost={lost}
-        lostLabel={t('ticket.offline', { time: updated ? time(updated) : '' })}
+        lostLabel={
+          updated
+            ? t('ticket.offline', { time: time(updated) })
+            : t('ticket.offline_unknown')
+        }
       />
       <p aria-live="polite" className="sr-only" role="status">
-        {notice}
+        {notice || change}
       </p>
 
-      {called ? <CalledScreen salon={salon} ticket={ticket} /> : null}
+      {called ? (
+        <section
+          aria-labelledby={STAGE_HEADING}
+          className="grid gap-5 rounded-xl border-2 border-success bg-success-subtle p-6 text-center"
+        >
+          <h2
+            className="font-display text-h1 font-bold text-success-text focus:outline-none"
+            id={STAGE_HEADING}
+            tabIndex={-1}
+          >
+            {t('ticket.called.title')}
+          </h2>
+          <p className="text-body-lg">
+            {t('ticket.called.stylist', {
+              first_name: ticket.assigned_stylist_first_name ?? '',
+              salon_name: salon.name,
+            })}
+          </p>
+          <p className="text-body-sm">
+            {salon.address_line}, {salon.postal_code} {salon.city}
+          </p>
+          <div className="rounded-lg bg-surface p-4">
+            <TicketCode code={ticket.short_code} />
+            <p className="text-body-sm text-text-muted">
+              {t('ticket.called.code_hint')}
+            </p>
+          </div>
+          {ticket.release_due_at ? (
+            <div className="flex justify-center">
+              {/* Read at 5 min and at 1 min only (DESIGN_SYSTEM §7.3). */}
+              <CountdownBadge
+                announce={(minutes) =>
+                  t('ticket.called.countdown_aria', { minutes })
+                }
+                deadline={Date.parse(ticket.release_due_at)}
+                label={t('ticket.called.countdown_label')}
+              />
+            </div>
+          ) : null}
+          <Directions salon={salon} />
+        </section>
+      ) : null}
 
       {seated ? (
         <section
-          aria-labelledby="stage-title"
+          aria-labelledby={STAGE_HEADING}
           className="grid gap-3 rounded-xl border border-border p-5"
         >
           <h2
-            className="font-display text-h2 font-bold"
-            id="stage-title"
+            className="font-display text-h2 font-bold focus:outline-none"
+            id={STAGE_HEADING}
             tabIndex={-1}
           >
             {t('ticket.arrived.title')}
@@ -262,12 +293,12 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
 
       {ticket.status === 'pending_confirmation' ? (
         <section
-          aria-labelledby="stage-title"
+          aria-labelledby={STAGE_HEADING}
           className="grid gap-3 rounded-xl border border-border p-5"
         >
           <h2
-            className="font-display text-h2 font-bold"
-            id="stage-title"
+            className="font-display text-h2 font-bold focus:outline-none"
+            id={STAGE_HEADING}
             tabIndex={-1}
           >
             {t('ticket.appointment.pending')}
@@ -280,63 +311,49 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
 
       {ticket.status === 'waiting' ? (
         <section
-          aria-labelledby="stage-title"
+          aria-labelledby={STAGE_HEADING}
           className="grid gap-4 rounded-xl border border-border bg-surface p-5 shadow-md"
         >
-          <h2 className="sr-only" id="stage-title" tabIndex={-1}>
+          <h2
+            className="text-center font-semibold focus:outline-none"
+            id={STAGE_HEADING}
+            tabIndex={-1}
+          >
             {salon.name}
           </h2>
-          <p className="text-center font-semibold">{salon.name}</p>
           <TicketCode code={ticket.short_code} />
-          <dl className="grid gap-2">
-            {ticket.kind === 'appointment' && ticket.scheduled_at ? (
-              <div>
-                <dt className="sr-only">
-                  {t('ticket.estimated_time', { time: '' })}
-                </dt>
-                <dd className="text-body-lg font-semibold">
-                  {t('ticket.appointment.times', {
-                    appointment_time: time(ticket.scheduled_at),
-                    start_time: ticket.estimated_start_at
-                      ? time(ticket.estimated_start_at)
-                      : '',
+          {ticket.kind === 'appointment' && ticket.scheduled_at ? (
+            <p className="text-body-lg font-semibold">
+              {t('ticket.appointment.times', {
+                appointment_time: time(ticket.scheduled_at),
+                start_time: ticket.estimated_start_at
+                  ? time(ticket.estimated_start_at)
+                  : '',
+              })}
+            </p>
+          ) : (
+            <>
+              {ticket.position !== null ? (
+                <p className="text-h3 font-semibold">
+                  {t('ticket.position', { count: ticket.position })}
+                </p>
+              ) : null}
+              {ticket.estimated_start_at ? (
+                <p className="text-body-lg">
+                  {t('ticket.estimated_time', {
+                    time: time(ticket.estimated_start_at),
                   })}
-                </dd>
-              </div>
-            ) : (
-              <>
-                {ticket.position !== null ? (
-                  <div>
-                    <dt className="sr-only">
-                      {t('ticket.position', { count: ticket.position })}
-                    </dt>
-                    <dd className="text-h3 font-semibold">
-                      {t('ticket.position', { count: ticket.position })}
-                    </dd>
-                  </div>
-                ) : null}
-                {ticket.estimated_start_at ? (
-                  <div>
-                    <dt className="sr-only">
-                      {t('ticket.estimated_time', { time: '' })}
-                    </dt>
-                    <dd className="text-body-lg">
-                      {t('ticket.estimated_time', {
-                        time: time(ticket.estimated_start_at),
-                      })}
-                    </dd>
-                  </div>
-                ) : null}
-              </>
-            )}
-            <div className="flex flex-wrap gap-x-2">
-              <dt className="text-text-muted">{t('ticket.stylist.label')}</dt>
-              <dd>
-                {ticket.requested_stylist_first_name ??
-                  t('ticket.stylist.first_available')}
-              </dd>
-            </div>
-          </dl>
+                </p>
+              ) : null}
+            </>
+          )}
+          <p>
+            <span className="text-text-muted">
+              {t('ticket.stylist.label')} :{' '}
+            </span>
+            {ticket.requested_stylist_first_name ??
+              t('ticket.stylist.first_available')}
+          </p>
           {updated ? (
             <p className="text-body-sm text-text-muted">
               {t('ticket.updated_at', { time: time(updated) })}
@@ -376,22 +393,36 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
         </Banner>
       ) : null}
 
+      {ticket.status === 'waiting' ||
+      ticket.status === 'pending_confirmation' ? (
+        // E17, K34: the anticipation messages, for this place only.
+        <div className="flex min-h-11 items-start gap-3">
+          <input
+            aria-describedby="consent-hint"
+            checked={ticket.notifications_consent}
+            className="mt-1 size-6"
+            id="ticket-consent"
+            onChange={(e) => void setConsent(e.target.checked)}
+            type="checkbox"
+          />
+          <div className="grid gap-1">
+            <label className="font-semibold" htmlFor="ticket-consent">
+              {t('join.summary.consent')}
+            </label>
+            <p className="text-body-sm text-text-muted" id="consent-hint">
+              {t('join.summary.consent_hint')}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid gap-2">
         {ticket.status === 'waiting' && ticket.kind === 'queue' && !askEta ? (
           <Button onClick={() => setDialog('late')} variant="secondary">
             {t('ticket.actions.late')}
           </Button>
         ) : null}
-        {!called ? (
-          <a
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-strong px-4 font-semibold"
-            href={directionsUrl(salon)}
-            rel="noreferrer"
-            target="_blank"
-          >
-            {tCommon('actions.directions')}
-          </a>
-        ) : null}
+        {!called ? <Directions salon={salon} /> : null}
         {ticket.status !== 'in_service' ? (
           <Button onClick={() => setDialog('cancel')} variant="ghost">
             {t('ticket.actions.cancel')}
@@ -402,6 +433,7 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
       <Dialog
         closeLabel={tCommon('actions.close')}
         description={t('ticket.late.hint')}
+        onCloseAutoFocus={focusStage}
         onOpenChange={(open) => setDialog(open ? 'late' : null)}
         open={dialog === 'late'}
         title={t('ticket.late.title')}
@@ -430,6 +462,7 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
       <Dialog
         closeLabel={tCommon('actions.close')}
         description={t('cancel_dialog.body')}
+        onCloseAutoFocus={focusStage}
         onOpenChange={(open) => setDialog(open ? 'cancel' : null)}
         open={dialog === 'cancel'}
         title={t('cancel_dialog.title')}

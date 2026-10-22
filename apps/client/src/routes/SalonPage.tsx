@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { Banner, Button, Skeleton } from '@zelate/ui';
 import { isActive } from '../lib/client-api';
+import { directionsUrl, nextOpening } from '../lib/places';
 import type { PublicSalon } from '../lib/client-api';
 import {
   useMyTicket,
@@ -68,7 +69,11 @@ export function SalonPage() {
   const salon = useSalon(slug);
   const session = useSession();
   const mine = useMyTicket(session.data === true);
-  usePageTitle(salon.data?.salon.name ?? t('salon.not_found.title'));
+  usePageTitle(
+    salon.isPending
+      ? t('salon.loading_title')
+      : (salon.data?.salon.name ?? t('salon.not_found.title')),
+  );
 
   if (salon.isPending) {
     return (
@@ -84,7 +89,10 @@ export function SalonPage() {
           {t('salon.not_found.title')}
         </h1>
         <p className="text-text-muted">{t('salon.not_found.body')}</p>
-        <Link className="font-semibold text-link underline" to="/">
+        <Link
+          className="inline-flex min-h-11 items-center font-semibold text-link underline"
+          to="/"
+        >
           {t('nearby_salons.link')}
         </Link>
       </main>
@@ -97,9 +105,26 @@ export function SalonPage() {
   const slots = new Map(
     (s.next_free_slots ?? []).map((x) => [x.service_id, x.start_at]),
   );
+  // F-C2: « Fermé · ouvre demain à 9h00 ».
+  const opening = nextOpening(data.opening_hours, Date.now());
+  const openingDay = opening
+    ? opening.daysAhead === 0
+      ? tCommon('days.today')
+      : opening.daysAhead === 1
+        ? tCommon('days.tomorrow')
+        : tCommon(`weekdays.${WEEKDAYS[opening.weekday - 1]!}`)
+    : null;
   const blocked =
     s.queue_status === 'closed'
-      ? t('salon.join_disabled.closed')
+      ? opening && openingDay
+        ? t('salon.join_disabled.closed_until', {
+            day: openingDay,
+            time: tCommon('formats.time', {
+              hours: String(Number(opening.time.slice(0, 2))),
+              minutes: opening.time.slice(3, 5),
+            }),
+          })
+        : t('salon.join_disabled.closed')
       : s.queue_status === 'paused'
         ? t('salon.join_disabled.paused')
         : s.is_full
@@ -160,7 +185,10 @@ export function SalonPage() {
               {t('salon.join')}
             </Button>
             {s.is_full ? (
-              <Link className="text-link underline" to="/">
+              <Link
+                className="inline-flex min-h-11 items-center text-link underline"
+                to="/"
+              >
                 {t('nearby_salons.link')}
               </Link>
             ) : null}
@@ -175,7 +203,7 @@ export function SalonPage() {
         )}
         <a
           className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-strong px-4 font-semibold"
-          href={`https://maps.apple.com/?daddr=${encodeURIComponent(address)}`}
+          href={directionsUrl(s)}
           rel="noreferrer"
           target="_blank"
         >

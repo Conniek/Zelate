@@ -121,11 +121,13 @@ function useChannel(topic: string | null, onMessage: () => void): boolean {
 /** F-C5: my ticket, on the private channel `ticket:{id}` and `salon-public:{id}`. */
 export function useMyTicket(enabled: boolean) {
   const queryClient = useQueryClient();
+  const [ticketLive, setTicketLive] = useState(false);
   const query = useQuery({
     queryKey: keys.myTicket,
     queryFn: loadMyTicket,
     enabled,
-    refetchInterval: POLL_MS,
+    // A fallback: realtime carries the changes while it is up.
+    refetchInterval: ticketLive ? false : POLL_MS,
     refetchOnWindowFocus: true,
     // ADR-007 spirit for clients: nothing kept once the page is left.
     gcTime: 60_000,
@@ -134,23 +136,25 @@ export function useMyTicket(enabled: boolean) {
     void queryClient.invalidateQueries({ queryKey: keys.myTicket });
   }, [queryClient]);
   const view = query.data ?? null;
-  const ticketLive = useChannel(
+  const subscribed = useChannel(
     view ? `ticket:${view.ticket.id}` : null,
     refresh,
   );
+  useEffect(() => setTicketLive(subscribed), [subscribed]);
   // Times move with the whole queue: the public salon channel says when.
   useChannel(view ? `salon-public:${view.ticket.salon_id}` : null, refresh);
-  return { query, live: ticketLive, refresh };
+  return { query, live: subscribed, refresh };
 }
 
 /** F-C10: the ticket of an SMS link, on `ticket-token:{key}`. */
 export function useLinkTicket(code: string) {
   const queryClient = useQueryClient();
+  const [linkLive, setLinkLive] = useState(false);
   const query = useQuery({
     queryKey: keys.link(code),
     queryFn: () => loadLinkTicket(code),
     refetchInterval: (q) =>
-      q.state.error instanceof LinkExpired ? false : POLL_MS,
+      q.state.error instanceof LinkExpired || linkLive ? false : POLL_MS,
     refetchOnWindowFocus: true,
     retry: (count, error) => !(error instanceof LinkExpired) && count < 2,
     gcTime: 60_000,
@@ -171,6 +175,7 @@ export function useLinkTicket(code: string) {
     };
   }, [token]);
   const live = useChannel(topic, refresh);
+  useEffect(() => setLinkLive(live), [live]);
   useChannel(
     query.data ? `salon-public:${query.data.ticket.salon_id}` : null,
     refresh,

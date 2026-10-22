@@ -70,14 +70,16 @@
     "join_disabled": {
       "paused": "File en pause, réessayez dans quelques minutes",
       "full": "Complet pour aujourd'hui",
-      "closed": "File fermée pour le moment"
+      "closed": "File fermée pour le moment",
+      "closed_until": "Fermé · ouvre {day} à {time}"
     },
     "not_found": {
       "title": "Salon introuvable",
       "body": "Ce salon n'existe pas ou n'est plus visible sur Zelaté."
     },
     "closed_today": "fermé",
-    "service_line": "{duration} · {price}"
+    "service_line": "{duration} · {price}",
+    "loading_title": "Salon"
   },
   "nearby_salons": {
     "link": "Salons proches"
@@ -87,7 +89,8 @@
     "phone": {
       "label": "Numéro de téléphone mobile",
       "prefix": "+33",
-      "hint": "Le salon ne voit jamais votre numéro."
+      "hint": "Le salon ne voit jamais votre numéro.",
+      "invalid": "Saisissez les 9 chiffres de votre numéro, sans le 0 du début."
     },
     "send_code": "Recevoir le code",
     "code": {
@@ -112,7 +115,8 @@
       "summary": "Vérifiez et confirmez"
     },
     "service": {
-      "unknown": "Je ne sais pas encore"
+      "unknown": "Je ne sais pas encore",
+      "required": "Choisissez une prestation, ou « Je ne sais pas encore »."
     },
     "stylist": {
       "first_available": "Premier disponible",
@@ -140,7 +144,8 @@
     "guard": {
       "already_has_ticket": "Vous avez déjà une place"
     },
-    "view_my_ticket": "Voir ma place"
+    "view_my_ticket": "Voir ma place",
+    "page_title": "{step} – {salon_name}"
   },
   "qr": {
     "header": "Vous êtes chez {salon_name}",
@@ -243,7 +248,8 @@
       "stylist": "{first_name} vous attend chez {salon_name}",
       "code_hint": "Donnez ce code à votre coiffeur en arrivant",
       "countdown": "Temps restant pour arriver : {remaining}",
-      "countdown_aria": "{minutes, plural, =1 {Plus qu'une minute pour arriver} other {Plus que # minutes pour arriver}}"
+      "countdown_aria": "{minutes, plural, =1 {Plus qu'une minute pour arriver} other {Plus que # minutes pour arriver}}",
+      "countdown_label": "Place libérée dans"
     },
     "arrived": {
       "title": "Installez-vous",
@@ -282,7 +288,8 @@
       "body": "Vous n'avez pas de place aujourd'hui. Choisissez un salon pour en prendre une.",
       "find": "Trouver un salon"
     },
-    "page_title": "Ma place"
+    "page_title": "Ma place",
+    "offline_unknown": "Connexion perdue : l'écran se mettra à jour au retour du réseau."
   },
   "cancel_dialog": {
     "title": "Annuler votre place ?",

@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -10,6 +11,7 @@ import {
 import { parisDate, parisInstant } from '@zelate/queue-service/time';
 import { Banner, Button, Skeleton, TextField } from '@zelate/ui';
 import { PhoneCode } from '../components/PhoneCode';
+import { hasProfile } from '../lib/auth-api';
 import { isActive } from '../lib/client-api';
 import {
   useClientCommand,
@@ -25,6 +27,9 @@ const STEPS: Step[] = ['service', 'stylist', 'arrival', 'identify', 'summary'];
 const UNKNOWN = 'unknown';
 const FIRST_AVAILABLE = '';
 const CLOSED_CODES = ['queue_closed', 'queue_paused', 'queue_full'];
+
+const latest = (a: string | null, b: string): string =>
+  a !== null && Date.parse(a) > Date.parse(b) ? a : b;
 
 /**
  * `/salons/:slug/join` (F-C3, U-04) and its QR variant `?via=qr` (F-C4,
@@ -44,7 +49,6 @@ export function JoinPage() {
   const signedIn = session.data === true;
   const mine = useMyTicket(signedIn);
   const command = useClientCommand();
-  usePageTitle(t('salon.join'));
 
   const [step, setStep] = useState<Step>('service');
   const [serviceId, setServiceId] = useState<string | null>(null);
@@ -58,6 +62,41 @@ export function JoinPage() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
+  const [serviceError, setServiceError] = useState<string | null>(null);
+  // Signed in before (an SMS code on /signin, then the app closed): his first
+  // name may still be missing, and `join_queue` would refuse (K30).
+  const profile = useQuery({
+    queryKey: ['has-profile'],
+    queryFn: hasProfile,
+    enabled: signedIn && known === null,
+  });
+  useEffect(() => {
+    if (profile.data !== undefined && known === null) setKnown(profile.data);
+  }, [known, profile.data]);
+  const title = t(
+    `join.steps.${step === 'identify' ? 'identification' : step}`,
+  );
+  usePageTitle(
+    t('join.page_title', {
+      step: title,
+      salon_name: salon.data?.salon.name ?? '',
+    }),
+  );
+  // An error is linked to its field once rendered, then focused (WCAG 3.3.1).
+  useEffect(() => {
+    if (arrivalError) document.getElementById('arrival-time')?.focus();
+  }, [arrivalError]);
+  useEffect(() => {
+    if (nameError) document.getElementById('join-first-name')?.focus();
+  }, [nameError]);
+  useEffect(() => {
+    if (serviceError) document.getElementById('service-error')?.focus();
+  }, [serviceError]);
+  useEffect(() => {
+    if (step === 'identify' && signedIn && known === false) {
+      document.getElementById('join-first-name')?.focus();
+    }
+  }, [known, signedIn, step]);
 
   // Each step moves the focus to its heading (WCAG 2.4.3).
   const heading = useRef<HTMLHeadingElement>(null);
@@ -119,7 +158,6 @@ export function JoinPage() {
       const at = arrivalInstant();
       if (!at || Date.parse(at) <= Date.now()) {
         setArrivalError(t('join.arrival.time_future'));
-        document.getElementById('arrival-time')?.focus();
         return;
       }
     }
@@ -130,7 +168,6 @@ export function JoinPage() {
   async function confirm() {
     if (known === false && firstName.trim() === '') {
       setNameError(t('join.summary.first_name_required'));
-      document.getElementById('join-first-name')?.focus();
       return;
     }
     const at = arrivalInstant();
@@ -154,10 +191,6 @@ export function JoinPage() {
     setRefusal(outcome.code);
   }
 
-  const title = t(
-    `join.steps.${step === 'identify' ? 'identification' : step}`,
-  );
-
   return (
     <main className="mx-auto grid w-full max-w-xl gap-5 px-5 py-8">
       {viaQr ? (
@@ -179,7 +212,20 @@ export function JoinPage() {
       </h1>
 
       {step === 'service' ? (
-        <fieldset className="grid gap-2">
+        <fieldset
+          aria-describedby={serviceError ? 'service-error' : undefined}
+          className="grid gap-2"
+        >
+          {serviceError ? (
+            <p
+              className="font-semibold text-danger-text focus:outline-none"
+              id="service-error"
+              role="alert"
+              tabIndex={-1}
+            >
+              {serviceError}
+            </p>
+          ) : null}
           <legend className="sr-only">{title}</legend>
           {[
             ...data.services.map((s) => ({
@@ -196,7 +242,10 @@ export function JoinPage() {
               <input
                 checked={serviceId === option.id}
                 name="service"
-                onChange={() => setServiceId(option.id)}
+                onChange={() => {
+                  setServiceError(null);
+                  setServiceId(option.id);
+                }}
                 type="radio"
               />
               <span className="flex-1">{option.label}</span>
@@ -331,7 +380,8 @@ export function JoinPage() {
                 <dt className="text-text-muted">
                   {t('join.summary.estimated_time')}
                 </dt>
-                <dd>{time(arrivalInstant() ?? asap)}</dd>
+                {/* Never earlier than the estimate: arriving early does not move the queue. */}
+                <dd>{time(latest(arrivalInstant(), asap))}</dd>
               </div>
             ) : null}
           </dl>
@@ -360,11 +410,17 @@ export function JoinPage() {
             </Banner>
           ) : null}
           {refusal === 'already_has_active_ticket' ? (
-            <Link className="font-semibold text-link underline" to="/ticket">
+            <Link
+              className="inline-flex min-h-11 items-center font-semibold text-link underline"
+              to="/ticket"
+            >
               {t('join.view_my_ticket')}
             </Link>
           ) : refusal && CLOSED_CODES.includes(refusal) ? (
-            <Link className="font-semibold text-link underline" to="/">
+            <Link
+              className="inline-flex min-h-11 items-center font-semibold text-link underline"
+              to="/"
+            >
               {t('nearby_salons.link')}
             </Link>
           ) : null}
@@ -385,11 +441,10 @@ export function JoinPage() {
         </Button>
         {step === 'service' || step === 'stylist' ? (
           <Button
-            aria-disabled={
-              (step === 'service' && serviceId === null) || undefined
-            }
             onClick={() =>
-              step === 'service' && serviceId === null ? undefined : forward()
+              step === 'service' && serviceId === null
+                ? setServiceError(t('join.service.required'))
+                : forward()
             }
           >
             {tCommon('actions.next')}
@@ -401,7 +456,6 @@ export function JoinPage() {
             onClick={() => {
               if (firstName.trim() === '') {
                 setNameError(t('join.summary.first_name_required'));
-                document.getElementById('join-first-name')?.focus();
                 return;
               }
               forward();

@@ -11,8 +11,8 @@ import { db, freeTestPhones, lateEvening, openSalon, proSignIn } from './seed';
  */
 const CLIENT_APP = 'http://localhost:5173';
 const CODE = '123456';
-// Realtime, or the next read 30 s later (PRD §6).
-const LIVE = { timeout: 40_000 };
+// Under the 30-s fallback read (PRD §6): only realtime can deliver in time.
+const LIVE = { timeout: 20_000 };
 
 async function phone(browser: Browser): Promise<Page> {
   const context = await browser.newContext({ ...devices['iPhone 13'] });
@@ -20,7 +20,12 @@ async function phone(browser: Browser): Promise<Page> {
 }
 
 /** F-C3 steps 1 to 5, the SMS code included. */
-async function join(page: Page, nationalDigits: string, firstName: string) {
+async function join(
+  page: Page,
+  nationalDigits: string,
+  firstName: string,
+  newAccount = false,
+) {
   await page.getByRole('radio', { name: /Coupe/ }).check();
   await page
     .getByRole('button', { name: fr('common', 'actions.next') })
@@ -56,6 +61,8 @@ async function join(page: Page, nationalDigits: string, firstName: string) {
     name: fr('client', 'join.confirm'),
   });
   await expect(name.or(summary)).toBeVisible();
+  // U-05 « sans compte préalable »: the first name is asked.
+  if (newAccount) await expect(name).toBeVisible();
   if (await name.isVisible()) {
     await name.fill(firstName);
     await page
@@ -165,7 +172,7 @@ test('a client joins through the QR poster without an account and is served (DEV
   await client
     .getByRole('link', { name: fr('client', 'qr.choice.join_queue') })
     .click();
-  await join(client, '612345679', 'Noé');
+  await join(client, '612345679', 'Noé', true);
   const { data } = await db
     .from('tickets')
     .select('channel')
@@ -174,4 +181,64 @@ test('a client joins through the QR poster without an account and is served (DEV
   expect(data?.channel).toBe('qr');
 
   await serve(client, stylistPage, await ticketCode(client));
+});
+
+test('from the SMS link, the client declares a delay then cancels (DEV-8, F-C10, U-07, U-08)', async ({
+  browser,
+}) => {
+  test.skip(lateEvening(), 'queue full before midnight');
+  await freeTestPhones();
+  const { salonId, slug } = await openSalon('client-link');
+  const client = await phone(browser);
+  await client.goto(`${CLIENT_APP}/salons/${slug}`);
+  await client.getByRole('link', { name: fr('client', 'salon.join') }).click();
+  await join(client, '612345678', 'Inès');
+  const { data: ticket } = await db
+    .from('tickets')
+    .select('id, tracking_short_code')
+    .eq('salon_id', salonId)
+    .single();
+  if (!ticket) throw new Error('ticket not found');
+
+  // A new device without a session: only the link of the SMS.
+  const link = await phone(browser);
+  await link.goto(`${CLIENT_APP}/t/${ticket.tracking_short_code}`);
+  await link
+    .getByRole('button', { name: fr('client', 'ticket.actions.late') })
+    .click();
+  await link
+    .getByRole('dialog')
+    .getByRole('button', {
+      name: fr('client', 'ticket.late.option', { minutes: 10 }),
+    })
+    .click();
+  await expect
+    .poll(async () => {
+      const { data } = await db
+        .from('tickets')
+        .select('eta_response, declared_delay_minutes')
+        .eq('id', ticket.id)
+        .single();
+      return `${data?.eta_response}/${data?.declared_delay_minutes}`;
+    })
+    .toBe('late/10');
+
+  await link
+    .getByRole('button', { name: fr('client', 'ticket.actions.cancel') })
+    .click();
+  await link
+    .getByRole('dialog')
+    .getByRole('button', { name: fr('client', 'cancel_dialog.confirm') })
+    .click();
+  await expect(
+    link.getByRole('heading', {
+      name: fr('client', 'ticket.end.title.cancelled'),
+    }),
+  ).toBeVisible();
+  // The signed-in phone follows: its place is cancelled too.
+  await expect(
+    client.getByRole('heading', {
+      name: fr('client', 'ticket.end.title.cancelled'),
+    }),
+  ).toBeVisible(LIVE);
 });

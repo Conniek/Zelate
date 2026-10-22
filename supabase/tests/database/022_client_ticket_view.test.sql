@@ -3,7 +3,7 @@ begin;
 -- DEV-8 (F-C5, E13): the client's view of his ticket.
 set local client_min_messages = warning;
 truncate public.salons, public.platform_admins, private.ticket_contacts cascade;
-select plan(7);
+select plan(9);
 
 alter table public.salons disable trigger salons_log_settings;
 alter table public.salon_members disable trigger salon_members_log_settings;
@@ -46,6 +46,19 @@ select pg_temp.login('00000000-0000-0000-0000-000000000704');
 select is(public.my_ticket() -> 'ticket' ->> 'short_code', 'BBBBB', 'my_ticket returns the client''s own ticket');
 select is((public.my_ticket() -> 'ticket' ->> 'position')::int, 1, 'position counts the clients before him at his stylist (E13)');
 select ok(not (public.my_ticket()::text ~ 'tokView|xxxxxxV'), 'my_ticket never returns the tracking token or link');
+reset role;
+
+-- Awa is called by Sam: she still counts before Bob (E13, positionOf).
+update public.tickets set status = 'called', assigned_member_id = 'a0000000-0000-0000-0000-000000000702', called_at = now()
+where id = 'b0000000-0000-0000-0000-000000000701';
+select pg_temp.login('00000000-0000-0000-0000-000000000704');
+select is((public.my_ticket() -> 'ticket' ->> 'position')::int, 1, 'the stylist''s called client counts before him');
+reset role;
+
+-- Without an expected stylist there is no position, not « nobody before you ».
+update public.tickets set estimated_member_id = null where id = 'b0000000-0000-0000-0000-000000000702';
+select pg_temp.login('00000000-0000-0000-0000-000000000704');
+select is(public.my_ticket() -> 'ticket' ->> 'position', null, 'no position without an expected stylist');
 select is(public.my_ticket() -> 'salon' ->> 'name', 'Salon Vue', 'my_ticket includes the salon');
 reset role;
 
