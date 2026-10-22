@@ -77,7 +77,7 @@ async function join(
 async function ticketCode(page: Page): Promise<string> {
   // Read from the screen-reader text « Code du ticket : A F 2 K 9 ».
   const spoken = page.getByText(/^Code du ticket :/).first();
-  await expect(spoken).toBeAttached();
+  await step(page, 'ticket code', () => expect(spoken).toBeAttached());
   return (await spoken.innerText())
     .replace(/^Code du ticket :/, '')
     .replace(/\s/g, '');
