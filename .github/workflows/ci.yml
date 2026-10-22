@@ -173,5 +173,7 @@ jobs:
             # The end of the output as an annotation, readable without the log files.
             echo "::error title=e2e::$(tail -c 15000 /tmp/e2e.log | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')"
             echo "::error title=functions::$(tail -c 4000 /tmp/functions.log | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')"
+            docker ps --format '{{.Names}}' | grep -E 'supabase_auth' | head -1 | xargs -r docker logs --tail 60 > /tmp/auth.log 2>&1 || true
+            echo "::error title=auth::$(grep -iE 'error|warn|sms|otp|hook' /tmp/auth.log | tail -c 4000 | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')"
             exit 1
           }
