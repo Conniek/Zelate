@@ -62,10 +62,32 @@ if (!rootElement) {
 if (sentryDsn) {
   void import('@sentry/react')
     .then(({ init }) => {
+      // The SMS link code is a bearer credential (ADR-006): never sent to Sentry.
+      const redact = (text: string) =>
+        text.replace(/\/t\/[A-Za-z0-9]{8}/g, '/t/[link]');
       init({
         dsn: sentryDsn,
         environment: import.meta.env.MODE,
         sendDefaultPii: false,
+        beforeSend(event) {
+          if (event.request?.url) event.request.url = redact(event.request.url);
+          return event;
+        },
+        beforeBreadcrumb(breadcrumb) {
+          const url = breadcrumb.data?.url;
+          if (typeof url === 'string' && breadcrumb.data) {
+            breadcrumb.data.url = redact(url);
+          }
+          if (breadcrumb.message)
+            breadcrumb.message = redact(breadcrumb.message);
+          if (breadcrumb.data && typeof breadcrumb.data.to === 'string') {
+            breadcrumb.data.to = redact(breadcrumb.data.to);
+          }
+          if (breadcrumb.data && typeof breadcrumb.data.from === 'string') {
+            breadcrumb.data.from = redact(breadcrumb.data.from);
+          }
+          return breadcrumb;
+        },
       });
     })
     .catch((error: unknown) => {

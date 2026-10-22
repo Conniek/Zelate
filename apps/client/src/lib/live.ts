@@ -80,32 +80,41 @@ export function useSession() {
   });
 }
 
-/** Listens to one channel; any message means « read again ». */
-function useChannel(
-  topic: string | null,
-  isPrivate: boolean,
-  onMessage: () => void,
-): boolean {
+/**
+ * Listens to one channel; a message with a newer `version` means « read
+ * again », at most once per 300 ms. Every channel is private: the server
+ * sends private broadcasts only, and RLS lets anon read the public topics
+ * (`salon-public:*`, `ticket-token:*`), so nobody can broadcast on them.
+ */
+function useChannel(topic: string | null, onMessage: () => void): boolean {
   const [subscribed, setSubscribed] = useState(false);
   useEffect(() => {
     if (!topic) return undefined;
     let cancelled = false;
-    const channel = supabase.channel(topic, {
-      config: { private: isPrivate },
-    });
-    const ready = isPrivate ? supabase.realtime.setAuth() : Promise.resolve();
-    void ready.then(() => {
+    let last = 0;
+    let timer: number | undefined;
+    const channel = supabase.channel(topic, { config: { private: true } });
+    void supabase.realtime.setAuth().then(() => {
       if (cancelled) return;
       channel
-        .on('broadcast', { event: '*' }, onMessage)
+        .on('broadcast', { event: '*' }, ({ payload }) => {
+          const version = Number((payload as { version?: unknown })?.version);
+          if (Number.isFinite(version)) {
+            if (version <= last) return;
+            last = version;
+          }
+          window.clearTimeout(timer);
+          timer = window.setTimeout(onMessage, 300);
+        })
         .subscribe((status) => setSubscribed(status === 'SUBSCRIBED'));
     });
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
       setSubscribed(false);
       void supabase.removeChannel(channel);
     };
-  }, [isPrivate, onMessage, topic]);
+  }, [onMessage, topic]);
   return subscribed;
 }
 
@@ -127,15 +136,10 @@ export function useMyTicket(enabled: boolean) {
   const view = query.data ?? null;
   const ticketLive = useChannel(
     view ? `ticket:${view.ticket.id}` : null,
-    true,
     refresh,
   );
   // Times move with the whole queue: the public salon channel says when.
-  useChannel(
-    view ? `salon-public:${view.ticket.salon_id}` : null,
-    false,
-    refresh,
-  );
+  useChannel(view ? `salon-public:${view.ticket.salon_id}` : null, refresh);
   return { query, live: ticketLive, refresh };
 }
 
@@ -166,10 +170,9 @@ export function useLinkTicket(code: string) {
       cancelled = true;
     };
   }, [token]);
-  const live = useChannel(topic, false, refresh);
+  const live = useChannel(topic, refresh);
   useChannel(
     query.data ? `salon-public:${query.data.ticket.salon_id}` : null,
-    false,
     refresh,
   );
   return { query, live, refresh };
@@ -188,7 +191,6 @@ export function useSalon(slug: string) {
   }, [queryClient, slug]);
   useChannel(
     query.data ? `salon-public:${query.data.salon.id}` : null,
-    false,
     refresh,
   );
   return query;

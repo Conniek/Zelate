@@ -97,10 +97,12 @@ export class LinkExpired extends Error {}
 export async function loadLinkTicket(
   code: string,
 ): Promise<TicketView & { tracking_token: string }> {
-  const response = await fetch(
-    `${supabaseUrl}/functions/v1/ticket-public?code=${encodeURIComponent(code)}`,
-    { headers: { apikey: supabaseAnonKey } },
-  );
+  // In the body, never in a URL: no proxy or log keeps the code (ADR-006).
+  const response = await fetch(`${supabaseUrl}/functions/v1/ticket-public`, {
+    body: JSON.stringify({ code }),
+    headers: { apikey: supabaseAnonKey, 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
   if (response.status === 410) throw new LinkExpired();
   const body = (await response.json().catch(() => null)) as {
     ok?: boolean;
