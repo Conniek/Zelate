@@ -183,7 +183,10 @@
   "check_in": {
     "progress": "Étape {step} sur {total}",
     "time": {
-      "label": "Mon rendez-vous est à…"
+      "label": "Mon rendez-vous est à…",
+      "choose": "Choisir l'heure",
+      "required": "Choisissez l'heure de votre rendez-vous.",
+      "none_today": "Le salon est fermé aujourd'hui : impossible de vous signaler."
     },
     "stylist": {
       "label": "Avec quel coiffeur ?",
@@ -195,7 +198,8 @@
       "time": "Heure du rendez-vous",
       "stylist": "Coiffeur"
     },
-    "confirm": "Me signaler"
+    "confirm": "Me signaler",
+    "page_title": "Se signaler · {step} · {salon_name}"
   },
   "ticket": {
     "code": {

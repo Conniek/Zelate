@@ -34,6 +34,12 @@ const router = createBrowserRouter([
   },
   {
     lazy: async () => ({
+      Component: (await import('./routes/CheckInPage')).CheckInPage,
+    }),
+    path: '/salons/:slug/check-in',
+  },
+  {
+    lazy: async () => ({
       Component: (await import('./routes/QrPage')).QrPage,
     }),
     path: '/q/:qrToken',

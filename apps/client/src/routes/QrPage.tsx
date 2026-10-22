@@ -44,6 +44,14 @@ export function QrPage() {
       >
         {t('qr.choice.join_queue')}
       </Link>
+      {/* F-C12: the token rides in the navigation state, never in the URL. */}
+      <Link
+        className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border-strong px-5 font-semibold"
+        state={{ qrToken }}
+        to={`/salons/${slug}/check-in`}
+      >
+        {t('qr.choice.have_appointment')}
+      </Link>
     </main>
   );
 }

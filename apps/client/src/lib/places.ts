@@ -47,3 +47,27 @@ export function nextOpening(
   }
   return null;
 }
+
+const minutesOf = (time: string): number => {
+  const [h, m] = time.split(':').map(Number);
+  return h! * 60 + m!;
+};
+
+/** F-C12: today's opening day in steps of `step` minutes, « 09:00 » to the last one before closing. */
+export function todaySlots(
+  hours: readonly OpeningRange[],
+  now: number,
+  step = 5,
+): string[] {
+  const weekday = isoWeekday(parisDate(now));
+  const out: string[] = [];
+  for (const range of hours.filter((h) => h.weekday === weekday)) {
+    const end = Math.min(minutesOf(range.closes_at), 24 * 60);
+    for (let m = minutesOf(range.opens_at); m < end; m += step) {
+      out.push(
+        `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`,
+      );
+    }
+  }
+  return [...new Set(out)].sort();
+}

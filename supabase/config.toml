@@ -268,6 +268,8 @@ max_frequency = "30s"
 33612345678 = "123456"
 33612345679 = "123456"
 33612345680 = "123456"
+33612345681 = "123456"
+33612345682 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]

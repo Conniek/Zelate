@@ -76,6 +76,7 @@ function EndScreen({
       [
         'client_cancelled',
         'end_of_day',
+        'appointment_rejected',
         'removed_by_salon',
         'stylist_unavailable',
       ] as const
@@ -85,7 +86,15 @@ function EndScreen({
       ? t('ticket.end.reason.completed', { salon_name: salon.name })
       : status === 'no_show'
         ? t('ticket.end.reason.no_show')
-        : t(`ticket.end.reason.${cancelReason}`);
+        : cancelReason === 'appointment_rejected'
+          ? t('ticket.end.reason.appointment_rejected', {
+              reason: t(
+                `ticket.end.removal_reasons.${(ticket.removal_reason ?? 'other') as 'other'}`,
+              ),
+            })
+          : t(`ticket.end.reason.${cancelReason}`);
+  const rejected =
+    cancelReason === 'appointment_rejected' && status === 'cancelled';
   return (
     <section aria-labelledby={STAGE_HEADING} className="grid gap-4 text-center">
       <h2
@@ -96,7 +105,7 @@ function EndScreen({
         {t(`ticket.end.title.${status}`)}
       </h2>
       <p className="text-body-lg">{reason}</p>
-      {ticket.removal_reason ? (
+      {ticket.removal_reason && !rejected ? (
         <p className="text-body-sm text-text-muted">
           {t('ticket.end.removal_reason', {
             reason: t(
@@ -105,12 +114,22 @@ function EndScreen({
           })}
         </p>
       ) : null}
-      <Link
-        className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-text-on-primary"
-        to="/"
-      >
-        {t('ticket.end.rejoin')}
-      </Link>
+      {rejected ? (
+        // F-C12: the appointment was not found, the queue stays open to him.
+        <Link
+          className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-text-on-primary"
+          to={`/salons/${salon.slug}/join`}
+        >
+          {t('qr.choice.join_queue')}
+        </Link>
+      ) : (
+        <Link
+          className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-text-on-primary"
+          to="/"
+        >
+          {t('ticket.end.rejoin')}
+        </Link>
+      )}
     </section>
   );
 }
