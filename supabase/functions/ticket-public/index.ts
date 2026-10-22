@@ -9,7 +9,8 @@ const PER_MINUTE = 60;
 Deno.serve(async (request) => {
   const early = preflight(request);
   if (early) return early;
-  if (request.method !== 'GET') return json(405, { ok: false });
+  // POST with `{ code }`: the code stays out of URLs and request logs.
+  if (request.method !== 'POST') return json(405, { ok: false });
   try {
     const allowed = await rateLimiter().consume(
       'ticket_public',
@@ -26,7 +27,10 @@ Deno.serve(async (request) => {
         },
       });
     }
-    const code = new URL(request.url).searchParams.get('code') ?? '';
+    const body = (await request.json().catch(() => null)) as {
+      code?: unknown;
+    } | null;
+    const code = typeof body?.code === 'string' ? body.code : '';
     const response = await readTicketLink(ticketLinkReader(), code, Date.now());
     return json(response.status, response.body);
   } catch {

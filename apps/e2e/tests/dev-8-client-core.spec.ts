@@ -1,0 +1,260 @@
+import { devices, expect, test } from '@playwright/test';
+import type { Browser, Page } from '@playwright/test';
+import { fr } from './fr';
+import { db, freeTestPhones, lateEvening, openSalon, proSignIn } from './seed';
+
+/**
+ * DEV-8 « Fini quand » (IMPLEMENTATION_PLAN): a client joins from the app,
+ * the stylist calls, the client sees « C'est votre tour », arrives, is served
+ * and sees the end; then the same through the poster's QR code, with no
+ * account before. Test phones and code: `supabase/config.toml`.
+ */
+const CLIENT_APP = 'http://localhost:5173';
+const CODE = '123456';
+// Under the 30-s fallback read (PRD §6): only realtime can deliver in time.
+const LIVE = { timeout: 20_000 };
+
+async function phone(browser: Browser): Promise<Page> {
+  const context = await browser.newContext({ ...devices['iPhone 13'] });
+  return context.newPage();
+}
+
+/** F-C3 steps 1 to 5, the SMS code included. */
+async function join(
+  page: Page,
+  nationalDigits: string,
+  firstName: string,
+  newAccount = false,
+) {
+  await page.getByRole('radio', { name: /Coupe/ }).check();
+  await page
+    .getByRole('button', { name: fr('common', 'actions.next') })
+    .click();
+  await page
+    .getByRole('button', { name: fr('common', 'actions.next') })
+    .click();
+  await page
+    .getByRole('button', { name: fr('common', 'actions.next') })
+    .click();
+  await page
+    .getByLabel(fr('client', 'signin.phone.label'))
+    .fill(nationalDigits);
+  await page
+    .getByRole('button', { name: fr('client', 'signin.send_code') })
+    .click();
+  const digit = page.getByLabel(
+    fr('client', 'signin.code.digit_aria', { index: 1 }),
+  );
+  try {
+    await expect(digit).toBeVisible();
+  } catch (error) {
+    const shown = (await page.locator('body').innerText()).slice(0, 800);
+    throw new Error(`no SMS code field; page shows: ${shown}`, {
+      cause: error,
+    });
+  }
+  await digit.click();
+  await page.keyboard.type(CODE);
+  // A first visit asks the first name (K30).
+  const name = page.getByLabel(fr('client', 'signin.first_name.label'));
+  const summary = page.getByRole('button', {
+    name: fr('client', 'join.confirm'),
+  });
+  await expect(name.or(summary)).toBeVisible();
+  // U-05 « sans compte préalable »: the first name is asked.
+  if (newAccount) await expect(name).toBeVisible();
+  if (await name.isVisible()) {
+    await name.fill(firstName);
+    await page
+      .getByRole('button', { name: fr('common', 'actions.next') })
+      .click();
+  }
+  await summary.click();
+  await expect(page).toHaveURL(/\/ticket$/);
+}
+
+/** The ticket code shown to the client, as the stylist will type it. */
+async function ticketCode(page: Page): Promise<string> {
+  // Read from the screen-reader text « Code du ticket : A F 2 K 9 ».
+  const spoken = page.getByText(/^Code du ticket\s*:/).first();
+  await step(page, 'ticket code', () => expect(spoken).toBeAttached());
+  return (await spoken.innerText())
+    .replace(/^Code du ticket\s*:/, '')
+    .replace(/\s/g, '');
+}
+
+/** Runs a step; on failure, says what the page shows. */
+async function step<T>(
+  page: Page,
+  name: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    const shown = (await page.locator('body').innerText()).slice(0, 900);
+    throw new Error(`${name} failed; page shows: ${shown}`, { cause: error });
+  }
+}
+
+/** C-04 to C-08 on the stylist's phone, checked on the client's screen. */
+async function serve(client: Page, stylist: Page, code: string) {
+  await stylist
+    .getByRole('button', { name: fr('pro-stylist', 'queue.call') })
+    .click();
+  await expect(
+    client.getByRole('heading', { name: fr('client', 'ticket.called.title') }),
+  ).toBeVisible(LIVE);
+
+  await stylist
+    .getByLabel(
+      fr('pro-stylist', 'arrival.char_label', { index: 1, count: 5 }),
+      {
+        exact: true,
+      },
+    )
+    .click();
+  await stylist.keyboard.type(code.toLowerCase());
+  await expect(
+    client.getByRole('heading', { name: fr('client', 'ticket.arrived.title') }),
+  ).toBeVisible(LIVE);
+
+  await stylist
+    .getByRole('button', { name: fr('pro-stylist', 'start.open') })
+    .click();
+  await stylist
+    .getByRole('dialog')
+    .getByRole('button', { name: fr('pro-stylist', 'start.confirm') })
+    .click();
+  await stylist
+    .getByRole('button', { name: fr('pro-stylist', 'service.complete') })
+    .focus();
+  await stylist.keyboard.press('Enter');
+  await stylist
+    .getByRole('dialog')
+    .getByRole('button', { name: fr('pro-stylist', 'service.complete') })
+    .click();
+  await expect(
+    client.getByRole('heading', {
+      name: fr('client', 'ticket.end.title.completed'),
+    }),
+  ).toBeVisible(LIVE);
+}
+
+test('a client joins from the app and is served (DEV-8, U-04, U-06)', async ({
+  browser,
+}) => {
+  test.skip(lateEvening(), 'queue full before midnight');
+  await freeTestPhones();
+  const { slug, stylist } = await openSalon('client-app');
+
+  const stylistPage = await phone(browser);
+  await proSignIn(stylistPage, stylist, '/stylist/queue');
+  await stylistPage
+    .getByRole('button', { name: fr('pro-stylist', 'presence.ready') })
+    .click();
+
+  const client = await phone(browser);
+  await client.goto(`${CLIENT_APP}/salons/${slug}`);
+  await client.getByRole('link', { name: fr('client', 'salon.join') }).click();
+  await join(client, '612345678', 'Inès');
+  const code = await ticketCode(client);
+  expect(code).toMatch(/^[A-HJ-NP-Z2-9]{5}$/);
+  await expect(
+    client.getByText(fr('client', 'ticket.stylist.first_available')),
+  ).toBeVisible();
+
+  await serve(client, stylistPage, code);
+});
+
+test('a client joins through the QR poster without an account and is served (DEV-8, U-05)', async ({
+  browser,
+}) => {
+  test.skip(lateEvening(), 'queue full before midnight');
+  await freeTestPhones();
+  const { salonId, qrToken, stylist } = await openSalon('client-qr');
+
+  const stylistPage = await phone(browser);
+  await proSignIn(stylistPage, stylist, '/stylist/queue');
+  await stylistPage
+    .getByRole('button', { name: fr('pro-stylist', 'presence.ready') })
+    .click();
+
+  const client = await phone(browser);
+  await client.goto(`${CLIENT_APP}/q/${qrToken}`);
+  await client
+    .getByRole('link', { name: fr('client', 'qr.choice.join_queue') })
+    .click();
+  await join(client, '612345679', 'Noé', true);
+  const { data } = await db
+    .from('tickets')
+    .select('channel')
+    .eq('salon_id', salonId)
+    .single();
+  expect(data?.channel).toBe('qr');
+
+  await serve(client, stylistPage, await ticketCode(client));
+});
+
+test('from the SMS link, the client declares a delay then cancels (DEV-8, F-C10, U-07, U-08)', async ({
+  browser,
+}) => {
+  test.skip(lateEvening(), 'queue full before midnight');
+  await freeTestPhones();
+  const { salonId, slug } = await openSalon('client-link');
+  const client = await phone(browser);
+  await client.goto(`${CLIENT_APP}/salons/${slug}`);
+  await client.getByRole('link', { name: fr('client', 'salon.join') }).click();
+  // Its own test phone: Auth allows one code per number every 30 s.
+  await join(client, '612345680', 'Inès');
+  const { data: ticket } = await db
+    .from('tickets')
+    .select('id, tracking_short_code')
+    .eq('salon_id', salonId)
+    .single();
+  if (!ticket) throw new Error('ticket not found');
+
+  // A new device without a session: only the link of the SMS.
+  const link = await phone(browser);
+  await link.goto(`${CLIENT_APP}/t/${ticket.tracking_short_code}`);
+  await step(link, 'link page', async () => {
+    await link
+      .getByRole('button', { name: fr('client', 'ticket.actions.late') })
+      .click();
+    await link
+      .getByRole('dialog')
+      .getByRole('button', {
+        name: fr('client', 'ticket.late.option', { minutes: 10 }),
+      })
+      .click();
+    await expect
+      .poll(async () => {
+        const { data } = await db
+          .from('tickets')
+          .select('eta_response, declared_delay_minutes')
+          .eq('id', ticket.id)
+          .single();
+        return `${data?.eta_response}/${data?.declared_delay_minutes}`;
+      })
+      .toBe('late/10');
+
+    await link
+      .getByRole('button', { name: fr('client', 'ticket.actions.cancel') })
+      .click();
+    await link
+      .getByRole('dialog')
+      .getByRole('button', { name: fr('client', 'cancel_dialog.confirm') })
+      .click();
+    await expect(
+      link.getByRole('heading', {
+        name: fr('client', 'ticket.end.title.cancelled'),
+      }),
+    ).toBeVisible();
+  });
+  // The signed-in phone follows: its place is cancelled too.
+  await expect(
+    client.getByRole('heading', {
+      name: fr('client', 'ticket.end.title.cancelled'),
+    }),
+  ).toBeVisible(LIVE);
+});

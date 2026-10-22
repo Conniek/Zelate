@@ -7,6 +7,8 @@ export interface DialogProps {
   closeLabel: string;
   description?: string;
   onOpenChange: (open: boolean) => void;
+  /** Where the focus goes on close when the opening button is gone (WCAG 2.4.3). */
+  onCloseAutoFocus?: (event: Event) => void;
   open: boolean;
   title: string;
 }
@@ -16,6 +18,7 @@ export function Dialog({
   closeLabel,
   description,
   onOpenChange,
+  onCloseAutoFocus,
   open,
   title,
 }: DialogProps) {
@@ -23,7 +26,10 @@ export function Dialog({
     <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-ink-900/50" />
-        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[min(90vh,48rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-surface p-6 text-text shadow-lg focus:outline-none">
+        <DialogPrimitive.Content
+          onCloseAutoFocus={onCloseAutoFocus}
+          className="fixed left-1/2 top-1/2 z-50 max-h-[min(90vh,48rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-surface p-6 text-text shadow-lg focus:outline-none"
+        >
           <div className="mb-5 flex items-start justify-between gap-4">
             <div className="grid gap-2">
               <DialogPrimitive.Title className="font-display text-h2 font-bold">

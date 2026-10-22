@@ -69,8 +69,17 @@
     "join": "Rejoindre la file",
     "join_disabled": {
       "paused": "File en pause, réessayez dans quelques minutes",
-      "full": "Complet pour aujourd'hui"
-    }
+      "full": "Complet pour aujourd'hui",
+      "closed": "File fermée pour le moment",
+      "closed_until": "Fermé · ouvre {day} à {time}"
+    },
+    "not_found": {
+      "title": "Salon introuvable",
+      "body": "Ce salon n'existe pas ou n'est plus visible sur Zelaté."
+    },
+    "closed_today": "fermé",
+    "service_line": "{duration} · {price}",
+    "loading_title": "Salon"
   },
   "nearby_salons": {
     "link": "Salons proches"
@@ -80,7 +89,8 @@
     "phone": {
       "label": "Numéro de téléphone mobile",
       "prefix": "+33",
-      "hint": "Le salon ne voit jamais votre numéro."
+      "hint": "Le salon ne voit jamais votre numéro.",
+      "invalid": "Saisissez les 9 chiffres de votre numéro, sans le 0 du début."
     },
     "send_code": "Recevoir le code",
     "code": {
@@ -105,7 +115,8 @@
       "summary": "Vérifiez et confirmez"
     },
     "service": {
-      "unknown": "Je ne sais pas encore"
+      "unknown": "Je ne sais pas encore",
+      "required": "Choisissez une prestation, ou « Je ne sais pas encore »."
     },
     "stylist": {
       "first_available": "Premier disponible",
@@ -115,7 +126,8 @@
     "arrival": {
       "asap": "Dès que possible",
       "around": "J'arrive vers…",
-      "time_picker_label": "Heure d'arrivée"
+      "time_picker_label": "Heure d'arrivée",
+      "time_future": "Choisissez une heure à venir, pendant l'ouverture du salon."
     },
     "summary": {
       "title": "Récapitulatif",
@@ -123,13 +135,17 @@
       "service": "Prestation",
       "stylist": "Coiffeur",
       "estimated_time": "Passage prévu",
-      "call_rule": "Une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min."
+      "call_rule": "Une fois appelé, vous avez 10 min pour arriver ; rappel à 5 min.",
+      "first_name_required": "Indiquez votre prénom : c'est le seul nom que voit le salon.",
+      "consent": "Me prévenir quand mon tour approche",
+      "consent_hint": "Sans cette case, vous recevez seulement les messages indispensables : inscription, votre tour, rappel et annulation."
     },
     "confirm": "Confirmer ma place",
     "guard": {
       "already_has_ticket": "Vous avez déjà une place"
     },
-    "view_my_ticket": "Voir ma place"
+    "view_my_ticket": "Voir ma place",
+    "page_title": "{step} – {salon_name}"
   },
   "qr": {
     "header": "Vous êtes chez {salon_name}",
@@ -137,7 +153,8 @@
       "join_queue": "Rejoindre la file",
       "have_appointment": "J'ai rendez-vous"
     },
-    "invalid": "Ce QR code n'est plus valide, demandez à l'accueil"
+    "invalid": "Ce QR code n'est plus valide, demandez à l'accueil",
+    "page_title": "Bienvenue"
   },
   "qr_entry": {
     "join_queue": "Rejoindre la file",
@@ -231,7 +248,8 @@
       "stylist": "{first_name} vous attend chez {salon_name}",
       "code_hint": "Donnez ce code à votre coiffeur en arrivant",
       "countdown": "Temps restant pour arriver : {remaining}",
-      "countdown_aria": "{minutes, plural, =1 {Plus qu'une minute pour arriver} other {Plus que # minutes pour arriver}}"
+      "countdown_aria": "{minutes, plural, =1 {Plus qu'une minute pour arriver} other {Plus que # minutes pour arriver}}",
+      "countdown_label": "Place libérée dans"
     },
     "arrived": {
       "title": "Installez-vous",
@@ -253,11 +271,25 @@
         "stylist_unavailable": "Aucun coiffeur ne peut vous prendre aujourd'hui, le salon a dû annuler votre place. Toutes nos excuses."
       },
       "removal_reason": "Motif : {reason}",
-      "rejoin": "Rejoindre une autre file"
+      "rejoin": "Rejoindre une autre file",
+      "removal_reasons": {
+        "emergency": "urgence",
+        "client_request": "à votre demande",
+        "duplicate": "doublon",
+        "inappropriate_behaviour": "comportement inapproprié",
+        "other": "autre motif"
+      }
     },
     "appointment_rejected": {
       "join_queue": "Rejoindre la file"
-    }
+    },
+    "none": {
+      "title": "Aucune place en cours",
+      "body": "Vous n'avez pas de place aujourd'hui. Choisissez un salon pour en prendre une.",
+      "find": "Trouver un salon"
+    },
+    "page_title": "Ma place",
+    "offline_unknown": "Connexion perdue : l'écran se mettra à jour au retour du réseau."
   },
   "cancel_dialog": {
     "title": "Annuler votre place ?",
