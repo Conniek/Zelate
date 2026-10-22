@@ -76,10 +76,10 @@ async function join(
 /** The ticket code shown to the client, as the stylist will type it. */
 async function ticketCode(page: Page): Promise<string> {
   // Read from the screen-reader text « Code du ticket : A F 2 K 9 ».
-  const spoken = page.getByText(/^Code du ticket :/).first();
+  const spoken = page.getByText(/^Code du ticket\s*:/).first();
   await step(page, 'ticket code', () => expect(spoken).toBeAttached());
   return (await spoken.innerText())
-    .replace(/^Code du ticket :/, '')
+    .replace(/^Code du ticket\s*:/, '')
     .replace(/\s/g, '');
 }
 

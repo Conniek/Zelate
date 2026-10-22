@@ -63,6 +63,7 @@ export function JoinPage() {
   const [consent, setConsent] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<string | null>(null);
+  const joined = useRef(false);
   // Signed in before (an SMS code on /signin, then the app closed): his first
   // name may still be missing, and `join_queue` would refuse (K30).
   const profile = useQuery({
@@ -109,7 +110,8 @@ export function JoinPage() {
     heading.current?.focus();
   }, [step]);
 
-  if (mine.query.data && isActive(mine.query.data.ticket)) {
+  // A place created by this page leads to /ticket without « déjà une place ».
+  if (mine.query.data && isActive(mine.query.data.ticket) && !joined.current) {
     // APP_FLOW §2.3: one active place at a time.
     return <Navigate replace state={{ already: true }} to="/ticket" />;
   }
@@ -171,6 +173,7 @@ export function JoinPage() {
       return;
     }
     const at = arrivalInstant();
+    joined.current = true;
     const outcome = await command.run('join_queue', {
       salon_id: data.salon.id,
       channel: viaQr ? 'qr' : 'app',
@@ -188,6 +191,7 @@ export function JoinPage() {
       void navigate('/ticket', { replace: true });
       return;
     }
+    joined.current = false;
     setRefusal(outcome.code);
   }
 
