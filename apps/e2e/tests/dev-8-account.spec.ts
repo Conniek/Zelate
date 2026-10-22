@@ -71,9 +71,10 @@ test('a client manages then deletes his account (DEV-8, U-13)', async ({
   await client
     .getByRole('button', { name: fr('client', 'account.first_name.save') })
     .click();
-  await expect(
-    client.getByText(fr('errors', 'validation.first_name')),
-  ).toBeVisible();
+  // Shown under the field (and said by the page's status line).
+  await expect(field).toHaveAccessibleDescription(
+    new RegExp(fr('errors', 'validation.first_name')),
+  );
   await field.fill('Awa-Marie');
   await client
     .getByRole('button', { name: fr('client', 'account.first_name.save') })
