@@ -634,6 +634,8 @@ export interface TicketEvent extends EventActor {
   readonly scope: 'ticket';
   readonly type: TicketEventType;
   readonly ticket_id: string;
+  /** `estimate_changed`: the time it moves away from (U-10: undone, the explanation goes). */
+  readonly previous_start_at?: Instant | null;
 }
 
 export interface SalonEvent extends EventActor {

@@ -17,6 +17,12 @@ import {
   useTime,
 } from '../lib/live';
 import { directionsUrl } from '../lib/places';
+import {
+  TicketNotes,
+  TicketRequests,
+  useChangeReason,
+  useRequestAnnouncement,
+} from './TicketBanners';
 
 const DELAYS = [5, 10, 15, 20, 30] as const;
 const STAGE_HEADING = 'stage-title';
@@ -75,6 +81,7 @@ function EndScreen({
       [
         'client_cancelled',
         'end_of_day',
+        'appointment_rejected',
         'removed_by_salon',
         'stylist_unavailable',
       ] as const
@@ -84,18 +91,31 @@ function EndScreen({
       ? t('ticket.end.reason.completed', { salon_name: salon.name })
       : status === 'no_show'
         ? t('ticket.end.reason.no_show')
-        : t(`ticket.end.reason.${cancelReason}`);
+        : cancelReason === 'appointment_rejected'
+          ? t('ticket.end.reason.appointment_rejected', {
+              reason: t(
+                `ticket.end.removal_reasons.${(ticket.removal_reason ?? 'other') as 'other'}`,
+              ),
+            })
+          : t(`ticket.end.reason.${cancelReason}`);
+  const rejected =
+    cancelReason === 'appointment_rejected' && status === 'cancelled';
   return (
     <section aria-labelledby={STAGE_HEADING} className="grid gap-4 text-center">
       <h2
+        aria-describedby="end-reason"
         className="font-display text-h1 font-bold focus:outline-none"
         id={STAGE_HEADING}
         tabIndex={-1}
       >
-        {t(`ticket.end.title.${status}`)}
+        {rejected
+          ? t('ticket.end.title.appointment_rejected')
+          : t(`ticket.end.title.${status}`)}
       </h2>
-      <p className="text-body-lg">{reason}</p>
-      {ticket.removal_reason ? (
+      <p className="text-body-lg" id="end-reason">
+        {reason}
+      </p>
+      {ticket.removal_reason && !rejected ? (
         <p className="text-body-sm text-text-muted">
           {t('ticket.end.removal_reason', {
             reason: t(
@@ -104,12 +124,23 @@ function EndScreen({
           })}
         </p>
       ) : null}
-      <Link
-        className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-text-on-primary"
-        to="/"
-      >
-        {t('ticket.end.rejoin')}
-      </Link>
+      {rejected ? (
+        // F-C12: the appointment was not found, the queue stays open to him
+        // (he checked in from the poster, so the place comes by QR).
+        <Link
+          className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-text-on-primary"
+          to={`/salons/${salon.slug}/join?via=qr`}
+        >
+          {t('qr.choice.join_queue')}
+        </Link>
+      ) : (
+        <Link
+          className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-text-on-primary"
+          to="/"
+        >
+          {t('ticket.end.rejoin')}
+        </Link>
+      )}
     </section>
   );
 }
@@ -118,16 +149,20 @@ function EndScreen({
 function useChangeAnnouncement(ticket: ClientTicket): string {
   const { t } = useTranslation('client');
   const time = useTime();
+  const changeReason = useChangeReason();
   const previous = useRef<{
     position: number | null;
     start: string | null;
+    changeAt: string | null;
   } | null>(null);
   const [text, setText] = useState('');
   const start = ticket.estimated_start_at;
   const position = ticket.position;
+  const changeAt = ticket.last_change?.at ?? null;
+  const reason = ticket.last_change?.reason ?? null;
   useEffect(() => {
     const before = previous.current;
-    previous.current = { position, start };
+    previous.current = { position, start, changeAt };
     if (!before || ticket.status !== 'waiting') return;
     const parts: string[] = [];
     if (position !== null && position !== before.position) {
@@ -136,8 +171,13 @@ function useChangeAnnouncement(ticket: ClientTicket): string {
     if (start && start !== before.start) {
       parts.push(t('ticket.estimated_time', { time: time(start) }));
     }
+    // U-10: a new change is said with its reason, once.
+    if (parts.length > 0 && changeAt && changeAt !== before.changeAt) {
+      const said = changeReason(reason);
+      if (said) parts.push(said);
+    }
     if (parts.length > 0) setText(parts.join('. '));
-  }, [position, start, t, ticket.status, time]);
+  }, [position, start, changeAt, t, ticket.status, time]);
   return text;
 }
 
@@ -152,6 +192,12 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
   const [dialog, setDialog] = useState<'late' | 'cancel' | null>(null);
   const [notice, setNotice] = useState('');
   const change = useChangeAnnouncement(ticket);
+  const request = useRequestAnnouncement(ticket);
+  // A new request is said over an older confirmation.
+  useEffect(() => {
+    if (request) setNotice('');
+  }, [request]);
+  const [endOfDayCancel, setEndOfDayCancel] = useState(false);
 
   const called = ticket.status === 'called' && ticket.arrived_at === null;
   const seated =
@@ -202,6 +248,15 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
     if (outcome.ok) setDialog(null);
   }
 
+  // U-11: « J'annule » answers the end-of-day warning (APP_FLOW F-C5).
+  async function cancelAtEndOfDay() {
+    const outcome = await command.run('respond_end_of_day', {
+      ticket_id: ticket.id,
+      choice: 'cancel',
+    });
+    if (outcome.ok) setDialog(null);
+  }
+
   async function setConsent(consent: boolean) {
     await command.run('set_notifications_consent', {
       ticket_id: ticket.id,
@@ -229,7 +284,7 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
         }
       />
       <p aria-live="polite" className="sr-only" role="status">
-        {notice || change}
+        {notice || request || change}
       </p>
 
       {called ? (
@@ -309,6 +364,22 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
         </section>
       ) : null}
 
+      <TicketRequests
+        command={command}
+        onAnswered={(message) => {
+          setNotice(message);
+          window.setTimeout(
+            () => document.getElementById(STAGE_HEADING)?.focus(),
+            0,
+          );
+        }}
+        onCancelEndOfDay={() => {
+          setEndOfDayCancel(true);
+          setDialog('cancel');
+        }}
+        ticket={ticket}
+      />
+
       {ticket.status === 'waiting' ? (
         <section
           aria-labelledby={STAGE_HEADING}
@@ -361,6 +432,8 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
           ) : null}
         </section>
       ) : null}
+
+      <TicketNotes ticket={ticket} />
 
       {askEta ? (
         <section
@@ -463,7 +536,10 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
         closeLabel={tCommon('actions.close')}
         description={t('cancel_dialog.body')}
         onCloseAutoFocus={focusStage}
-        onOpenChange={(open) => setDialog(open ? 'cancel' : null)}
+        onOpenChange={(open) => {
+          setDialog(open ? 'cancel' : null);
+          if (!open) setEndOfDayCancel(false);
+        }}
         open={dialog === 'cancel'}
         title={t('cancel_dialog.title')}
       >
@@ -479,7 +555,13 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
             </Button>
             <Button
               loading={command.busy !== null}
-              onClick={() => void (askEta ? answerEta('cancel') : cancel())}
+              onClick={() =>
+                void (endOfDayCancel
+                  ? cancelAtEndOfDay()
+                  : askEta
+                    ? answerEta('cancel')
+                    : cancel())
+              }
               variant="danger"
             >
               {t('cancel_dialog.confirm')}

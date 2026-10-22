@@ -73,6 +73,8 @@ describe('E11 — 10-minute rule measured against the last announced time, small
         type: 'estimate_changed',
         ticket_id: 'a',
         reason_code: 'service_longer',
+        // U-10: the client view hides the explanation once back near 15:00.
+        previous_start_at: at('15:00'),
       }),
     );
   });

@@ -11,14 +11,18 @@ export function finalize(
   const notifications = diffNotifications(before, after);
   const estimateEvents = notifications
     .filter((n) => n.template === 'estimate_changed')
-    .map((n) =>
-      ticketEvent(
+    .map((n) => ({
+      ...ticketEvent(
         SYSTEM,
         'estimate_changed',
         n.ticket_id,
         typeof n.params.reason === 'string' ? n.params.reason : null,
       ),
-    );
+      previous_start_at:
+        typeof n.params.previous_start_at === 'number'
+          ? n.params.previous_start_at
+          : null,
+    }));
   return {
     state: after,
     events: [...events, ...estimateEvents],

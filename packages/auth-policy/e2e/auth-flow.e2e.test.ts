@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 // Run with: E2E_SUPABASE_URL=... E2E_SUPABASE_ANON_KEY=... pnpm test:e2e
 const url = process.env['E2E_SUPABASE_URL'];
 const anonKey = process.env['E2E_SUPABASE_ANON_KEY'];
-const TEST_PHONE = '+33612345678'; // config.toml [auth.sms.test_otp] → 123456
+const TEST_PHONE = '+33639980078'; // config.toml [auth.sms.test_otp] → 123456
 const TEST_CODE = '123456';
 
 async function call(name: string, payload: object) {
@@ -46,7 +46,7 @@ describe.skipIf(!url || !anonKey)('U-03 / P-03 end to end', () => {
 
   it('blocks a phone after 3 wrong codes (P-03)', async () => {
     // Fixed 5-minute window: rerunning within 5 minutes starts already blocked.
-    const phone = '+33612345679';
+    const phone = '+33639980079';
     const codes: string[] = [];
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const wrong = await call('auth-verify-otp', { code: '000000', phone });
