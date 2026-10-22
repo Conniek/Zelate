@@ -183,10 +183,8 @@ export function AccountPage() {
         {status}
       </p>
 
-      <section aria-labelledby="account-name-title" className="grid gap-3">
-        <h2 className="sr-only" id="account-name-title">
-          {t('account.first_name.label')}
-        </h2>
+      {/* The field's own label names this part: no extra heading. */}
+      <div className="grid gap-3">
         {profile.isPending ? (
           <Skeleton className="h-16 w-full" />
         ) : (
@@ -218,7 +216,7 @@ export function AccountPage() {
             </div>
           </form>
         )}
-      </section>
+      </div>
 
       <section aria-labelledby="account-consent-title" className="grid gap-2">
         <h2 className="text-h3 font-semibold" id="account-consent-title">
