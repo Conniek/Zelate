@@ -64,7 +64,9 @@ test('a client manages then deletes his account (DEV-8, U-13)', async ({
   await expect(client).toHaveURL(/\/account$/);
 
   // Scenario 3 then 2: 31 characters are refused, « Awa-Marie » is saved.
-  const field = client.getByLabel(fr('client', 'account.first_name.label'));
+  const field = client.getByRole('textbox', {
+    name: fr('client', 'account.first_name.label'),
+  });
   await field.fill('A'.repeat(31));
   await client
     .getByRole('button', { name: fr('client', 'account.first_name.save') })
@@ -116,7 +118,9 @@ test('a client manages then deletes his account (DEV-8, U-13)', async ({
     first_name: 'Awa-Marie',
   });
   expect(exported.tickets.map((t) => t.status)).toEqual(['waiting']);
-  expect(JSON.stringify(exported)).not.toMatch(/tracking/);
+  expect(JSON.stringify(exported)).not.toMatch(
+    /tracking_token|tracking_short_code/,
+  );
 
   // Scenarios 10 and 12 bis: two confirmations, the place is cancelled.
   await client

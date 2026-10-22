@@ -11,8 +11,8 @@ alter table public.salon_members disable trigger salon_members_log_settings;
 -- Mia manages the salon; Awa and Bob are clients.
 insert into auth.users (id, instance_id, aud, role, phone) values
   ('00000000-0000-0000-0000-000000000a01', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', null),
-  ('00000000-0000-0000-0000-000000000a02', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', '33639980078'),
-  ('00000000-0000-0000-0000-000000000a03', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', '33639980079');
+  ('00000000-0000-0000-0000-000000000a02', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', '33639980090'),
+  ('00000000-0000-0000-0000-000000000a03', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', '33639980091');
 insert into public.profiles (id, first_name, tracking_consent_at) values
   ('00000000-0000-0000-0000-000000000a01', 'Mia', null),
   ('00000000-0000-0000-0000-000000000a02', 'Awa', now() - interval '1 day'),
@@ -39,14 +39,14 @@ values
    'Bob', 'app', 30, 2, '00000000-0000-0000-0000-000000000a03', 'cancelled', now() - interval '3 days', 'client_cancelled', null, null,
    null, now() - interval '3 days');
 insert into private.ticket_contacts (ticket_id, phone_e164, phone_hash, is_active, closed_at) values
-  ('b0000000-0000-0000-0000-000000000a01', '+33639980078', '\x01', false, now() - interval '3 days');
+  ('b0000000-0000-0000-0000-000000000a01', '+33639980090', '\x01', false, now() - interval '3 days');
 insert into public.ticket_events (ticket_id, salon_id, type, actor_type, reason_code) values
   ('b0000000-0000-0000-0000-000000000a01', '90000000-0000-0000-0000-000000000aa1', 'cancelled', 'manager', 'other'),
   ('b0000000-0000-0000-0000-000000000a01', '90000000-0000-0000-0000-000000000aa1', 'duration_adjusted', 'stylist', null);
 
 -- Export.
 select is(jsonb_array_length(public.account_export('00000000-0000-0000-0000-000000000a02') -> 'tickets'), 2, 'the export holds my two tickets');
-select is(public.account_export('00000000-0000-0000-0000-000000000a02') -> 'profile' ->> 'phone', '+33639980078', 'with my phone number (right of access)');
+select is(public.account_export('00000000-0000-0000-0000-000000000a02') -> 'profile' ->> 'phone', '+33639980090', 'with my phone number (right of access)');
 select ok(public.account_export('00000000-0000-0000-0000-000000000a02') -> 'profile' ->> 'tracking_consent_at' is not null, 'with my consents and their date');
 select ok(public.account_export('00000000-0000-0000-0000-000000000a02')::text !~ '(tokAcc|xxxxxxA|Note du salon|Bob)',
   'no tracking token, no staff note, nobody else');

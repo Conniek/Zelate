@@ -53,6 +53,8 @@ export function AccountPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  // The switch shows the choice at once and takes no other until the server answers.
+  const [pendingConsent, setPendingConsent] = useState<boolean | null>(null);
   const doneHeading = useRef<HTMLHeadingElement>(null);
 
   const view = mine.query.data;
@@ -111,6 +113,8 @@ export function AccountPage() {
     const value = shownName.trim();
     if (value.length < 1 || value.length > FIRST_NAME_MAX) {
       setNameError(tErrors('validation.first_name'));
+      // Said too when Enter was pressed in the field (focus already there).
+      setStatus(tErrors('validation.first_name'));
       setNameTries((n) => n + 1);
       return;
     }
@@ -120,6 +124,7 @@ export function AccountPage() {
     if (!ok) {
       setStatus('');
       setNameError(tErrors('generic.unexpected'));
+      setStatus(tErrors('generic.unexpected'));
       setNameTries((n) => n + 1);
       return;
     }
@@ -232,15 +237,21 @@ export function AccountPage() {
             <label className="flex min-h-11 items-center gap-3 font-semibold">
               {/* K18, K34: the consent belongs to the place in progress. */}
               <input
+                aria-busy={pendingConsent !== null || undefined}
                 aria-describedby="account-consent-detail"
-                checked={active.ticket.notifications_consent}
+                checked={pendingConsent ?? active.ticket.notifications_consent}
                 className="size-6"
-                onChange={(e) =>
-                  void command.run('set_notifications_consent', {
-                    ticket_id: active.ticket.id,
-                    consent: e.target.checked,
-                  })
-                }
+                onChange={(e) => {
+                  if (pendingConsent !== null) return;
+                  const consent = e.target.checked;
+                  setPendingConsent(consent);
+                  void command
+                    .run('set_notifications_consent', {
+                      ticket_id: active.ticket.id,
+                      consent,
+                    })
+                    .finally(() => setPendingConsent(null));
+                }}
                 role="switch"
                 type="checkbox"
               />
@@ -262,6 +273,8 @@ export function AccountPage() {
               </Banner>
             ) : null}
           </>
+        ) : active ? (
+          <p className="text-body-sm">{t('account.consent.served')}</p>
         ) : (
           <p className="text-body-sm">{t('account.consent.no_ticket')}</p>
         )}
@@ -310,21 +323,42 @@ export function AccountPage() {
         title={t('account.delete.label')}
       >
         <div className="grid gap-3">
+          {/* The page's live region is hidden behind the dialog: said here. */}
+          <p aria-live="polite" className="sr-only" role="status">
+            {step === 'second' ? t('account.delete.confirm_second') : ''}
+          </p>
           {deleteFailed ? (
             <Banner role="alert" tone="danger">
               {tErrors('account.delete_failed')}
             </Banner>
           ) : null}
           <div className="flex flex-wrap justify-end gap-2">
-            <Button onClick={() => setStep(null)} variant="ghost">
+            <Button
+              id="account-delete-keep"
+              onClick={() => setStep(null)}
+              variant="ghost"
+            >
               {t('account.delete.keep')}
             </Button>
+            {/* Two buttons, not one relabelled: a double tap cannot confirm twice. */}
             {step === 'first' ? (
-              <Button onClick={() => setStep('second')} variant="danger">
+              <Button
+                key="continue"
+                onClick={() => {
+                  setStep('second');
+                  window.setTimeout(
+                    () =>
+                      document.getElementById('account-delete-keep')?.focus(),
+                    0,
+                  );
+                }}
+                variant="danger"
+              >
                 {t('account.delete.continue')}
               </Button>
             ) : (
               <Button
+                key="confirm"
                 loading={deleting}
                 onClick={() => !deleting && void remove()}
                 variant="danger"

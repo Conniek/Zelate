@@ -379,7 +379,8 @@
     "consent": {
       "title": "Notifications de suivi",
       "no_ticket": "Vous n'avez pas de place en cours. La case « Me prévenir » vous sera proposée, décochée, à votre prochaine inscription.",
-      "current": "Pour votre place chez {salon_name}."
+      "current": "Pour votre place chez {salon_name}.",
+      "served": "C'est votre tour : il n'y a plus de message de suivi à recevoir pour cette place."
     },
     "data": {
       "title": "Mes données",
