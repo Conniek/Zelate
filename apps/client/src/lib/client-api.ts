@@ -53,6 +53,14 @@ export interface ClientTicket {
   end_of_day_choice: 'stay' | 'cancel' | null;
   /** Clients before him at his stylist (E13); null for an appointment. */
   position: number | null;
+  /** E7, E8: « Attendre » can still be offered when the stylist changes. */
+  wait_offered: boolean | null;
+  /** U-10: what last moved his time or place, with its reason (K26). */
+  last_change: {
+    type: 'estimate_changed' | 'postponed';
+    reason: string | null;
+    at: string;
+  } | null;
 }
 
 export interface TicketSalon {

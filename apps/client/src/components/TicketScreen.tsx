@@ -17,6 +17,7 @@ import {
   useTime,
 } from '../lib/live';
 import { directionsUrl } from '../lib/places';
+import { TicketBanners } from './TicketBanners';
 
 const DELAYS = [5, 10, 15, 20, 30] as const;
 const STAGE_HEADING = 'stage-title';
@@ -361,6 +362,8 @@ export function TicketScreen({ view, trackingToken, live, stale }: Props) {
           ) : null}
         </section>
       ) : null}
+
+      <TicketBanners command={command} ticket={ticket} />
 
       {askEta ? (
         <section

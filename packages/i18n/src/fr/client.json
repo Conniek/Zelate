@@ -212,7 +212,8 @@
       "times": "Rendez-vous à {appointment_time} · passage prévu vers {start_time}",
       "summary": "Rendez-vous à {appointment_time} · passage prévu vers {start_time}",
       "pending": "Le salon confirme votre rendez-vous…",
-      "pending_hint": "Votre heure de passage s'affichera dès que le salon aura confirmé."
+      "pending_hint": "Votre heure de passage s'affichera dès que le salon aura confirmé.",
+      "salon_late": "Le salon a du retard : venez vers {time}."
     },
     "updated_at": "mis à jour à {time}",
     "offline": "Connexion perdue, dernière mise à jour à {time}",
