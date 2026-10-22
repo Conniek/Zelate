@@ -26,5 +26,8 @@ Deno.serve(async (request) => {
   });
   // Never log the data: it holds the phone number.
   if (error || !data) return json(500, UNEXPECTED);
-  return json(200, { ok: true, data });
+  const response = json(200, { ok: true, data });
+  // The phone number is in it: kept in no HTTP cache of the device.
+  response.headers.set('cache-control', 'no-store');
+  return response;
 });

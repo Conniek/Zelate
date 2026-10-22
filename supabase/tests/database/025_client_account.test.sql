@@ -3,7 +3,7 @@ begin;
 -- DEV-8 part 4 (U-13, K17, K29): export and deletion of a client account.
 set local client_min_messages = warning;
 truncate public.salons, public.platform_admins, private.ticket_contacts cascade;
-select plan(17);
+select plan(19);
 
 alter table public.salons disable trigger salons_log_settings;
 alter table public.salon_members disable trigger salon_members_log_settings;
@@ -55,14 +55,16 @@ select is(jsonb_path_query_array(public.account_export('00000000-0000-0000-0000-
 
 -- Rights: only the Edge Functions (service role) call these.
 select ok(not has_function_privilege('authenticated', 'public.account_export(uuid)', 'execute'), 'a client cannot export someone else');
-select ok(not has_function_privilege('authenticated', 'public.account_delete(uuid)', 'execute'), 'a client cannot delete someone else');
-select ok(not has_function_privilege('anon', 'public.account_delete(uuid)', 'execute'), 'anon cannot delete');
+select ok(not has_function_privilege('authenticated', 'public.account_delete(uuid, boolean)', 'execute'), 'a client cannot delete someone else');
+select ok(not has_function_privilege('anon', 'public.account_delete(uuid, boolean)', 'execute'), 'anon cannot delete');
 
 -- Deletion.
 select is(public.account_delete('00000000-0000-0000-0000-000000000a01'), 'staff', 'a Zelaté Pro account is not deleted from the client app');
+select is(public.account_delete('00000000-0000-0000-0000-000000000a01', true), 'staff', 'the check refuses a Pro account before any cancel');
 select is(public.account_delete('00000000-0000-0000-0000-000000000a02'), 'active_ticket', 'the place in progress is cancelled first');
 update public.tickets set status = 'cancelled', cancelled_at = now(), cancel_reason = 'client_cancelled'
 where id = 'b0000000-0000-0000-0000-000000000a02';
+select is(public.account_delete('00000000-0000-0000-0000-000000000a02', true), 'ready', 'the check deletes nothing');
 select is(public.account_delete('00000000-0000-0000-0000-000000000a02'), 'deleted', 'then the account is deleted');
 
 select is((select count(*)::int from auth.users where id = '00000000-0000-0000-0000-000000000a02'), 0, 'the Auth account is gone');

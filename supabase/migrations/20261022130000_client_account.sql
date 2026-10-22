@@ -2,9 +2,22 @@
 -- Called only by the Edge Functions `account-export` and `account-delete`
 -- (service role), for the caller they authenticated.
 
+-- The event types a client sees of his own tickets: the allow-list of the
+-- `ticket_events_select` policy (BACKEND_SCHEMA §7.3 rule 3). A new type
+-- stays hidden until it is added here and there.
+create function private.client_visible_event(p_type public.ticket_event_type)
+returns boolean language sql immutable set search_path = '' as $$
+  select p_type in (
+    'created', 'assigned', 'reassigned', 'estimate_changed', 'eta_responded', 'postponed',
+    'stylist_change_requested', 'stylist_change_resolved', 'arrival_confirmed', 'called',
+    'service_started', 'completed', 'cancelled', 'no_show', 'end_of_day_warned',
+    'appointment_checked_in', 'appointment_confirmed', 'appointment_rejected',
+    'appointment_delay_warned');
+$$;
+
 -- The client's own data (RGPD right of access): profile with his phone
--- number, consents, every ticket and its events visible to him (BACKEND_SCHEMA
--- §7.3 rule 3). Never a tracking token, a staff note or another person's data.
+-- number, consents, every ticket and its events visible to him. Never a
+-- tracking token, a staff note or another person's data.
 create function public.account_export(p_profile_id uuid)
 returns jsonb language sql stable security definer set search_path = '' as $$
   select jsonb_build_object(
@@ -34,9 +47,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
                              order by e.created_at, e.id)
             from public.ticket_events e
             where e.ticket_id = t.id
-              and e.type::text not in ('duration_adjusted', 'appointment_merged', 'appointment_updated',
-                                       'end_of_day_responded')
-              and e.type::text not like 'reassignment\_%'), '[]'::jsonb))
+              and private.client_visible_event(e.type)), '[]'::jsonb))
         order by t.created_at)
       from public.tickets t
       join public.salons s on s.id = t.salon_id
@@ -51,10 +62,15 @@ $$;
 -- is: it holds no first name nor free text (K10). `no_show_records` keep
 -- their 30 days: deleting an account does not reset the abuse limits (P-03).
 -- Returns `deleted`, `active_ticket` (cancel it first) or `staff` (an
--- account of Zelaté Pro is not deleted from the client app).
-create function public.account_delete(p_profile_id uuid)
+-- account of Zelaté Pro is not deleted from the client app). `p_check_only`
+-- answers `ready` instead of deleting: `account-delete` asks before it
+-- cancels the place in progress, so a refused deletion changes nothing.
+create function public.account_delete(p_profile_id uuid, p_check_only boolean default false)
 returns text language plpgsql security definer set search_path = '' as $$
 begin
+  -- A place taken meanwhile (another tab) waits for this lock, then fails on
+  -- the deleted profile; or it committed first and is seen below.
+  perform 1 from public.profiles where id = p_profile_id for update;
   if exists (select 1 from public.salon_members m where m.profile_id = p_profile_id)
      or exists (select 1 from public.salons s where s.created_by = p_profile_id)
      or exists (select 1 from public.platform_admins a where a.user_id = p_profile_id) then
@@ -66,21 +82,31 @@ begin
       and t.status in ('pending_confirmation', 'waiting', 'called', 'in_service')) then
     return 'active_ticket';
   end if;
+  if p_check_only then
+    return 'ready';
+  end if;
 
   delete from private.ticket_contacts c
   using public.tickets t
   where c.ticket_id = t.id and t.client_id = p_profile_id;
+  delete from public.push_subscriptions ps
+  using public.tickets t
+  where ps.ticket_id = t.id and t.client_id = p_profile_id;
   update public.tickets
   set display_name = 'Client', removal_note = null
   where client_id = p_profile_id;
   -- Cascades: profiles, then push_subscriptions; tickets.client_id and
   -- notifications.recipient_profile_id become null (K29).
   delete from auth.users where id = p_profile_id;
+  -- Auth's own sign-in log names the phone next to the id kept in our
+  -- journals (`actor_profile_id`): it goes too, so nothing links them.
+  delete from auth.audit_log_entries where payload ->> 'actor_id' = p_profile_id::text;
   return 'deleted';
 end;
 $$;
 
 revoke execute on function public.account_export(uuid) from public, anon, authenticated;
-revoke execute on function public.account_delete(uuid) from public, anon, authenticated;
+revoke execute on function public.account_delete(uuid, boolean) from public, anon, authenticated;
+revoke execute on function private.client_visible_event(public.ticket_event_type) from public, anon, authenticated;
 grant execute on function public.account_export(uuid) to service_role;
-grant execute on function public.account_delete(uuid) to service_role;
+grant execute on function public.account_delete(uuid, boolean) to service_role;

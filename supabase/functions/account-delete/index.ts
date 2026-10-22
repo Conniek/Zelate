@@ -28,6 +28,12 @@ Deno.serve(async (request) => {
   }
   try {
     const db = serviceClient();
+    // Refused before anything changes: a Pro account keeps its place too.
+    const { data: check, error: checkError } = await db.rpc('account_delete', {
+      p_profile_id: profileId,
+      p_check_only: true,
+    });
+    if (checkError || check === 'staff') return json(409, FAILED);
     const { data: active, error: readError } = await db
       .from('tickets')
       .select('id')
