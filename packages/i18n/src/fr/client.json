@@ -360,7 +360,8 @@
     "first_name": {
       "label": "Prénom",
       "save": "Enregistrer",
-      "saved": "Prénom enregistré"
+      "saved": "Prénom enregistré",
+      "hint": "1 à 30 caractères, c'est ce que le salon voit."
     },
     "export": "Télécharger mes données",
     "delete": {
@@ -370,8 +371,21 @@
       "confirm_second": "Cette suppression est définitive. Voulez-vous vraiment supprimer votre compte ?",
       "keep": "Garder mon compte",
       "confirm": "Oui, supprimer mon compte",
-      "done": "Votre compte a été supprimé. Merci d'avoir utilisé Zelaté."
+      "done": "Votre compte a été supprimé. Merci d'avoir utilisé Zelaté.",
+      "done_home": "Retour à l'accueil"
     },
-    "sign_out": "Se déconnecter"
+    "sign_out": "Se déconnecter",
+    "page_title": "Mon compte",
+    "consent": {
+      "title": "Notifications de suivi",
+      "no_ticket": "Vous n'avez pas de place en cours. La case « Me prévenir » vous sera proposée, décochée, à votre prochaine inscription.",
+      "current": "Pour votre place chez {salon_name}."
+    },
+    "data": {
+      "title": "Mes données",
+      "exported": "Vos données ont été téléchargées.",
+      "export_failed": "Le téléchargement n'a pas abouti. Vérifiez votre connexion."
+    },
+    "link": "Compte"
   }
 }

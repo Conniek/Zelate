@@ -134,9 +134,20 @@ export function HomePage() {
   return (
     <main className="mx-auto grid w-full max-w-xl gap-5 px-5 py-8">
       <header className="grid gap-2">
-        <p className="font-display text-h2 font-bold">
-          {tCommon('brand.client_name')}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="font-display text-h2 font-bold">
+            {tCommon('brand.client_name')}
+          </p>
+          {/* APP_FLOW §2.1: the account, for a signed-in client. */}
+          {session.data === true ? (
+            <Link
+              className="inline-flex min-h-11 items-center font-semibold text-link underline"
+              to="/account"
+            >
+              {t('account.link')}
+            </Link>
+          ) : null}
+        </div>
         <h1 className="text-h3">{t('home.title')}</h1>
       </header>
 
