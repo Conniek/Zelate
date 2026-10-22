@@ -212,3 +212,39 @@ export async function tokenKey(token: string): Promise<string> {
     .join('')
     .slice(0, 32);
 }
+
+export interface SalonResult {
+  id: string;
+  slug: string;
+  name: string;
+  address_line: string;
+  postal_code: string;
+  city: string;
+  distance_m: number;
+  queue_status: 'open' | 'paused' | 'closed';
+  is_full: boolean;
+  waiting_count: number;
+  current_wait_minutes: number | null;
+  estimate_updated_at: string | null;
+  latitude: number;
+  longitude: number;
+  /** U-16: the earliest free slot and its service, open queue only (E22). */
+  next_free_slot: { start_at: string; service_name: string } | null;
+  /** U-01: when a closed salon opens again (within a week). */
+  next_opening_at: string | null;
+}
+
+/** F-C1: published salons within `radiusM` of a point, nearest first. */
+export async function searchSalons(
+  lat: number,
+  lng: number,
+  radiusM: number,
+): Promise<SalonResult[]> {
+  const { data, error } = await supabase.rpc('search_salons', {
+    lat,
+    lng,
+    radius_m: radiusM,
+  });
+  if (error) throw new Error('search failed');
+  return (data ?? []) as unknown as SalonResult[];
+}

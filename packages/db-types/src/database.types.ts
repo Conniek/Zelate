@@ -1472,8 +1472,12 @@ export type Database = {
           estimate_updated_at: string;
           id: string;
           is_full: boolean;
+          latitude: number;
+          longitude: number;
           name: string;
+          next_free_slot: Json;
           next_free_slots: Json;
+          next_opening_at: string;
           photo_paths: string[];
           postal_code: string;
           queue_status: Database['public']['Enums']['queue_status'];

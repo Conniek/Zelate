@@ -8,7 +8,9 @@
     },
     "search": {
       "label": "Adresse ou ville",
-      "suggestions_count": "{count, plural, =0 {Aucune suggestion} one {# suggestion} other {# suggestions}}"
+      "suggestions_count": "{count, plural, =0 {Aucune suggestion} one {# suggestion} other {# suggestions}}",
+      "hint": "Tapez au moins 3 caractères, puis choisissez une suggestion.",
+      "no_results": "Aucune adresse ne correspond."
     },
     "tabs": {
       "list": "Liste",
@@ -27,14 +29,32 @@
     "map": {
       "aria_label": "Carte des salons autour de vous",
       "marker_aria": "{salon_name}, attente ~{minutes} min",
-      "locate_me": "Me localiser"
+      "locate_me": "Me localiser",
+      "loading": "Chargement de la carte…",
+      "open_salon": "Voir {salon_name}"
     },
     "empty": {
       "message": "Aucun salon ouvert à moins de 5 km pour le moment.",
       "widen": "Élargir à 10 km",
       "message_widened": "Aucun salon ouvert à moins de 10 km pour le moment. Essayez une autre adresse ou revenez un peu plus tard."
     },
-    "active_ticket_banner": "Ma place"
+    "active_ticket_banner": "Ma place",
+    "page_title": "Salons autour de vous",
+    "title": "Trouver un salon",
+    "locating": "Recherche de votre position…",
+    "distance": {
+      "m": "à {meters} m",
+      "km": "à {km} km"
+    },
+    "results_title": "{count, plural, =0 {Aucun salon} one {# salon} other {# salons}}",
+    "queue_state": {
+      "paused": "File en pause",
+      "closed": "Fermé",
+      "full": "Complet aujourd'hui"
+    },
+    "error": "La liste n'a pas pu être chargée. Vérifiez votre connexion, puis réessayez.",
+    "next_free_slot_now": "Créneau libre maintenant · {service_name}",
+    "display_label": "Affichage"
   },
   "salon": {
     "photos": {
