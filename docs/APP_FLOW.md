@@ -1,5 +1,6 @@
 # APP FLOW — Zelaté
 
+> version 0.8 · 22/10/2026 · lot DEV-8 : `/account` s'ouvre depuis le lien « Compte » de l'accueil et demande de se connecter (`/signin?next=/account`)
 > version 0.7 · 19/10/2026 · alignements de la passe finale des stories (créneau libre E22, rendez-vous d'un coiffeur indisponible E18, absence E7)
 > version 0.6 · 19/10/2026 · alignement sur le TRD v0.5 et BACKEND_SCHEMA v0.5 : commandes `set_notifications_consent` (K34) et `publish_salon` (K35), messages indispensables sans « Me prévenir » (E17), motif obligatoire pour annuler ou refuser un rendez-vous (E29)
 > version 0.5 · 19/10/2026 · réponses d'Ely E17 à E31 (pause sans choix de coiffeur, aucun compteur d'absences côté salon)
@@ -41,7 +42,7 @@ Les chemins d'URL sont en anglais (ce sont des noms de code) ; les titres de pag
 | `/ticket`                | Mon ticket actif et suivi                                        | Client connecté              | Après création, notification, menu  |
 | `/t/:shortCode`          | Suivi par lien SMS (lien court de 8 caractères)                  | Détenteur du lien            | SMS                                 |
 | `/install`               | Guide d'installation et notifications                            | Public                       | Proposition après le premier ticket |
-| `/account`               | Compte : prénom, consentements, export, suppression, déconnexion | Client connecté              | Menu                                |
+| `/account`               | Compte : prénom, consentements, export, suppression, déconnexion | Client connecté              | Lien « Compte » de l'accueil        |
 | `/legal/:page`           | CGU, confidentialité, mentions                                   | Public                       | Pied de page                        |
 
 ### 2.2 App Pro
@@ -72,7 +73,7 @@ Les chemins d'URL sont en anglais (ce sont des noms de code) ; les titres de pag
 
 | Situation                                                                        | Redirection                                                                                                                  |
 | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Client non connecté sur `/ticket`                                                | `/signin?next=/ticket`                                                                                                       |
+| Client non connecté sur `/ticket` ou `/account`                                  | `/signin?next=/ticket` (ou `/account`)                                                                                       |
 | Client avec un ticket actif sur `/salons/:slug/join` ou `/salons/:slug/check-in` | `/ticket` avec message « Vous avez déjà une place »                                                                          |
 | Gérant dont le salon est en brouillon                                            | `/signup` à l'étape enregistrée                                                                                              |
 | Gérant dont le salon attend la validation                                        | `/signup/pending` (le wizard reste accessible)                                                                               |

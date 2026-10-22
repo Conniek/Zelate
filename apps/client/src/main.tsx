@@ -56,6 +56,12 @@ const router = createBrowserRouter([
     }),
     path: '/t/:shortCode',
   },
+  {
+    lazy: async () => ({
+      Component: (await import('./routes/AccountPage')).AccountPage,
+    }),
+    path: '/account',
+  },
 ]);
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 
