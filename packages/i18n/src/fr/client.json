@@ -24,7 +24,6 @@
     },
     "wait_badge": "~{minutes} min",
     "freshness": "{minutes, plural, =0 {mis à jour à l'instant} other {mis à jour il y a # min}}",
-    "freshness_stale": "à vérifier",
     "next_free_slot": "Créneau libre à {time} · {service_name}",
     "map": {
       "aria_label": "Carte des salons autour de vous",
@@ -50,11 +49,14 @@
     "queue_state": {
       "paused": "File en pause",
       "closed": "Fermé",
-      "full": "Complet aujourd'hui"
+      "full": "Complet aujourd'hui",
+      "paused_badge": "En pause"
     },
     "error": "La liste n'a pas pu être chargée. Vérifiez votre connexion, puis réessayez.",
     "next_free_slot_now": "Créneau libre maintenant · {service_name}",
-    "display_label": "Affichage"
+    "display_label": "Affichage",
+    "freshness_at": "mis à jour à {time}",
+    "no_wait": "Aucune attente"
   },
   "salon": {
     "photos": {
@@ -64,7 +66,8 @@
     "wait": {
       "title": "Attente actuelle",
       "people_ahead": "{count, plural, =0 {Personne n'attend en ce moment} one {# personne avant vous} other {# personnes avant vous}}",
-      "estimated_time": "Passage estimé vers {time}"
+      "estimated_time": "Passage estimé vers {time}",
+      "mine": "Vous avez une place dans ce salon."
     },
     "hours": {
       "title": "Horaires"

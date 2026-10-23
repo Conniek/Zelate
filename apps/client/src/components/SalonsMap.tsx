@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import type { SalonResult } from '../lib/client-api';
 import { useNow } from '../lib/live';
-import { useSalonSummary } from '../lib/salon-summary';
+import { BADGE_CLASSES, useSalonSummary } from '../lib/salon-summary';
 
 /** OpenFreeMap: free tiles, no key, not openstreetmap.org's own servers (TRD §3). */
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
@@ -59,16 +59,19 @@ export default function SalonsMap({ center, salons, me }: Props) {
     const markers = salons.map((salon) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className =
-        'min-h-11 min-w-11 rounded-full bg-primary px-3 font-semibold text-text-on-primary shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
       // The marker says what the list card says (U-01, U-16).
       const summary = summarize(salon, now);
-      button.textContent = summary.wait ?? summary.state ?? salon.name;
+      button.className = `min-h-11 min-w-11 rounded-full border border-border px-3 font-semibold shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${
+        summary.badge
+          ? BADGE_CLASSES[summary.badge.tone]
+          : 'bg-surface text-text'
+      }`;
+      button.textContent = summary.badge?.text ?? salon.name;
       button.setAttribute(
         'aria-label',
         [
           salon.name,
-          summary.wait,
+          summary.badge?.text,
           summary.state,
           summary.slot,
           summary.freshness,

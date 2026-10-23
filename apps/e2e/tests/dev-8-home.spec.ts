@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { fr } from './fr';
-import { db, must, openSalon, run } from './seed';
+import { db, lateEvening, must, openSalon, parisNow, run } from './seed';
 
 /**
  * DEV-8 part 2 (U-01, U-16): salons around the client's position, the
@@ -13,8 +13,18 @@ const NEARBY = { latitude: 48.87, longitude: 2.332 };
 test('the home lists open salons around me with their next free slot (DEV-8, U-01, U-16)', async ({
   browser,
 }) => {
+  test.skip(lateEvening(), 'the free slot would fall after midnight');
   const open = await openSalon('home-open');
   const paused = await openSalon('home-paused');
+  // Queue left « open », but the salon is closed today (F-C1, F-C2).
+  const closed = await openSalon('home-closed');
+  const today = parisNow().date;
+  must(
+    await db
+      .from('salon_closures')
+      .insert({ salon_id: closed.salonId, starts_on: today, ends_on: today }),
+    'closure',
+  );
   must(
     await db
       .from('salons')
@@ -64,6 +74,19 @@ test('the home lists open salons around me with their next free slot (DEV-8, U-0
   await expect(
     page.getByRole('link', { name: new RegExp(`Salon home-paused ${run}`) }),
   ).toBeVisible();
+  const closedCard = page.getByRole('link', {
+    name: new RegExp(`Salon home-closed ${run}`),
+  });
+  await expect(closedCard).toContainText(
+    fr('client', 'home.queue_state.closed'),
+  );
+  await expect(closedCard).not.toContainText(/Créneau libre/);
+  // Its join page sends back to the salon page, which says why.
+  await page.goto(`${CLIENT_APP}/salons/${closed.slug}/join`);
+  await expect(page).toHaveURL(new RegExp(`/salons/${closed.slug}$`));
+  await expect(page.locator('#join-blocked')).toContainText(/^Fermé/);
+  await page.goto(CLIENT_APP);
+  await page.getByLabel(fr('client', 'home.filters.open_now')).uncheck();
 
   await card.click();
   await expect(page).toHaveURL(new RegExp(`/salons/${open.slug}$`));

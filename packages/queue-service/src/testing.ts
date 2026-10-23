@@ -207,6 +207,39 @@ export class FakeDb implements QueueDb {
         }
         return null;
       },
+      closePastDays: async (today) => {
+        for (const [id, t] of this.tickets) {
+          const c = t.columns;
+          const status = c.status as TicketState['status'];
+          if (
+            c.is_test ||
+            !isActiveStatus(status) ||
+            (c.service_date as string) >= today
+          ) {
+            continue;
+          }
+          const at = new Date().toISOString();
+          Object.assign(
+            c,
+            status === 'in_service'
+              ? { status: 'completed', completed_at: at }
+              : {
+                  status: 'cancelled',
+                  cancelled_at: at,
+                  cancel_reason: 'end_of_day',
+                },
+            { called_at: null, reminder_sent_at: null, release_due_at: null },
+          );
+          const contact = this.contacts.get(id);
+          if (contact?.is_active) {
+            Object.assign(contact, {
+              is_active: false,
+              is_pending_confirmation: false,
+              closed_at: at,
+            });
+          }
+        }
+      },
       activeTicketOfClient: async (profileId) => {
         for (const [id, t] of this.tickets) {
           if (

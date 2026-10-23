@@ -155,6 +155,10 @@ export interface PublicSalon {
   };
   first_available_wait_minutes: number | null;
   waiting_count: number;
+  /** Same reading of the hours as the home list (F-C2). */
+  accepting: boolean;
+  closes_at: string | null;
+  next_opening_at: string | null;
   services: PublicService[];
   opening_hours: { weekday: number; opens_at: string; closes_at: string }[];
   stylists: PublicStylist[];
@@ -240,6 +244,10 @@ export interface SalonResult {
   next_free_slot: { start_at: string; service_name: string } | null;
   /** U-01: when a closed salon opens again (within a week). */
   next_opening_at: string | null;
+  /** The queue takes new clients now: open, an opening day, before closing. */
+  accepting: boolean;
+  /** Today's last closing; null on a closed day. */
+  closes_at: string | null;
 }
 
 /** F-C1: published salons within `radiusM` of a point, nearest first. */
