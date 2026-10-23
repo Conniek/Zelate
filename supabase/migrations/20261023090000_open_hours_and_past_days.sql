@@ -120,35 +120,42 @@ returns jsonb language sql stable security definer set search_path = '' as $$
 $$;
 
 -- No place outlives its day (S-15 scenario 15). `queue-tick` ends them at
--- closing and at midnight; when it did not run, the next command, tick or
--- nightly maintenance does it here: waiting, called and unconfirmed places
--- are cancelled with the end-of-day reason, a service in progress is
--- completed, their phone copies are closed. Salons whose figures date from
--- an earlier day show no wait until the engine computes today's.
-create function private.close_past_days(p_today date default (now() at time zone 'Europe/Paris')::date)
+-- midnight with the apology message (E24); when it did not run, this ends
+-- what is left, by the engine's own rule (`endOfServiceDay`): every active
+-- place of an earlier day is cancelled with the end-of-day reason, its call
+-- cleared and its phone copy closed. No message: the day is over.
+--
+-- `p_profile_id` / `p_phone_hash` limit it to one client's places: what
+-- `queue-command` runs, under the salon lock, before « une place à la fois »
+-- is checked. Without them (the hourly job) it covers every salon, and
+-- clears the figures of salons whose estimate dates from an earlier day.
+-- Rows another transaction holds are skipped, never waited for.
+create function private.close_past_days(
+  p_today date default (now() at time zone 'Europe/Paris')::date,
+  p_profile_id uuid default null,
+  p_phone_hash bytea default null)
 returns integer language plpgsql security definer set search_path = '' as $$
 declare
   n integer;
+  v_scoped boolean := p_profile_id is not null or p_phone_hash is not null;
 begin
   with stale as (
-    select t.id, t.salon_id, t.status from public.tickets t
+    select t.id from public.tickets t
     where t.status in ('pending_confirmation', 'waiting', 'called', 'in_service')
       and not t.is_test and t.service_date < p_today
-    for update skip locked
+      and (not v_scoped
+           or t.client_id = p_profile_id
+           or exists (select 1 from private.ticket_contacts c
+                      where c.ticket_id = t.id and c.is_active and c.phone_hash = p_phone_hash))
+    for update of t skip locked
   ), ended as (
     update public.tickets t
-    set status = case when s.status = 'in_service' then 'completed'::public.ticket_status
-                      else 'cancelled'::public.ticket_status end,
-        completed_at = case when s.status = 'in_service'
-                            then coalesce(t.started_at, now()) + make_interval(mins => t.planned_duration_minutes)
-                            else t.completed_at end,
-        cancelled_at = case when s.status = 'in_service' then t.cancelled_at else now() end,
-        cancel_reason = case when s.status = 'in_service' then t.cancel_reason
-                             else 'end_of_day'::public.cancel_reason end,
+    set status = 'cancelled', cancelled_at = now(), cancel_reason = 'end_of_day',
+        stylist_change_pending_since = null, priority_since = null,
         called_at = null, reminder_sent_at = null, release_due_at = null
     from stale s
     where t.id = s.id
-    returning t.id, t.salon_id, t.status
+    returning t.id, t.salon_id
   ), contacts as (
     update private.ticket_contacts c
     set is_active = false, is_pending_confirmation = false, closed_at = now()
@@ -156,26 +163,28 @@ begin
     where c.ticket_id = e.id and c.is_active
   ), events as (
     insert into public.ticket_events (ticket_id, salon_id, type, actor_type, reason_code)
-    select e.id, e.salon_id,
-           case when e.status = 'completed' then 'completed'::public.ticket_event_type
-                else 'cancelled'::public.ticket_event_type end,
-           'system', case when e.status = 'completed' then null else 'end_of_day' end
-    from ended e
+    select e.id, e.salon_id, 'cancelled', 'system', 'end_of_day' from ended e
   )
   select count(*)::integer into n from ended;
 
-  update public.salons s
-  set waiting_count = 0, current_wait_minutes = null, is_full = false, next_free_slots = null
-  where s.estimate_updated_at < (p_today::timestamp at time zone 'Europe/Paris')
-    and (s.waiting_count <> 0 or s.current_wait_minutes is not null or s.is_full
-         or s.next_free_slots is not null);
+  if not v_scoped then
+    update public.salons s
+    set waiting_count = 0, current_wait_minutes = null, is_full = false,
+        next_free_slots = '[]'::jsonb
+    from (select x.id from public.salons x
+          where x.estimate_updated_at < (p_today::timestamp at time zone 'Europe/Paris')
+            and (x.waiting_count <> 0 or x.current_wait_minutes is not null or x.is_full
+                 or x.next_free_slots <> '[]'::jsonb)
+          for update skip locked) stale_salons
+    where s.id = stale_salons.id;
+  end if;
   return n;
 end;
 $$;
 
 revoke execute on function private.salon_closes_at(uuid) from public, anon, authenticated;
 revoke execute on function private.salon_next_opening(uuid) from public, anon, authenticated;
-revoke execute on function private.close_past_days(date) from public, anon, authenticated;
+revoke execute on function private.close_past_days(date, uuid, bytea) from public, anon, authenticated;
 
 -- Hourly as well: a salon with no activity starts the day clean, whatever
 -- the time zone offset of the night (cron runs in UTC).

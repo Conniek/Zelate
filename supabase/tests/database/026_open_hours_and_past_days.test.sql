@@ -3,7 +3,7 @@ begin;
 -- Client reads follow the opening hours; no place outlives its day.
 set local client_min_messages = warning;
 truncate public.salons, public.platform_admins, private.ticket_contacts cascade;
-select plan(11);
+select plan(12);
 
 alter table public.salons disable trigger salons_log_settings;
 alter table public.salon_members disable trigger salon_members_log_settings;
@@ -23,7 +23,7 @@ insert into public.salons (id, slug, name, phone, address_line, postal_code, cit
 values ('90000000-0000-0000-0000-000000000bb1', 'salon-hours', 'Salon Horaires', '+33611111111', '1 rue A', '75001', 'Paris',
         'SRID=4326;POINT(2.35 48.85)', '11111111111121', 'published', '00000000-0000-0000-0000-000000000b01', 'qrHOURS',
         'open', 1, 60, now() - interval '1 day',
-        jsonb_build_array(jsonb_build_object('service_id', 'c0000000-0000-0000-0000-000000000b01', 'start_at', now() + interval '5 minutes')));
+        jsonb_build_array(jsonb_build_object('service_id', 'c0000000-0000-0000-0000-000000000b01', 'start_at', now() - interval '1 minute')));
 insert into public.opening_hours (salon_id, weekday, opens_at, closes_at)
 select '90000000-0000-0000-0000-000000000bb1', d, '00:00', '24:00' from generate_series(1, 7) d;
 insert into public.services (id, salon_id, name, duration_minutes, price_cents)
@@ -57,6 +57,9 @@ values ('b0000000-0000-0000-0000-000000000b01', '90000000-0000-0000-0000-0000000
 insert into private.ticket_contacts (ticket_id, phone_e164, phone_hash, is_active)
 values ('b0000000-0000-0000-0000-000000000b01', '+33639980090', '\x02', true);
 
+-- Scoped to another client: nothing of Awa's is touched.
+select is(private.close_past_days((now() at time zone 'Europe/Paris')::date, '00000000-0000-0000-0000-000000000b01'::uuid, null), 0,
+  'scoped to someone else, her place stays');
 select is(private.close_past_days(), 1, 'one place of an earlier day is ended');
 select results_eq(
   $$select status::text, cancel_reason::text from public.tickets where id = 'b0000000-0000-0000-0000-000000000b01'$$,
@@ -66,7 +69,7 @@ select is((select is_active from private.ticket_contacts where ticket_id = 'b000
   'its phone no longer holds a place');
 select results_eq(
   $$select waiting_count, current_wait_minutes, next_free_slots from public.salons where id = '90000000-0000-0000-0000-000000000bb1'$$,
-  $$values (0, null::integer, null::jsonb)$$,
+  $$values (0, null::integer, '[]'::jsonb)$$,
   'yesterday''s figures are cleared until the engine computes today''s');
 
 select * from finish();

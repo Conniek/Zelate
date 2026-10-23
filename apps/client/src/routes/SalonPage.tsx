@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { Banner, Button, Skeleton } from '@zelate/ui';
 import { isActive } from '../lib/client-api';
-import { directionsUrl, nextOpening } from '../lib/places';
+import { directionsUrl } from '../lib/places';
 import { fullToday, openness, useOpeningDay } from '../lib/salon-summary';
 import type { PublicSalon } from '../lib/client-api';
 import {
@@ -112,30 +112,20 @@ export function SalonPage() {
   const takes = state === 'open' && !full;
   const slots = new Map(
     (s.next_free_slots ?? [])
-      .filter((x) => data.closes_at && x.start_at < data.closes_at)
+      .filter(
+        (x) =>
+          data.closes_at !== null &&
+          Date.parse(x.start_at) < Date.parse(data.closes_at),
+      )
       .map((x) => [x.service_id, x.start_at]),
   );
-  // « Fermé · ouvre demain à 9h00 ».
-  const fallback = nextOpening(data.opening_hours, now);
+  // « Fermé · ouvre demain à 9h00 », closures included (only the server knows them).
   const openingText = data.next_opening_at
     ? {
         day: openingDayOf(data.next_opening_at, now),
         time: time(data.next_opening_at),
       }
-    : fallback
-      ? {
-          day:
-            fallback.daysAhead === 0
-              ? tCommon('days.today')
-              : fallback.daysAhead === 1
-                ? tCommon('days.tomorrow')
-                : tCommon(`weekdays.${WEEKDAYS[fallback.weekday - 1]!}`),
-          time: tCommon('formats.time', {
-            hours: String(Number(fallback.time.slice(0, 2))),
-            minutes: fallback.time.slice(3, 5),
-          }),
-        }
-      : null;
+    : null;
   const blocked =
     state === 'closed'
       ? openingText

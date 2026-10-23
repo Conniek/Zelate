@@ -235,7 +235,11 @@ export interface QueueTx {
    * Ends the places of earlier days still active (S-15 scenario 15), when
    * `queue-tick` did not: none may block its client the next day.
    */
-  closePastDays(today: string): Promise<void>;
+  closePastDays(
+    today: string,
+    profileId: string | null,
+    phoneHash: Uint8Array | null,
+  ): Promise<void>;
   /** Active, non-test ticket of a client in any salon. */
   activeTicketOfClient(profileId: string): Promise<TicketRef | null>;
   /**

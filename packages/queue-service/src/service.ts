@@ -1058,9 +1058,18 @@ function commandTransaction(
   return deps.db.transaction(async (tx) => {
     const ctx = await resolveContext(tx, req, caller);
     if ('status' in ctx) return ctx;
-    // A place of an earlier day never blocks « une place à la fois » (S-15).
-    await tx.closePastDays(parisDate(deps.clock()));
     await tx.lockSalon(ctx.salonId);
+    // A place of an earlier day never blocks « une place à la fois » (S-15):
+    // only this client's, or this number's, so no other salon is touched.
+    const sweepProfile =
+      ctx.actor.type === 'client' ? ctx.actor.profile_id : null;
+    if (sweepProfile !== null || phone !== null) {
+      await tx.closePastDays(
+        parisDate(deps.clock()),
+        sweepProfile,
+        phone?.hash ?? null,
+      );
+    }
     // ADR-004: checked under the lock, so a retry waits for the first try.
     const stored = await tx.findProcessed(req.command_id);
     if (stored) return stored;

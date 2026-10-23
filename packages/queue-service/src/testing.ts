@@ -207,35 +207,43 @@ export class FakeDb implements QueueDb {
         }
         return null;
       },
-      closePastDays: async (today) => {
+      closePastDays: async (today, profileId, phoneHash) => {
+        const hash = phoneHash
+          ? [...phoneHash].map((b) => b.toString(16).padStart(2, '0')).join('')
+          : null;
         for (const [id, t] of this.tickets) {
           const c = t.columns;
           const status = c.status as TicketState['status'];
+          const contact = this.contacts.get(id);
+          const mine =
+            (profileId !== null && c.client_id === profileId) ||
+            (hash !== null &&
+              contact?.is_active &&
+              contact.phone_hash === hash);
           if (
+            !mine ||
             c.is_test ||
             !isActiveStatus(status) ||
             (c.service_date as string) >= today
           ) {
             continue;
           }
-          const at = new Date().toISOString();
-          Object.assign(
-            c,
-            status === 'in_service'
-              ? { status: 'completed', completed_at: at }
-              : {
-                  status: 'cancelled',
-                  cancelled_at: at,
-                  cancel_reason: 'end_of_day',
-                },
-            { called_at: null, reminder_sent_at: null, release_due_at: null },
-          );
-          const contact = this.contacts.get(id);
+          // Same rule as the engine's end of service day (E24).
+          Object.assign(c, {
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            cancel_reason: 'end_of_day',
+            stylist_change_pending_since: null,
+            priority_since: null,
+            called_at: null,
+            reminder_sent_at: null,
+            release_due_at: null,
+          });
           if (contact?.is_active) {
             Object.assign(contact, {
               is_active: false,
               is_pending_confirmation: false,
-              closed_at: at,
+              closed_at: new Date().toISOString(),
             });
           }
         }

@@ -25,6 +25,26 @@ test('the home lists open salons around me with their next free slot (DEV-8, U-0
       .insert({ salon_id: closed.salonId, starts_on: today, ends_on: today }),
     'closure',
   );
+  // Yesterday's figures would still offer a slot: closed, it must not show.
+  const { data: closedService } = await db
+    .from('services')
+    .select('id')
+    .eq('salon_id', closed.salonId)
+    .single();
+  must(
+    await db
+      .from('salons')
+      .update({
+        next_free_slots: [
+          {
+            service_id: closedService!.id,
+            start_at: new Date(Date.now() + 30 * 60_000).toISOString(),
+          },
+        ],
+      })
+      .eq('id', closed.salonId),
+    'stale slot',
+  );
   must(
     await db
       .from('salons')

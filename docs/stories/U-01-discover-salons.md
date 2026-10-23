@@ -72,12 +72,12 @@
 - **Alors** ce salon apparaît dans les résultats
 - **Et** il est affiché « Fermé » avec sa prochaine heure d'ouverture
 
-### 10. Information d'attente ancienne : « à vérifier »
+### 10. Ancienneté de l'estimation
 
-- **Étant donné** qu'un salon a une estimation d'attente mise à jour il y a plus de 5 min (exemple : 6 min)
+- **Étant donné** qu'un salon a une estimation d'attente mise à jour il y a 12 min
 - **Quand** il apparaît dans la liste ou sur la carte
-- **Alors** son badge d'attente porte la mention « à vérifier »
-- **Et** un salon dont l'estimation date de 5 min ou moins n'affiche pas cette mention
+- **Alors** sa carte indique « mis à jour il y a 12 min »
+- **Et** au-delà d'une heure, « mis à jour à 14h05 » (recette du 23/10, remplace « à vérifier »)
 
 ### 10 bis. Prochain créneau libre sur la carte du salon (renvoi vers U-16)
 
@@ -142,7 +142,7 @@
 | `client.home.filters.open_now`          | « Ouvert maintenant »                                                                                                               | Activé par défaut                                                                                                    |
 | `client.home.wait_badge`                | « ~{minutes} min » (exemple APP_FLOW : « ~25 min »)                                                                                 | Variable `minutes`                                                                                                   |
 | `client.home.freshness`                 | {minutes, plural, =0 {mis à jour à l'instant} other {mis à jour il y a # min}}                                                      | Pluriel ICU                                                                                                          |
-| `client.home.freshness_stale`           | « à vérifier »                                                                                                                      | Au-delà de 5 min                                                                                                     |
+| `client.home.freshness_at`              | « mis à jour à {time} »                                                                                                             | Au-delà d'une heure                                                                                                  |
 | `client.home.next_free_slot`            | Créneau libre à {time}                                                                                                              | Variable `time` ; partagé avec U-16 ; ne porte pas le nom de la prestation demandé par E22 (voir questions ouvertes) |
 | `client.home.map.locate_me`             | « Me localiser »                                                                                                                    | —                                                                                                                    |
 | `client.home.empty.message`             | Aucun salon ouvert à moins de 5 km pour le moment.                                                                                  | —                                                                                                                    |

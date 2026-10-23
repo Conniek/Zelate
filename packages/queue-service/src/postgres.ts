@@ -230,8 +230,11 @@ function sqlTx(q: SqlRunner): QueueTx {
       );
     },
 
-    async closePastDays(today) {
-      await q.query('select private.close_past_days($1::date)', [today]);
+    async closePastDays(today, profileId, phoneHash) {
+      await q.query(
+        `select private.close_past_days($1::date, $2::uuid, decode($3, 'hex'))`,
+        [today, profileId, phoneHash ? hex(phoneHash) : null],
+      );
     },
 
     async activeTicketOfClient(profileId) {
