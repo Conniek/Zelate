@@ -7,6 +7,9 @@ select plan(11);
 
 alter table public.salons disable trigger salons_log_settings;
 alter table public.salon_members disable trigger salon_members_log_settings;
+alter table public.opening_hours disable trigger opening_hours_log_settings;
+alter table public.services disable trigger services_log_settings;
+alter table public.salon_closures disable trigger salon_closures_log_settings;
 
 insert into auth.users (id, instance_id, aud, role) values
   ('00000000-0000-0000-0000-000000000b01', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'),
