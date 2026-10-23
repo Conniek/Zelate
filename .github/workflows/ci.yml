@@ -79,7 +79,13 @@ jobs:
         run: supabase db reset
 
       - name: Run pgTAP tests
-        run: supabase test db
+        run: |
+          set -o pipefail
+          supabase test db 2>&1 | tee /tmp/pgtap.log || {
+            # Failing assertions as an annotation, readable without the log files.
+            echo "::error title=pgtap::$(grep -E 'not ok|Failed|Looks like|ERROR|Wstat|# +(have|want|got|expected)|\.sql \.\.' /tmp/pgtap.log | tail -c 15000 | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          }
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
