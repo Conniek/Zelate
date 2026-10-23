@@ -231,6 +231,15 @@ export interface QueueTx {
   /** Active managers of a salon (at least one must stay, S-16 scenario 8). */
   activeManagerCount(salonId: string): Promise<number>;
   ticketByToken(token: string): Promise<TicketRef | null>;
+  /**
+   * Ends the places of earlier days still active (S-15 scenario 15), when
+   * `queue-tick` did not: none may block its client the next day.
+   */
+  closePastDays(
+    today: string,
+    profileId: string | null,
+    phoneHash: Uint8Array | null,
+  ): Promise<void>;
   /** Active, non-test ticket of a client in any salon. */
   activeTicketOfClient(profileId: string): Promise<TicketRef | null>;
   /**

@@ -1,6 +1,7 @@
 # TRD — Zelaté
 
-> **Technical Requirements Document** · version 0.11 · 22/10/2026 · statut : en vigueur (lots DEV)
+> **Technical Requirements Document** · version 0.12 · 23/10/2026 · statut : en vigueur (lots DEV)
+> v0.12 · 23/10/2026 : tâches planifiées en local (`corepack pnpm dev:cron`, §11).
 > v0.11 · 22/10/2026 : `account-export` et `account-delete` (DEV-8, U-13) ; les fonctions répondent aussi à GET (CORS).
 > v0.10 · 22/10/2026 : téléphones de test (`[auth.sms.test_otp]`) dans la plage ARCEP réservée à la fiction, jamais sur un projet hébergé (§11).
 > v0.9 · 22/10/2026 : lot DEV-8 — `my_ticket()` et `ticket-public` renvoient la même vue du ticket (`private.client_ticket_view`) ; la page client lit à nouveau toutes les 30 s et écoute `ticket:{id}` (session) ou `ticket-token:{clé}` (lien SMS) et `salon-public:{id}`.
@@ -413,6 +414,8 @@ Ordre : installation → lint et formatage → types → tests unitaires → bas
 | Local         | `supabase start` (Docker)           | `pnpm dev`                         | `seed.sql` (salons fictifs) |
 | Préversion    | Projet Supabase « staging » (UE)    | Préversion Vercel par pull request | Jeu de démonstration        |
 | Production    | Projet Supabase « production » (UE) | Vercel production                  | Réelles                     |
+
+En local, les tâches planifiées (`queue-tick` chaque minute, etc.) n'appellent les Edge Functions qu'une fois leur adresse et leur secret dans Vault : `corepack pnpm dev:cron` les y écrit depuis `supabase/functions/.env` (à relancer après chaque `supabase db reset`, avec `supabase functions serve` en marche). Sans cela, rien ne recalcule la file : attentes et créneaux figés, pas de fin de journée.
 
 Les téléphones de test de `supabase/config.toml` (`[auth.sms.test_otp]`, code fixe, local et CI seulement) sont pris dans la plage ARCEP réservée à la fiction (06 39 98 xx xx) : aucun abonné réel. Cette section n'est jamais envoyée vers un projet hébergé (`supabase config push`) : en préversion et en production, `test_otp` reste vide.
 

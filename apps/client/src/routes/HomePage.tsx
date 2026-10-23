@@ -7,7 +7,7 @@ import { searchPlaces } from '../lib/address';
 import { isActive, searchSalons } from '../lib/client-api';
 import type { SalonResult } from '../lib/client-api';
 import { useMyTicket, useNow, usePageTitle, useSession } from '../lib/live';
-import { useSalonSummary } from '../lib/salon-summary';
+import { BADGE_CLASSES, openness, useSalonSummary } from '../lib/salon-summary';
 
 // MapLibre weighs more than the rest of the page: loaded with the tab (TRD §3).
 const SalonsMap = lazy(() => import('../components/SalonsMap'));
@@ -36,9 +36,11 @@ function SalonCard({ salon, now }: { salon: SalonResult; now: number }) {
       >
         <span className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="text-h3 font-semibold">{salon.name}</span>
-          {summary.wait ? (
-            <span className="rounded-full bg-primary-subtle px-3 py-0.5 font-semibold text-link tabular-nums">
-              {summary.wait}
+          {summary.badge ? (
+            <span
+              className={`rounded-full px-3 py-0.5 font-semibold tabular-nums ${BADGE_CLASSES[summary.badge.tone]}`}
+            >
+              {summary.badge.text}
             </span>
           ) : null}
         </span>
@@ -127,7 +129,11 @@ export function HomePage() {
   // The same array between renders: the map keeps its markers, and the focus.
   const shown = useMemo(() => {
     const all = results.data ?? [];
-    return openOnly ? all.filter((s) => s.queue_status === 'open') : all;
+    // « Ouvert maintenant »: open by its hours too; full queues stay, marked.
+    const at = Date.now();
+    return openOnly
+      ? all.filter((s) => openness(s.queue_status, s.closes_at, at) === 'open')
+      : all;
   }, [openOnly, results.data]);
   const active = mine.query.data && isActive(mine.query.data.ticket);
 

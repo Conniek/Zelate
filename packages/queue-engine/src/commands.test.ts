@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { applyCommand } from './index.ts';
 import type { Command } from './index.ts';
 import {
+  DAY,
+  END_OF_DAY,
   adjustDuration,
   at,
   callTicket,
@@ -54,6 +56,19 @@ describe('join_queue errors', () => {
         at('10:00'),
       ),
     ).toBe('queue_paused');
+  });
+
+  it('queue_closed on a day with no opening hours, even with the queue open (F-C2)', () => {
+    const closedDay = makeState({
+      salon: {
+        service_day: {
+          service_date: DAY,
+          opening_ranges: [],
+          ends_at: END_OF_DAY,
+        },
+      },
+    });
+    expect(fails(closedDay, joinQueue('a'), at('10:00'))).toBe('queue_closed');
   });
 
   it('queue_full when the new service would end after the last closing (K36)', () => {

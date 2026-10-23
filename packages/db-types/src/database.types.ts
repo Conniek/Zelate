@@ -1465,8 +1465,10 @@ export type Database = {
       search_salons: {
         Args: { lat: number; lng: number; query?: string; radius_m?: number };
         Returns: {
+          accepting: boolean;
           address_line: string;
           city: string;
+          closes_at: string;
           current_wait_minutes: number;
           distance_m: number;
           estimate_updated_at: string;
