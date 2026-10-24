@@ -50,3 +50,12 @@ Revue de code : 8 points, corrigés.
 - Pendant la coupure de midi, la file reste ouverte (le moteur accepte les inscriptions jusqu'à la dernière fermeture du jour) ; seul l'après-fermeture et les jours fermés comptent comme « Fermé ».
 - « Complet aujourd'hui » s'affiche quand `is_full` est vrai ou quand maintenant + attente dépasse la dernière fermeture.
 - La carte à plusieurs salons (regroupement, fiche en bas de carte) fait l'objet d'une PR suivante.
+
+## Suite : la carte avec beaucoup de salons (24/10)
+
+Branche `feat/client-map-clusters`, validée par Koni le 23/10.
+
+- Repères compacts : la pastille ne montre que le badge du salon (« ~25 min », « Aucune attente », « Complet aujourd'hui », « Fermé »), aux couleurs de la liste.
+- Salons trop proches pour être lus (pastilles à moins de 56 px) : une seule pastille « 3 salons » ; la toucher zoome jusqu'à les séparer. Regroupement recalculé à la fin de chaque déplacement de la carte (`lib/map-groups.ts`, testé).
+- Toucher un salon ouvre en bas de la carte une petite fiche : nom, badge, adresse, créneau libre, fraîcheur, « Voir le salon » et « Fermer » ; le focus va sur la fiche, Échap ou « Fermer » le ramène sur le repère.
+- Choix par défaut : la carte n'est pas couverte par les tests de bout en bout (tuiles externes) ; le regroupement l'est par des tests unitaires, les premiers de l'app client.

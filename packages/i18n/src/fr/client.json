@@ -30,7 +30,10 @@
       "marker_aria": "{salon_name}, attente ~{minutes} min",
       "locate_me": "Me localiser",
       "loading": "Chargement de la carte…",
-      "open_salon": "Voir {salon_name}"
+      "open_salon": "Voir {salon_name}",
+      "group": "{count} salons",
+      "group_aria": "{count} salons ici : {names}. Zoomer pour les voir",
+      "view_salon": "Voir le salon"
     },
     "empty": {
       "message": "Aucun salon ouvert à moins de 5 km pour le moment.",
