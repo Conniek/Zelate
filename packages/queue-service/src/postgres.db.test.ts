@@ -503,4 +503,38 @@ describe.skipIf(!sql || lateParisEvening())('queue-command on Postgres', () => {
       where salon_id = ${salon} and type = 'member_deactivated' and subject_member_id = ${ben.member}`;
     expect(event!.actor_member_id).toBe(manager.member);
   });
+
+  it('a place left from an earlier day ends before the client joins again (S-15)', async () => {
+    const lena = id();
+    const stale = id();
+    await sql!`insert into auth.users (id, instance_id, aud, role, phone)
+      values (${lena}, '00000000-0000-0000-0000-000000000000', 'authenticated',
+              'authenticated', ${phone().slice(1)})`;
+    await sql!`insert into public.profiles (id, first_name) values (${lena}, 'Léna')`;
+    await sql!`insert into public.tickets (id, salon_id, service_date, short_code, tracking_token,
+        tracking_short_code, display_name, channel, planned_duration_minutes, queue_rank,
+        client_id, status)
+      values (${stale}, ${salon}, (now() at time zone 'Europe/Paris')::date - 1, 'ZZ9ZZ',
+        ${'tok-' + stale}, ${stale.slice(0, 8)}, 'Léna', 'app', 30, 1, ${lena}, 'waiting')`;
+    // Yesterday's figures on the salon (the nightly job did not run yet).
+    await sql!`update public.salons set estimate_updated_at = now() - interval '2 days',
+      current_wait_minutes = 60 where id = ${salon}`;
+
+    ok(
+      await send(lena, 'join_queue', {
+        salon_id: salon,
+        service_id: service,
+        channel: 'app',
+      }),
+    );
+    const [old] =
+      await sql!`select status, cancel_reason from public.tickets where id = ${stale}`;
+    expect(old).toEqual({ status: 'cancelled', cancel_reason: 'end_of_day' });
+
+    // The hourly job covers every salon and never writes a null slot list.
+    await sql!`select private.close_past_days()`;
+    const [row] =
+      await sql!`select next_free_slots from public.salons where id = ${salon}`;
+    expect(Array.isArray(row!.next_free_slots)).toBe(true);
+  });
 });

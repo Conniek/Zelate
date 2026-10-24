@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 import { Banner, Button, Skeleton } from '@zelate/ui';
 import { isActive } from '../lib/client-api';
-import { directionsUrl, nextOpening } from '../lib/places';
+import { directionsUrl } from '../lib/places';
+import { fullToday, openness, useOpeningDay } from '../lib/salon-summary';
 import type { PublicSalon } from '../lib/client-api';
 import {
   useMyTicket,
@@ -65,6 +66,7 @@ export function SalonPage() {
   const { t } = useTranslation('client');
   const { t: tCommon } = useTranslation('common');
   const time = useTime();
+  const openingDayOf = useOpeningDay();
   const { slug = '' } = useParams();
   const salon = useSalon(slug);
   const session = useSession();
@@ -101,36 +103,42 @@ export function SalonPage() {
 
   const data = salon.data;
   const s = data.salon;
+  const now = Date.now();
   const wait = data.first_available_wait_minutes;
+  // F-C2: the hours win over the queue button (« Fermé » after closing).
+  const state = openness(s.queue_status, data.closes_at, now);
+  const full =
+    state === 'open' && fullToday(s.is_full, wait, data.closes_at, now);
+  const takes = state === 'open' && !full;
   const slots = new Map(
-    (s.next_free_slots ?? []).map((x) => [x.service_id, x.start_at]),
+    (s.next_free_slots ?? [])
+      .filter(
+        (x) =>
+          data.closes_at !== null &&
+          Date.parse(x.start_at) < Date.parse(data.closes_at),
+      )
+      .map((x) => [x.service_id, x.start_at]),
   );
-  // F-C2: « Fermé · ouvre demain à 9h00 ».
-  const opening = nextOpening(data.opening_hours, Date.now());
-  const openingDay = opening
-    ? opening.daysAhead === 0
-      ? tCommon('days.today')
-      : opening.daysAhead === 1
-        ? tCommon('days.tomorrow')
-        : tCommon(`weekdays.${WEEKDAYS[opening.weekday - 1]!}`)
+  // « Fermé · ouvre demain à 9h00 », closures included (only the server knows them).
+  const openingText = data.next_opening_at
+    ? {
+        day: openingDayOf(data.next_opening_at, now),
+        time: time(data.next_opening_at),
+      }
     : null;
   const blocked =
-    s.queue_status === 'closed'
-      ? opening && openingDay
-        ? t('salon.join_disabled.closed_until', {
-            day: openingDay,
-            time: tCommon('formats.time', {
-              hours: String(Number(opening.time.slice(0, 2))),
-              minutes: opening.time.slice(3, 5),
-            }),
-          })
+    state === 'closed'
+      ? openingText
+        ? t('salon.join_disabled.closed_until', openingText)
         : t('salon.join_disabled.closed')
-      : s.queue_status === 'paused'
+      : state === 'paused'
         ? t('salon.join_disabled.paused')
-        : s.is_full
+        : full
           ? t('salon.join_disabled.full')
           : null;
   const active = mine.query.data && isActive(mine.query.data.ticket);
+  // His place is here: the page points to it instead of counting him (U-02).
+  const mineHere = active && mine.query.data!.ticket.salon_id === s.id;
   const address = `${s.address_line}, ${s.postal_code} ${s.city}`;
 
   return (
@@ -155,27 +163,41 @@ export function SalonPage() {
         <h2 className="font-semibold" id="wait-title">
           {t('salon.wait.title')}
         </h2>
-        <p className="text-h3">
-          {t('salon.wait.people_ahead', { count: data.waiting_count })}
-        </p>
-        {wait !== null && s.queue_status === 'open' ? (
-          <p>
-            {t('salon.wait.estimated_time', {
-              time: time(new Date(Date.now() + wait * 60_000).toISOString()),
-            })}
+        {mineHere ? (
+          <p className="text-h3">{t('salon.wait.mine')}</p>
+        ) : takes ? (
+          <>
+            <p className="text-h3">
+              {t('salon.wait.people_ahead', { count: data.waiting_count })}
+            </p>
+            {wait !== null ? (
+              <p>
+                {t('salon.wait.estimated_time', {
+                  time: time(new Date(now + wait * 60_000).toISOString()),
+                })}
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <p className="text-h3" id="join-blocked">
+            {blocked}
           </p>
-        ) : null}
+        )}
         <p className="text-body-sm text-text-muted">
-          {tCommon(`queue_status.${s.is_full ? 'full' : s.queue_status}`)}
+          {tCommon(`queue_status.${full ? 'full' : state}`)}
         </p>
       </section>
 
       <div className="grid gap-2">
-        {blocked ? (
+        {mineHere ? (
+          <Link
+            className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-5 font-semibold text-text-on-primary"
+            to="/ticket"
+          >
+            {t('join.view_my_ticket')}
+          </Link>
+        ) : blocked ? (
           <>
-            <p className="text-body-sm text-text-muted" id="join-blocked">
-              {blocked}
-            </p>
             <Button
               aria-describedby="join-blocked"
               aria-disabled
@@ -184,7 +206,7 @@ export function SalonPage() {
             >
               {t('salon.join')}
             </Button>
-            {s.is_full ? (
+            {full || state === 'closed' ? (
               <Link
                 className="inline-flex min-h-11 items-center text-link underline"
                 to="/"
@@ -238,7 +260,7 @@ export function SalonPage() {
                     })}
                   </span>
                 </span>
-                {slot && s.queue_status === 'open' ? (
+                {slot && takes ? (
                   <span className="text-body-sm text-success-text">
                     {t('salon.services.next_free_slot', { time: time(slot) })}
                   </span>
@@ -247,7 +269,7 @@ export function SalonPage() {
             );
           })}
         </ul>
-        {slots.size > 0 && s.queue_status === 'open' ? (
+        {slots.size > 0 && takes ? (
           <p className="text-body-sm text-text-muted">
             {t('salon.free_slot_hint')}
           </p>

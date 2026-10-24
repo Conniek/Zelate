@@ -7,6 +7,7 @@ select plan(5);
 
 alter table public.salons disable trigger salons_log_settings;
 alter table public.services disable trigger services_log_settings;
+alter table public.opening_hours disable trigger opening_hours_log_settings;
 
 insert into auth.users (id, instance_id, aud, role) values
   ('00000000-0000-0000-0000-000000000801', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');
@@ -20,6 +21,9 @@ values ('90000000-0000-0000-0000-0000000008a1', 'salon-slot', 'Salon Créneau', 
 insert into public.services (id, salon_id, name, duration_minutes, price_cents) values
   ('c0000000-0000-0000-0000-000000000801', '90000000-0000-0000-0000-0000000008a1', 'Coupe homme', 30, 2500),
   ('c0000000-0000-0000-0000-000000000802', '90000000-0000-0000-0000-0000000008a1', 'Couleur', 90, 6000);
+-- Open all day, every day: the free slot is shown only within the hours.
+insert into public.opening_hours (salon_id, weekday, opens_at, closes_at)
+select '90000000-0000-0000-0000-0000000008a1', d, '00:00', '24:00' from generate_series(1, 7) d;
 update public.salons set next_free_slots = jsonb_build_array(
     jsonb_build_object('service_id', 'c0000000-0000-0000-0000-000000000802', 'start_at', '2026-10-22T14:00:00Z'),
     jsonb_build_object('service_id', 'c0000000-0000-0000-0000-000000000801', 'start_at', '2026-10-22T13:20:00Z'))
@@ -41,9 +45,6 @@ select is((select next_free_slot from public.search_salons(48.85, 2.35)), null,
 reset role;
 
 -- U-01 scenario 9: a closed salon gives its next opening.
-alter table public.opening_hours disable trigger opening_hours_log_settings;
-insert into public.opening_hours (salon_id, weekday, opens_at, closes_at)
-select '90000000-0000-0000-0000-0000000008a1', d, '09:00', '19:00' from generate_series(1, 7) d;
 update public.salons set queue_status = 'closed' where id = '90000000-0000-0000-0000-0000000008a1';
 set local role anon;
 select ok((select next_opening_at > now() and next_opening_at < now() + interval '25 hours'

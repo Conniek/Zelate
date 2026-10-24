@@ -9,6 +9,7 @@
   "scripts": {
     "build": "corepack pnpm --recursive --if-present build",
     "dev": "corepack pnpm --parallel --filter @zelate/client --filter @zelate/pro dev",
+    "dev:cron": "bash scripts/dev-cron.sh",
     "dev:client": "corepack pnpm --filter @zelate/client dev",
     "dev:pro": "corepack pnpm --filter @zelate/pro dev",
     "format": "prettier --write \"apps/**/*.{css,html,js,json,ts,tsx}\" \"packages/config/**/*.{js,json,ts}\" \"packages/ui/**/*.{css,js,json,ts,tsx}\" \"packages/i18n/src/**/*.{json,ts}\" \"packages/i18n/*.json\" \"packages/queue-engine/**/*.{json,ts}\" \"packages/auth-policy/**/*.{json,ts}\" \"packages/queue-service/**/*.{json,ts}\" \"supabase/functions/**/*.ts\" \"packages/db-types/*.json\" \"packages/db-types/src/index.ts\" \".github/workflows/*.yml\" \"*.{js,json,yaml,yml}\"",

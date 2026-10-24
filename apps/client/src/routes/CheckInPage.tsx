@@ -20,6 +20,7 @@ import {
   useSession,
 } from '../lib/live';
 import { todaySlots } from '../lib/places';
+import { openness } from '../lib/salon-summary';
 
 type Step = 'time' | 'stylist' | 'identify' | 'summary';
 const STEPS: Step[] = ['time', 'stylist', 'identify', 'summary'];
@@ -123,6 +124,17 @@ export function CheckInPage() {
     );
   }
   if (!salon.data) return <Navigate replace to={`/salons/${slug}`} />;
+  // Closed or paused: the engine would refuse at the end (F-C12).
+  if (
+    !checkedIn.current &&
+    openness(
+      salon.data.salon.queue_status,
+      salon.data.closes_at,
+      Date.now(),
+    ) !== 'open'
+  ) {
+    return <Navigate replace to={`/salons/${slug}`} />;
+  }
 
   const data = salon.data;
   const steps = STEPS.filter(

@@ -12,6 +12,7 @@ import { parisDate, parisInstant } from '@zelate/queue-service/time';
 import { Banner, Button, Skeleton, TextField } from '@zelate/ui';
 import { PhoneCode } from '../components/PhoneCode';
 import { hasProfile } from '../lib/auth-api';
+import { fullToday, openness } from '../lib/salon-summary';
 import { isActive } from '../lib/client-api';
 import {
   useClientCommand,
@@ -125,6 +126,24 @@ export function JoinPage() {
   if (!salon.data) return <Navigate replace to={`/salons/${slug}`} />;
 
   const data = salon.data;
+  // Closed, paused or full: the salon page says why, before any step (F-C2).
+  const salonState = openness(
+    data.salon.queue_status,
+    data.closes_at,
+    Date.now(),
+  );
+  if (
+    !joined.current &&
+    (salonState !== 'open' ||
+      fullToday(
+        data.salon.is_full,
+        data.first_available_wait_minutes,
+        data.closes_at,
+        Date.now(),
+      ))
+  ) {
+    return <Navigate replace to={`/salons/${slug}`} />;
+  }
   const steps = STEPS.filter(
     (s) => s !== 'identify' || !signedIn || known === false,
   );

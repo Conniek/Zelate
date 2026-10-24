@@ -1006,3 +1006,21 @@ describe('error responses', () => {
     expect(errorResponse('queue_full').status).toBe(409);
   });
 });
+
+describe('places of earlier days (S-15 scenario 15)', () => {
+  it('a place left active yesterday never blocks the client today', async () => {
+    const yesterday = data(await join());
+    const id = yesterday.ticket_id as string;
+    // `queue-tick` did not end the day: the place is still waiting, a day old.
+    h.db.tickets.get(id)!.columns.service_date = '2026-10-18';
+    expect(DATE).toBe('2026-10-19');
+
+    const today = await join();
+    expect(today.status).toBe(200);
+    expect(h.db.tickets.get(id)!.columns).toMatchObject({
+      status: 'cancelled',
+      cancel_reason: 'end_of_day',
+    });
+    expect(h.db.contacts.get(id)?.is_active).toBe(false);
+  });
+});

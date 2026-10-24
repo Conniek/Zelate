@@ -7,7 +7,7 @@ These rules mirror `CLAUDE.md`. If the two files disagree, `CLAUDE.md` wins and 
 ## Current state
 
 - **Phase 2 is closed (19/10/2026).** All business and technical questions are decided: E1-E39 (Ely) and K1-K45 (Koni). For E32-E39 and K42-K45 the written proposals are the default decisions (`docs/stories/README.md`); Ely may still revise one, nothing waits for her.
-- **DEV-0 to DEV-7 are merged; DEV-8 (client app) comes in 4 pull requests, part 1 (salon page, join, QR, tracking, SMS link) is merged, part 2 (home list and map, next free slot) is merged, part 3 (tracking banners, appointment check-in) is merged, part 4 (account) is on `feat/dev-8-account`, see `docs/reviews/2026-10-22-dev-8-part-4.md`.** `/dashboard/salon` is still open. Queue writes only go through `packages/queue-service` and the Edge Functions that call it (ADR-003).
+- **DEV-0 to DEV-7 are merged; DEV-8 (client app) comes in 4 pull requests, part 1 (salon page, join, QR, tracking, SMS link) is merged, part 2 (home list and map, next free slot) is merged, part 3 (tracking banners, appointment check-in) is merged, part 4 (account) is merged: DEV-8 is done. Fixes from the first manual test run (`docs/reviews/2026-10-23-recette-client.md`) are on `fix/client-open-hours`.** `/dashboard/salon` is still open. Queue writes only go through `packages/queue-service` and the Edge Functions that call it (ADR-003).
 - Supabase local is running and its API, Studio and Mailpit endpoints respond. Some ports bind to `0.0.0.0`; Studio, pgMeta and analytics have no authentication. Keep the stack on a trusted local network only; never use its shared default keys in production or share `supabase status` output.
 
 ## Read before working

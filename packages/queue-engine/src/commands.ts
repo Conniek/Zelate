@@ -201,6 +201,10 @@ function queueOpenError(
   now: Instant,
 ): QueueErrorCode | null {
   if (now >= state.salon.service_day.ends_at) return 'queue_closed';
+  // The hours win over the queue button: no opening today (closed day,
+  // exceptional closure), no new client, as the client screens say (F-C2).
+  if (state.salon.service_day.opening_ranges.length === 0)
+    return 'queue_closed';
   if (state.salon.queue_status === 'closed') return 'queue_closed';
   if (state.salon.queue_status === 'paused') return 'queue_paused';
   return null;
