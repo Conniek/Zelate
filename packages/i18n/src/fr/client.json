@@ -27,7 +27,6 @@
     "next_free_slot": "Créneau libre à {time} · {service_name}",
     "map": {
       "aria_label": "Carte des salons autour de vous",
-      "marker_aria": "{salon_name}, attente ~{minutes} min",
       "locate_me": "Me localiser",
       "loading": "Chargement de la carte…",
       "open_salon": "Voir {salon_name}",
